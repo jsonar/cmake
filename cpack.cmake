@@ -1,4 +1,10 @@
 include(SonarFunctions)
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  message(STATUS "No install prefix defined, default is /usr")
+  set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Package install prefix" FORCE)
+endif()
+
 if (NOT DEFINED CPACK_GENERATOR)
   sonar_cpack_generator(CPACK_GENERATOR)
 endif()
