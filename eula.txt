@@ -1,0 +1,385 @@
+PROGRAM LICENSE AGREEMENT
+
+PLEASE READ THE FOLLOWING CONDITIONS CAREFULLY BEFORE YOU PROCEED WITH
+INSTALLING AND USING THE LICENSED SOFTWARE. BY CLICKING ON THE “I AGREE”
+BUTTON AND/OR BY DOWNLOADING AND INSTALLING THE LICENSED SOFTWARE, AND/OR
+OTHERWISE USING THE LICENSED SOFTWARE, YOU HEREBY ACKNOWLEDGE AND AGREE THAT
+YOU READ AND UNDERSTOOD THE TERMS AND CONDITIONS OF THIS LICENSE AGREEMENT (the
+"AGREEMENT") AND AGREED TO BE LEGALLY BOUND BY THEM. IF YOU DO NOT AGREE TO BE
+BOUND BY THIS AGREEMENT, THAN PLEASE EXIT THE INSTALLATION PROCESS AND DO NOT
+INSTALL, ACCESS OR USE THE LICENSED SOFTWARE.
+IF YOU USE THE LICENSED SOFTWARE ON BEHALF OF A COMPANY OR OTHER LEGAL ENTITY,
+THEN BY CLICKING THE "I AGREE" BUTTON, YOU REPRESENT AND WARRANT THAT YOU HAVE
+FULL POWER AND AUTHORITY TO BIND THAT ENTITY AND TO ACCEPT THIS AGREEMENT ON
+ITS BEHALF. THE TERM "YOU" OR “CUSTOMER” OR “LICENSEE” IN THIS
+AGREEMENT REFERS TO YOU, AN INDIVIDUAL, AND/OR TO THE ENTITY ON WHOSE BEHALF
+YOU AUTHORIZED THIS AGREEMENT.
+
+1.	Definitions
+For the purposes of this Agreement the terms -
+1.1.	“jSonar” means jSonar, Inc., a Delaware corporation, having its
+principal place of business at 370 Marrett Rd, Lexington, MA 02421.
+1.2.	"Licensed Software" means jSonar software known by the names
+JSON Studio, SonarW, SonarG, and SonarSQL as provided and released by jSonar, in object code only, any
+updates and new versions of jSonar software, as made available from
+time to time by jSonar, any third party software provided therewith, and all
+associated documentation provided with the Licensed Software. Nothing in this
+Agreement shall be construed as granting rights to any third parties.
+
+2.	Grant of License:
+2.1.	License: Subject to the terms and conditions of this Agreement and
+payment of license fees, jSonar hereby grants the Customer, and the Customer
+hereby accept, a non-exclusive, non-transferable, limited and revocable license
+to use the copy of the Licensed Software for installation on Customer’s
+computer server for Customer’s internal purposes only.
+2.2.	Restrictions: Licensee will not, and will not allow, without the
+express written authorization of jSonar to:
+(a)	Demonstrate, copy, rent, lease, sell, sublicense, assign, market or
+otherwise transfer any portion of the Licensed Software to any third party; or
+(b)	Publish or otherwise disclose or provide information in connection with
+the Licensed Software, documentation, or any related information including but
+not limited to information relating to performance or quality of the Licensed
+Software to any third party; or
+(c)	Modify, reuse, disassemble, decompile (or attempt to derive the source
+code of the Licensed Software), reverse engineer or otherwise translate the
+Licensed Software or any portion thereof, including, without limitation, any
+software delivered with the Licensed Software, except and only to the extent
+that this limitation is expressly prohibited by applicable law notwithstanding
+this limitation; or
+(d)	Create any software program that links, embeds or makes direct function
+calls to run time or other components licensed by jSonar from third parties; or
+(e)	Remove, alter or cause not to be displayed, any trademarks, copyright
+notices or start-up messages contained in the Licensed Software; or
+(f)	Remove or attempt to remove or circumvent any security measures
+installed in the Licensed Software.
+(g)	Create any derivative works of the Licensed Software.
+Nothing in this section shall derogate from any of the other Licensee’s
+obligations and undertakings in this Agreement.
+2.3.	The Customer may make an additional machine-readable copy of the
+Licensed Software, and use it for back-up purposes only. The Customer must
+reproduce on the back-up copy of the License Software all copyright notices and
+any other proprietary legends appearing on the original copy of the Licensed
+Software that the Customer have downloaded. The Customer may not sell, lease,
+rent or otherwise transfer the back-up copy of the License Software to any
+third party.
+2.4.	From time to time, upon jSonar's reasonable request, the Customer will
+provide jSonar log files generated in Customer’s computer servers, as a
+result of using the Licensed Software ("Log Files"). jSonar may use the Log
+Files for internal purposes only, including for debugging, and for monitoring
+and enhancing the functionality of the Licensed Software. The method and format
+for transferring log files will be mutually discussed and agreed between the
+parties.
+2.5.	jSonar will keep the Log Files confidential, will not transfer them to
+any third party without Customer written permission, and will permanently
+delete them when their retention is no longer necessary. jSonar will reasonably
+safeguard the Log Files from unauthorized, negligent or inadvertent use or
+disclosure thereof.
+
+3.	Confidentiality:
+3.1.	The parties acknowledge and contemplate the exchange of Confidential
+Information. Each party shall maintain the other party’s Confidential
+Information in the strictest confidence, using the same degree of care it uses
+to protect its own Confidential Information, and at least a reasonable degree
+of care.
+3.2.	Without limiting the foregoing, neither party shall disclose
+Confidential Information to any third party, other than to personnel who have a
+“need to know”, and only to the extent necessary for the execution of this
+Agreement. Each party shall be responsible for compliance of its personnel with
+confidentiality undertakings substantially similar to the provisions of this
+section ‎4.
+3.3.	Neither party shall use the Confidential Information disclosed to it in
+any way whatsoever other than as necessary for the performance of this
+Agreement.
+3.4.	In this Agreement, the term “Confidential Information” shall mean
+any proprietary information of either party, designated as confidential by such
+party or of a confidential nature, including but not limited to, all designs,
+concepts, scientific, algorithmic and structural information; information of a
+business and commercial nature (such as financial and marketing information
+disclosed in any form or medium whatsoever) and the terms and conditions of
+this Agreement.
+3.5.	The code of the Licensed Software, pricing information, and any
+materials, methodology and documentation associated with the Licensed Software,
+including this Agreement are proprietary and shall be deemed Confidential
+Information of jSonar, unless they are in the public domain through no default
+of this Agreement. Licensee must keep them confidential and may not disclose
+them to any third party. This provision will survive the termination or
+expiration of this Agreement.
+
+4.	Warranty:
+4.1.	jSonar warrants for Customer’s benefit only that for a period of
+ninety (90) days following the date this Agreement was confirmed by Customer
+and provided that this Agreement is not terminated at the end of that term
+(“Warranty Period”), the Licensed Software, if operated as directed and for
+purposes for which it was designed, will perform in substantial compliance with
+it's specifications (as and when applicable). jSonar's sole obligation under
+the warranty herein shall be, at jSonar's sole discretion: (i) to replace or
+repair the Licensed Software, free of charge; or (ii) to refund the fees the
+Customer paid for the Customer’s first license period and not more than
+yearly license fees. Any replaced or substituted license or Licensed Software
+will be warranted for the remainder of the original Warranty Period. Warranty
+claims must be made in writing during the Warranty Period and within seven (7)
+days of the observation of the defect accompanied by evidence satisfactory to
+jSonar.
+4.2.	EXCEPT FOR THE WARRANTY SET FORTH IN THIS SECTION, AND ANY ADDITIONAL
+WARRANTY THAT THE CUSTOMER PURCHASE, SUBJECT TO THE TERMS OF THE ADDITIONAL
+WARRANTY, THE LICENSED SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY
+KIND, EITHER EXPRESSED OR IMPLIED. JSONAR DOES NOT WARRANT THAT THE LICENSED
+SOFTWARE WILL MEET CUSTOMER REQUIREMENTS OR THAT ITS OPERATION WILL BE
+UNINTERRUPTED OR ERROR-FREE. TO THE EXTENT PERMITTED BY LAW, JSONAR EXPRESSLY
+DISCLAIMS ALL EXPRESS WARRANTIES NOT STATED HERE AND ALL IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE. THE CUSTOMER AGREE AND ACKNOWLEDGE THAT THE
+USE OF THE LICENSED SOFTWARE IS ENTIRELY, OR AT THE MAXIMUM PERMITTED BY THE
+APPLICABLE LAW, AT CUSTOMER’S OWN RISK. NO DEALER, DISTRIBUTOR, RESELLER,
+AGENT OR EMPLOYEE OF JSONAR IS AUTHORIZED TO MAKE ANY MODIFICATIONS,
+EXTENSIONS, OR ADDITIONS TO THIS WARRANTY. This warranty is void if any
+modifications are made to the Licensed Software or to any component thereof
+during the warranty period; if the Licensed Software is subjected to accident,
+abuse, or improper use; or if the Customer violates the terms of this
+Agreement.
+4.3.	THE CUSTOMER ACKNOWLEDGES THAT THE LICENSED SOFTWARE IS INHERENTLY
+COMPLEX AND MAY THEREFORE NOT BE COMPLETELY FREE OF ERRORS. THE CUSTOMER
+FURTHER ACKNOWLEDGE THAT THE PERFORMANCE OF THE LICENSED SOFTWARE MAY BE
+AFFECTED BY ANY NUMBER OF FACTORS, INCLUDING WITHOUT LIMITATION, TECHNICAL
+FAILURE OF THE LICENSED SOFTWARE, ACTS OR OMISSIONS OF THIRD PARTIES AND OTHER
+CAUSES REASONABLY BEYOND THE CONTROL OF JSONAR. BY USING THE LICENSED SOFTWARE
+THE CUSTOMER DECLARE THAT THE CUSTOMER ACCEPT THESE FACTS AND THEIR
+CONSEQUENCES. Nothing contained in this Agreement shall be construed as (a) a
+warranty or representation that use of the Licensed Software will be free from
+infringement of copyrights, patents or other rights of third parties; or (b)
+conferring by implication, estoppel, or otherwise, upon either party, any right
+to services, license or other right except the services and/or licenses and
+rights expressly granted in this Agreement; or (c) a warranty or representation
+that Customer or any other entity, will be able to use the jSonar Licensed
+Software for any purpose.
+
+5.	Limitation of Liability:
+5.1.	JSONAR, ITS OFFICERS, EMPLOYEES, SHAREHOLDERS, LICENSORS, AGENTS AND
+SUCCESSORS SHALL NOT BE LIABLE (WHETHER UNDER CONTRACT, TORT (INCLUDING
+NEGLIGENCE) OR OTHERWISE, TO THE CUSTOMER, OR ANY THIRD PARTY FOR ANY LOSS OR
+DAMAGE, INCLUDING INDIRECT, SPECIAL CONSEQUENTIAL, PUNITIVE, OR OTHER DAMAGES
+WHATSOEVER, AND INCLUDING, WITHOUT LIMITATION, ANY LOSS OR DAMAGE TO BUSINESS
+EARNINGS, LOST PROFITS AND OR GOODWILL, SUFFERED BY ANY PERSON, ARISING FROM
+AND/OR RELATED TO DELIVERY, INSTALLATION, USE, PERFORMANCE OF OR INABILITY TO
+USE THE LICENSED SOFTWARE AND/OR ANY OF ITS COMPONENTS, CUSTOMIZATIONS,
+DEVELOPMENTS OR MODIFICATIONS, WHETHER FORESEEABLE OR NOT, EVEN IF JSONAR, OR
+ANY ONE ON ITS BEHALF, ARE ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. IN NO
+WAY LIMITING THE FOREGOING AND TO THE FULL EXTENT PERMITTED BY LAW, JSONAR WILL
+NOT BE LIABLE FOR NEGLIGENCE WITH RESPECT TO THE DESIGN OF THE JSONAR LICENSED
+SOFTWARE AND WILL NOT BE LIABLE UNDER ANY STRICT LIABILITY CLAIMS CONCERNING
+THE LICENSED SOFTWARE.
+5.2.	IN ANY EVENT JSONAR'S TOTAL LIABILITY SHALL NOT EXCEED THE PRICE PAID
+TO JSONAR FOR AN ANNUAL LICENSE TO USE THE LICENSED SOFTWARE OR TWENTY FIVE
+THOUSAND UNITED STATES DOLLARS (US$ 25,000), WHICHEVER IS LOWER. Nothing in
+this Agreement limits the liability of jSonar in the event of death or personal
+injury resulting from negligence or from fraud of jSonar. The foregoing
+limitations shall apply notwithstanding any failure of essential purpose of any
+limited remedy and are fundamental elements of the transaction between jSonar
+and the Customer. The Customer acknowledges that jSonar and/or its reseller
+would not have entered into this Agreement absent such limitations. Some
+jurisdictions do not allow the exclusion or limitation of incidental or
+consequential damages, so the above limitation or exclusion may not apply to
+the Customer. However, jSonar otherwise disclaims and/or limits liability to
+the extent fully allowed under applicable law.
+
+6.	Proprietary Rights:
+6.1.	All jSonar Intellectual Property Rights shall be the sole property of
+jSonar and except for the licenses granted hereunder, Licensee shall have no
+rights or claims to the Licensed Software (or any derivatives thereof) or any
+intellectual property in connection therewith. Nothing in this Agreement is
+intended to grant any rights or license under any patent, copyright, or other
+intellectual property right of jSonar to Licensee and/or to any other party,
+nor shall this Agreement grant the Licensee any rights in or to the jSonar
+Intellectual Property Rights, except for the limited right to use such jSonar
+Intellectual Property Rights solely for the purpose specified hereinabove. For
+the purpose of this agreement, the term “jSonar Intellectual Property
+Rights” shall mean any and all intellectual property rights in connection
+with the Licensed Software, including, without limitation, the worldwide
+rights, whether or not perfected, associated with: (a) works of authorship,
+copyrights, including moral rights, registrations and applications for
+registration thereof; (b) any invention, discovery, concept, composition, data,
+experiment, material, method, process, product and result; (c) patents, patent
+applications and all related continuations, divisional, reissue, utility
+models, design patents, applications and registrations thereof, certificates of
+inventions; (d) trade secrets, confidential information, know-how, designs,
+prototypes, enhancements, improvement, work-in progress, research and
+development information; (e) trade marks, trade marks applications, trade
+names, logos, product names, product manuals, training materials, documentation
+and other support materials, whether or not patented, copyrighted or
+trademarked; (f) software, firmware, network or product architectures,
+specifications, drawings, flow charts; and (g) all other proprietary rights
+relating to the foregoing. Inasmuch as Licensee and/or any on its behalf shall
+discover, conceive or develop (or have developed) any concepts, know-how,
+technologies, processes or products in connection with or as a result of the
+use of the Licensed Software ("jSonar's Work Product"), such shall be deemed
+jSonar's Property and Licensee hereby irrevocably: (i) assigns to jSonar,
+whenever and in perpetuity, any right, title and interest, whether now existing
+or later arising, that Licensee may have in or to jSonar's Work Product and
+related intellectual property rights; and (ii) agrees, to take any lawful
+action, which jSonar reasonably requests to vest or protect jSonar's right,
+title and interest in and to jSonar's Work Product (at jSonar's reasonable
+cost).
+6.2.	Customer shall cooperate with jSonar in protecting the rights of jSonar
+in the Licensed Software and Confidential Information. Without limiting the
+foregoing, Customer agrees to notify jSonar promptly in the event that the
+Customer becomes aware of any infringement of such rights. jSonar shall
+exclusively have the right, in its sole discretion, to prosecute lawsuits
+against any party for infringement of the rights of jSonar in the Licensed
+Software and Confidential Information. The Customer agrees to fully cooperate
+with jSonar, at the expense of jSonar, in the prosecution of any such suit.
+
+7.	Indemnification:
+7.1.	Indemnification by jSonar: jSonar agrees to defend, indemnify and hold
+Customer harmless from and against any claim or suit alleging that the Licensed
+Software infringes upon third parties’ Intellectual Property Rights, and to
+pay all costs, settlements, or judgments finally awarded; provided, however,
+that (1) Customer shall have given jSonar a prompt written notice of such
+claim, suit, demand, or action; (2) Customer shall reasonably cooperate with
+jSonar in the defense and settlement thereof at the expense of jSonar; and (3)
+jSonar shall have sole control of the defense of such claim, suit, demand, or
+action and the settlement or compromise thereof. The foregoing shall not apply
+to the extent that the infringement arises: (i) from the use of the Licensed
+Software in a manner for which it was not intended, or (ii) not in compliance
+with the documentation provided by jSonar therewith, or (iii) where the
+infringement results from the combination of the Licensed Software or other
+third party’s equipment or systems, where the Licensed Software standing
+alone, would not have infringed upon third party’s rights. In the event that
+an injunction is obtained against the Customer’s use of the Licensed Software
+arising from a suit, claim or proceeding, or if jSonar anticipates that there
+is a likelihood of a claim of infringement, or determines that the following
+steps will assist in defending or settling a claim, suit, demand or action,
+jSonar shall, at its option and expense, either (a) procure for Customer the
+right to continue using the Licensed Software; or (b) replace or modify the
+same so that it no longer infringes upon such Intellectual Property Rights, so
+long as the utility or performance of the Licensed Software is not adversely
+affected by such replacement or modification and the Licensed Software
+continues to substantially conform to the License Software documentation; or
+(c) where (a) or (b) are not practicable, to terminate the license and call
+back the Software, and to reimburse to Customer the license fees under this
+Agreement.
+7.2.	Exclusivity: This Section ‎8 sets forth the exclusive and entire
+remedy of Customer against jSonar with respect to any action or claim for an
+alleged infringement of Intellectual Property Rights by the Licensed Software
+or any component thereof.
+7.3.	Indemnification by Customer: Customer agrees and undertakes to defend,
+indemnify and hold jSonar harmless from and against any claim or liability
+arising out of Customer’s or Customer personnel use of the Licensed Software,
+including without limitation, arising out of the using the Licensed Software
+not in compliance with the applicable laws and regulations, or arising out in
+connection with the content presented by or to Customer’s users, or available
+to them through the Licensed Software; provided, however, that (1) jSonar shall
+have given Customer a prompt written notice of such claim, suit, demand, or
+action; (2) jSonar shall reasonably cooperate with Customer in the defense and
+settlement thereof at Customer’s expense; and (3) Customer shall have sole
+control of the defense of such claim, suit, demand, or action and the
+settlement or compromise thereof, subject, however, to obtaining the prior
+written consent of jSonar in the event such settlement or compromise may affect
+jSonar’ rights or interests in or to the Licensed Software.
+
+8.	Term and Termination:
+8.1.	This Agreement is effective until terminated. If licensed for a twelve
+(12) month period, the agreement shall automatically renew itself for
+subsequent consecutive twelve (12) months periods, subject to jSonar receiving
+payment for the additional license terms.
+8.2.	Without derogating from anything in this Agreement, if any of the terms
+and conditions of this Agreement are breached by Licensee and are not remedied
+within 14 days of written notice by jSonar (subject to jSonar's ability to know
+of the breach and only if the breach is capable of being remedied), jSonar may
+terminate this Agreement, in addition to any other legal rights and remedies
+jSonar may have. Upon termination of this Agreement, for any reason, Licensee
+shall cease using, and erase or destroy, the Licensed Software and all copies
+thereof. jSonar may request Licensee to provide a declaration signed by the
+Licensee attesting that Licensee ceased using the Licensed Software and that
+all copies of the Licensed Software have been destroyed. For the removal of
+doubt, the provisions of this Agreement, which protect the proprietary rights
+of jSonar or which pertain to limitation of liability and/or exclusivity of
+warranty and/or remedies, shall survive the termination of this Agreement.
+8.3.	Sections ‎4 (Confidentiality), 6 (Limitation on Liability), ‎7
+(Proprietary Rights), 87 (Indemnification),  ‎11 (Governing Law;
+Jurisdiction) and ‎12 (Miscellaneous) shall survive termination and shall
+remain in full force and effect thereafter.
+
+9.	Notices: Any notice required by this Agreement shall be given in
+writing by registered mail, facsimile transmission or personal delivery to the
+addresses of the parties (Customer’s address will be as delivered to jSonar ,
+and shall be deemed to have been delivered five days after the date on which
+the notice was posted, or in the case of notice by facsimile, 24 hours after
+dispatch, or in the case of personal delivery, at the time of delivery.
+
+10.	Governing Law; Jurisdiction: This Agreement shall be governed by and
+construed under the laws of the Commonwealth of Massachusetts exclusive of its
+choice of law rules. The competent courts of Massachusetts shall have exclusive
+jurisdiction with respect to all disputes and differences arising out of or
+relating to this Agreement or to its interpretation.
+
+11.	Miscellaneous:
+11.1.	Assistance: The Customer shall grant to jSonar such access to
+Customer’s premises, and all Customer other means as may be required or
+appropriate for jSonar to perform its obligations under this Agreement. The
+Customer shall furnish and make available such access (remote and other) as
+required for installation, operation or maintenance of the Licensed Software.
+The Customer will further grant jSonar such access to information by
+Customer’s personnel and third party network and other suppliers of Customer
+as may be necessary to enable jSonar to perform its obligations under this
+Agreement.
+11.2.	Customer’s Responsibility: For avoidance of doubt, the Customer shall
+be responsible for establishing reasonable backups, accuracy checks, and
+security precautions to guard against possible malfunction of the Licensed
+Software, loss of data, or unauthorized access to the Licensed Software.
+11.3.	Force Majeure: Neither party shall be liable for any costs or damages
+due to nonperformance under this Agreement, arising out of any cause or event
+not within the reasonable control of such party and without its fault or
+negligence, such as an act of God, reason of fire, floods, or inability to
+obtain necessary materials or services from suppliers if no equipment sources
+for such suppliers or services are readily available.
+11.4.	Assignment: The Customer may not assign this Agreement, and any rights
+or obligation hereunder, in whole or in part without the prior written consent
+of jSonar, and any attempt by the Customer to so assign this Agreement shall be
+deemed null and void. jSonar may transfer its rights and obligations hereunder
+to a third party that acquires all or substantially all of the assets or
+securities or jSonar.
+11.5.	Notices: Notices to either party to this Agreement shall be deemed
+given (a) four (4) business days after being mailed by airmail, postage
+prepaid, (b) the same business day, if dispatched by facsimile before 13:00
+hours (EST) and sender receives acknowledgment of receipt, or (c) the next
+business day, if dispatched by facsimile after the hour 13:00 hours (EST) and
+sender receives acknowledgment of receipt. Mail shall be addressed to each
+Party’s address as first mentioned above, or at such other address as it
+shall have notified the other pursuant to the provisions of this subsection.
+11.6.	Entire Agreement: This Agreement and any orders placed to jSonar by
+Customer constitute the entire agreement between jSonar and the Customer with
+respect to the delivery, installation, and operation of the Licensed Software
+by jSonar and the Customer’s use thereof. In the event of a contradiction
+between the body of this Agreement and any one of the exhibits thereto, the
+provisions contained in any orders placed by Customer shall prevail. This
+Agreement may only be amended by a written instrument signed by both parties.
+11.7.	Independent Contractors: The parties hereto are and shall remain
+independent contractors. Nothing herein shall be deemed to establish a
+partnership, joint venture, or agency relationship between the parties. Neither
+party shall have the right to obligate or bind the other party in any manner to
+any third party.
+11.8.	Authority to Contract: Each party represents that it has the full power
+and authority to enter into this Agreement and to convey the rights herein
+conveyed. Each party further represents that it has not entered, nor will it
+enter, into any agreements that would conflict with its obligations hereunder
+or would render it incapable of satisfactorily performing hereunder.
+11.9.	No Waiver: Neither party shall, by mere lapse of time, without giving
+notice thereof, be deemed to have waived any breach by the other party of any
+terms or provisions of this Agreement. The waiver by either party of any such
+breach shall not be construed as a waiver of subsequent breaches or as a
+continuing waiver of such breach.
+11.10.	Third Party Software: The Licensed Software may contain software
+provided by third parties. Such third party’s software shall be subject to
+the terms, provisions and restrictions set forth in the agreement
+contained/attached to such software and not to this Agreement unless
+specifically stated otherwise.
+11.11.	Export Laws: The Customer agree that any copy of the Licensed Software
+will not be shipped, transferred or exported into any country or used in any
+manner prohibited by the United States Export Administration Act or any other
+export laws, restrictions or regulations (collectively the "Export Laws"). In
+addition, if the Licensed Software is identified as an export controlled item
+under the Export Laws, the Customer represent and warrant that the Customer are
+not a citizen of, or located within, an embargoed or otherwise restricted
+nation (including without limitation Iran, Syria, Sudan, Libya, Cuba and North
+Korea) and that the Customer are not otherwise prohibited under the Export Laws
+from receiving the Licensed Software.
