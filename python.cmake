@@ -11,7 +11,6 @@ function(python_pip_dependencies _deps)
           RESULT_VARIABLE rv)
         if (${rv} EQUAL 0)
           execute_process(
-#            COMMAND rpm "-q" "--queryformat" "%{NAME} = %{EPOCHNUM}:%{VERSION}-%{RELEASE}" ${package}
             COMMAND rpm "-q" "--queryformat" "%{NAME}" ${package}
             OUTPUT_VARIABLE dep)
           list(APPEND deplist ${dep})
@@ -23,8 +22,8 @@ function(python_pip_dependencies _deps)
       foreach(python_ver python python2.7 python2.6 python3 python3.4)
         set(package ${python_ver}-${python_pkg})
         execute_process(
-#          COMMAND dpkg-query "--show" "--showformat" "\${Package}(=\${Version})" ${package}
           COMMAND dpkg-query "--show" "--showformat" "\${Package}" ${package}
+          ERROR_QUIET
           OUTPUT_VARIABLE dep)
         list(APPEND deplist ${dep})
       endforeach()
