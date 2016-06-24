@@ -56,7 +56,7 @@ if (CPACK_GENERATOR STREQUAL "RPM")
       string(REPLACE "python3-pip" "python34u-pip"
         CPACK_RPM_PACKAGE_REQUIRES ${CPACK_RPM_PACKAGE_REQUIRES})
     elseif(RHEL STREQUAL "el7")
-      string(REPLACE "mysql55" "mariadb"
+      string(REPLACE "mysql" "mariadb"
         CPACK_RPM_PACKAGE_REQUIRES ${CPACK_RPM_PACKAGE_REQUIRES})
     endif()
   endif()
