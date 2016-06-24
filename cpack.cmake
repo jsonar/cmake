@@ -55,8 +55,7 @@ if (CPACK_GENERATOR STREQUAL "RPM")
         CPACK_RPM_PACKAGE_REQUIRES ${CPACK_RPM_PACKAGE_REQUIRES})
       string(REPLACE "python3-pip" "python34u-pip"
         CPACK_RPM_PACKAGE_REQUIRES ${CPACK_RPM_PACKAGE_REQUIRES})
-    elseif(RHEL STREQUAL "el7")
-      string(REPLACE "mysql" "mariadb"
+      string(REPLACE "mariadb" "mysql < 5.2" # ius has 5.7 which causes install problems
         CPACK_RPM_PACKAGE_REQUIRES ${CPACK_RPM_PACKAGE_REQUIRES})
     endif()
   endif()
