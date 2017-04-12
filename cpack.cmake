@@ -21,7 +21,7 @@ endif()
 
 set(CPACK_SET_DESTDIR true)
 set(CPACK_PACKAGE_VENDOR "jsonar")
-set(CPACK_PACKAGE_LICENSE "2016 jSonar Inc")
+set(CPACK_PACKAGE_LICENSE "2017 jSonar Inc")
 set(CPACK_PACKAGE_URL "http://www.jsonar.com")
 set(CPACK_PACKAGE_CONTACT "jSonar Support <support@jsonar.com>")
 if (NOT DEFINED CPACK_PACKAGE_DESCRIPTION_SUMMARY)
