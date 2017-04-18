@@ -9,7 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(InstallRequiredSystemLibraries)
 include(FindPkgConfig)
 
-set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type")
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(GNUInstallDirs)
