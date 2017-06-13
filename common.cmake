@@ -15,6 +15,12 @@ endif()
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  message(STATUS "No install prefix defined, default is /usr")
+  set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Package install prefix" FORCE)
+endif()
+
+
 include(GNUInstallDirs)
 include(SonarFunctions)
 
