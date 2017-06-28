@@ -109,3 +109,19 @@ function(sonar_find_libraries)
     message(FATAL_ERROR "Cannot find dependencies: ${FAILED_DEPS}")
   endif()
 endfunction()
+
+function(sonar_external_project_dirs project)
+  # set variables project_<dir> for each of the requested properties
+  # Usage:
+  #  sonar_external_project_dirs myproject install_dir source_dir...
+  #
+  #  will create variables myproject_install_dir, myproject_source_dir,...
+  #
+  MATH(EXPR last "${ARGC}-1")
+  foreach(i RANGE 1 ${last})
+    set(prop ${ARGV${i}})
+    ExternalProject_Get_Property(${project} ${prop})
+    set(${project}_${prop} ${${prop}} PARENT_SCOPE)
+  endforeach()
+endfunction()
+
