@@ -117,11 +117,16 @@ function(sonar_external_project_dirs project)
   #
   #  will create variables myproject_install_dir, myproject_source_dir,...
   #
-  MATH(EXPR last "${ARGC}-1")
-  foreach(i RANGE 1 ${last})
-    set(prop ${ARGV${i}})
+  foreach(prop ${ARGN})
     ExternalProject_Get_Property(${project} ${prop})
     set(${project}_${prop} ${${prop}} PARENT_SCOPE)
   endforeach()
 endfunction()
 
+function(sonar_deps _out deps)
+  foreach(dep ${ARGN})
+    list(APPEND deps ${dep})
+  endforeach()
+  string(REPLACE ";" ", " _deps "${deps}")
+  set(${_out} ${_deps} PARENT_SCOPE)
+endfunction()
