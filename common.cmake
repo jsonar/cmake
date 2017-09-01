@@ -25,7 +25,13 @@ include(GNUInstallDirs)
 include(SonarFunctions)
 
 string(TOLOWER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_LOWER)
-install(FILES ${CMAKE_CURRENT_LIST_DIR}/eula.txt
-  DESTINATION share/doc/${CMAKE_PROJECT_NAME_LOWER}
-  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  )
+if (NOT components)
+  set(components ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME})
+endif()
+foreach(component ${components})
+  install(FILES ${CMAKE_CURRENT_LIST_DIR}/eula.txt
+    DESTINATION share/doc/${CMAKE_PROJECT_NAME_LOWER}
+    COMPONENT ${component}
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+    )
+endforeach()
