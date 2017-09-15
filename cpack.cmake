@@ -80,10 +80,23 @@ elseif(CPACK_GENERATOR STREQUAL "DEB")
   set(DEBIAN_REVISION_NUMBER "${DEBIAN_REVISION}${DEBIAN_OS}")
   set(CPACK_PACKAGE_FILE_NAME
     "${CPACK_PACKAGE_NAME}_${DEBIAN_VERSION_NUMBER}-${DEBIAN_REVISION_NUMBER}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+elseif(CPACK_GENERATOR STREQUAL "TGZ")
+  set (CPACK_PACKAGE_FILE_NAME
+    "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}-Linux")
 endif()
 
 set_property (GLOBAL PROPERTY TARGET_MESSAGES OFF)
 string(TOLOWER ${CPACK_GENERATOR} CPACK_PACKAGE_EXT)
-add_custom_target(package_file_name echo ${CPACK_PACKAGE_FILE_NAME}.${CPACK_PACKAGE_EXT})
+if(components)
+  add_custom_target(package_file_name)
+  foreach(component ${components})
+    add_custom_target(package_file_name-${component}
+      COMMAND echo ${CPACK_PACKAGE_FILE_NAME}-${component}.${CPACK_PACKAGE_EXT})
+    add_dependencies(package_file_name package_file_name-${component})
+  endforeach()
+else()
+  add_custom_target(package_file_name
+    COMMAND echo ${CPACK_PACKAGE_FILE_NAME}.${CPACK_PACKAGE_EXT})
+endif()
 
 include(CPack)
