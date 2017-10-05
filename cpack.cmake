@@ -87,16 +87,16 @@ endif()
 
 set_property (GLOBAL PROPERTY TARGET_MESSAGES OFF)
 string(TOLOWER ${CPACK_GENERATOR} CPACK_PACKAGE_EXT)
-if(components)
+if(components STREQUAL "${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME}")
+  add_custom_target(package_file_name
+    COMMAND echo ${CPACK_PACKAGE_FILE_NAME}.${CPACK_PACKAGE_EXT})
+else()
   add_custom_target(package_file_name)
   foreach(component ${components})
     add_custom_target(package_file_name-${component}
       COMMAND echo ${CPACK_PACKAGE_FILE_NAME}-${component}.${CPACK_PACKAGE_EXT})
     add_dependencies(package_file_name package_file_name-${component})
   endforeach()
-else()
-  add_custom_target(package_file_name
-    COMMAND echo ${CPACK_PACKAGE_FILE_NAME}.${CPACK_PACKAGE_EXT})
 endif()
 
 include(CPack)
