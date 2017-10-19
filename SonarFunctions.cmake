@@ -183,3 +183,13 @@ function(build_mongoc_git tag)
     APPEND
   )
 endfunction()
+
+function(sonar_python3_package_dir _out)
+  sonar_detect_distribution(os)
+  if (os MATCHES "debian")
+    set(python_path lib/python3/dist-packages)
+  else()
+    set(python_path lib/python3.4/site-packages)
+  endif()
+  set(${_out) ${python_path} PARENT_SCOPE)
+endfunction()
