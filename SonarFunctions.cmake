@@ -143,6 +143,7 @@ endfunction()
 function(build_mongoc_git tag)
   # builds mongoc as an external directory. Provides
   # targets mongo::lib and bson::lib
+  message(STATUS "mongo-c-driver version: ${tag}")
   include(ExternalProject)
   ExternalProject_Add(mongoc
     GIT_REPOSITORY https://github.com/mongodb/mongo-c-driver.git
@@ -176,10 +177,11 @@ function(build_mongoc_git tag)
   endforeach()
   # mongoc requires openssl, rt and bson::lib
   find_package(OpenSSL REQUIRED)
+  find_package(Threads REQUIRED)
   find_library(rt rt)
   set_property(TARGET mongo::lib
     PROPERTY
-    INTERFACE_LINK_LIBRARIES OpenSSL::SSL ${rt} bson::lib
+    INTERFACE_LINK_LIBRARIES OpenSSL::SSL ${rt} bson::lib Threads::Threads
     APPEND
   )
 endfunction()
