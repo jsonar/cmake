@@ -3,7 +3,7 @@ include(GNUInstallDirs)
 string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
 
 function(build_mongoc)
-  # builds mongoc as an external directory. Provides
+  # builds mongoc as an external project. Provides
   # targets mongo::lib and bson::lib
   cmake_parse_arguments(PARSE_ARGV 1 "MONGOC" "" "VERSION" "")
   message(STATUS "Building mongo-c-driver-${MONGOC_VERSION}")
@@ -177,4 +177,63 @@ function(build_sqlite3)
       ${CMAKE_DL_LIBS}
     )
   target_include_external_directory(sqlite3::lib sqlite3 install_dir include)
+endfunction()
+
+
+function(build_mongocxx)
+  # builds mongocxx as an external project. Provides mongocxx::lib and
+  # bsoncxx::lib
+  cmake_parse_arguments(MONGOCXX "" "VERSION;PATCH_FILE;MONGOC_VERSION" "" ${ARGN})
+  message(STATUS "Building mongocxx-${MONGOCXX_VERSION}")
+  if(MONGOCXX_MONGOC_VERSION)
+    build_mongoc(VERSION ${MONGOCXX_MONGOC_VERSION})
+  endif()
+  if(MONGOCXX_PATCH_FILe)
+    set(patch_command git checkout .
+      COMMAND patch -p1 < ${MONGOCXX_PATCH_FILE})
+  endif()
+  ExternalProject_Add(mongocxx
+    GIT_REPOSITORY https://github.com/mongodb/mongo-cxx-driver.git
+    GIT_TAG r${MONGOCXX_VERSION}
+    #UPDATE_DISCONNECTED 1 # uncomment for cmake 3.8
+    UPDATE_COMMAND ""
+    DEPENDS mongoc
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${mongoc_install_dir}
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmongocxx.a <INSTALL_DIR>/lib/libbsoncxx.a
+    PATCH_COMMAND ${patch_command}
+  )
+  ExternalProject_Add_StepTargets(mongocxx update)
+  sonar_external_project_dirs(mongocxx install_dir)
+
+  # generate mongocxx::lib and bsoncxx::lib targets
+  foreach(driver mongo bson)
+    set(libcxx ${driver}cxx::lib)
+    set(libcxx_file lib/lib${driver}cxx.a)
+    set(libcxx_include include/${driver}cxx/v_noabi)
+
+    add_library(${libcxx} STATIC IMPORTED)
+    add_dependencies(${libcxx} mongocxx)
+    set_target_properties(${libcxx}
+      PROPERTIES
+        IMPORTED_LOCATION ${mongocxx_install_dir}/${libcxx_file}
+        INTERFACE_LINK_LIBRARIES ${driver}::lib
+      )
+    target_include_external_directory(${libcxx} mongocxx install_dir ${libcxx_include})
+  endforeach()
+  # bsoncxx require bson lib
+  set_property(TARGET bsoncxx::lib
+    PROPERTY INTERFACE_LINK_LIBRARIES bson::lib
+    APPEND
+    )
+  # mongocxx requires bsoncxx and mongoc
+  set_property(TARGET mongocxx::lib
+    PROPERTY INTERFACE_LINK_LIBRARIES bsoncxx::lib mongo::lib
+    APPEND
+    )
 endfunction()
