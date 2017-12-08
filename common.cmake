@@ -23,6 +23,7 @@ endif()
 
 include(GNUInstallDirs)
 include(SonarFunctions)
+include(SonarExternal)
 
 string(TOLOWER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_LOWER)
 if (NOT components)
