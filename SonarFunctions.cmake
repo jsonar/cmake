@@ -247,6 +247,5 @@ function(sonar_package_file_name)
   endif()
 
   set(${PACKAGE_OUTPUT_VARIABLE} ${package_file_name} PARENT_SCOPE)
-
 endfunction()
 
