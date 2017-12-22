@@ -143,7 +143,6 @@ endfunction()
 function(build_mongoc_git tag)
   # builds mongoc as an external directory. Provides
   # targets mongo::lib and bson::lib
-  message(STATUS "mongo-c-driver version: ${tag}")
   include(ExternalProject)
   ExternalProject_Add(mongoc
     GIT_REPOSITORY https://github.com/mongodb/mongo-c-driver.git
@@ -177,11 +176,10 @@ function(build_mongoc_git tag)
   endforeach()
   # mongoc requires openssl, rt and bson::lib
   find_package(OpenSSL REQUIRED)
-  find_package(Threads REQUIRED)
   find_library(rt rt)
   set_property(TARGET mongo::lib
     PROPERTY
-    INTERFACE_LINK_LIBRARIES OpenSSL::SSL ${rt} bson::lib Threads::Threads
+    INTERFACE_LINK_LIBRARIES OpenSSL::SSL ${rt} bson::lib
     APPEND
   )
 endfunction()
@@ -195,3 +193,60 @@ function(sonar_python3_package_dir _out)
   endif()
   set(${_out} ${python_path} PARENT_SCOPE)
 endfunction()
+
+function(sonar_vendor)
+  cmake_parse_arguments(VENDOR "" "OUTPUT_VARIABLE" "" ${ARGN})
+  set(${VENDOR_OUTPUT_VARIABLE} jsonar PARENT_SCOPE)
+endfunction()
+
+function(sonar_package_file_name)
+  # sonar_package_file_name(autoparts CPACK_autoparts_FILE_NAME)
+  cmake_parse_arguments(PACKAGE "" "COMPONENT;OUTPUT_VARIABLE" "" ${ARGN})
+  sonar_cpack_generator(generator)
+  if(NOT DEFINED CPACK_PACKAGE_VERSION_MAJOR)
+    sonar_cpack_version(CPACK_PACKAGE_VERSION_MAJOR
+      CPACK_PACKAGE_VERSION_MINOR
+      CPACK_PACKAGE_VERSION_PATCH)
+  endif()
+  if(generator STREQUAL "RPM")
+    execute_process(COMMAND uname "-m"
+      OUTPUT_VARIABLE CPACK_RPM_PACKAGE_ARCHITECTURE
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+      COMMAND rpm "-q" "--queryformat" "%{RELEASE}" rpm
+      COMMAND rev
+      COMMAND cut "-d." "-f1"
+      COMMAND rev
+      OUTPUT_VARIABLE RHEL
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    sonar_vendor(OUTPUT_VARIABLE vendor)
+    set (package_file_name
+      "${PACKAGE_COMPONENT}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}.${RHEL}.${vendor}.${CPACK_RPM_PACKAGE_ARCHITECTURE}")
+  elseif(generator STREQUAL "DEB")
+
+    execute_process(COMMAND dpkg "--print-architecture"
+      OUTPUT_VARIABLE CPACK_DEBIAN_PACKAGE_ARCHITECTURE
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    string(REPLACE "-" "~" DEBIAN_VERSION_NUMBER
+      "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}")
+    if (NOT DEFINED DEBIAN_REVISION)
+      set(DEBIAN_REVISION 1)
+    endif()
+    execute_process(COMMAND lsb_release "-ir"
+      COMMAND cut "-f2"
+      COMMAND xargs
+      COMMAND tr "[ [:upper:]]" "[+[:lower:]]"
+      OUTPUT_VARIABLE DEBIAN_OS
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(DEBIAN_REVISION_NUMBER "${DEBIAN_REVISION}${DEBIAN_OS}")
+    set(package_file_name
+      "${PACKAGE_COMPONENT}_${DEBIAN_VERSION_NUMBER}-${DEBIAN_REVISION_NUMBER}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+  elseif(generator STREQUAL "TGZ")
+    set (package_file_name
+      "${PACKAGE_COMPONENT}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}-Linux")
+  endif()
+
+  set(${PACKAGE_OUTPUT_VARIABLE} ${package_file_name} PARENT_SCOPE)
+
+endfunction()
+

@@ -25,10 +25,10 @@ include(GNUInstallDirs)
 include(SonarFunctions)
 
 string(TOLOWER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_LOWER)
-if (NOT components)
-  set(components ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME})
+if (NOT SONAR_COMPONENTS)
+  set(SONAR_COMPONENTS ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME})
 endif()
-foreach(component ${components})
+foreach(component ${SONAR_COMPONENTS})
   install(FILES ${CMAKE_CURRENT_LIST_DIR}/eula.txt
     DESTINATION share/doc/${CMAKE_PROJECT_NAME_LOWER}
     COMPONENT ${component}
