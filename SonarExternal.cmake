@@ -5,7 +5,7 @@ string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
 function(build_mongoc)
   # builds mongoc as an external project. Provides
   # targets mongo::lib and bson::lib
-  cmake_parse_arguments(PARSE_ARGV 1 "MONGOC" "" "VERSION" "")
+  cmake_parse_arguments(MONGOC "" "VERSION" "" ${ARGN})
   message(STATUS "Building mongo-c-driver-${MONGOC_VERSION}")
   ExternalProject_Add(mongoc
     GIT_REPOSITORY https://github.com/mongodb/mongo-c-driver.git
