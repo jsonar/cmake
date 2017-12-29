@@ -14,7 +14,6 @@ if (NOT DEFINED CPACK_PACKAGE_VERSION_MAJOR)
     CPACK_PACKAGE_VERSION_PATCH)
 endif()
 
-set(CPACK_SET_DESTDIR true)
 sonar_vendor(OUTPUT_VARIABLE CPACK_PACKAGE_VENDOR)
 set(CPACK_PACKAGE_LICENSE "2017 jSonar Inc")  # @todo: calculate the year
 set(CPACK_PACKAGE_URL "http://www.jsonar.com")
