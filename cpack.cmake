@@ -14,7 +14,13 @@ if (NOT DEFINED CPACK_PACKAGE_VERSION_MAJOR)
     CPACK_PACKAGE_VERSION_PATCH)
 endif()
 
-set(CPACK_SET_DESTDIR true)
+#
+# CPACK_SET_DESTDIR allows packaging of files installed in absolute
+# directories (e.g. /etc/) However, it affects extrenal projects as well, so
+# they end up in the parent project's package.  To avoid that, use `$(MAKE)
+# DESTDIR=<INSTALL_PREFIX> install` when installing an external project.
+set(CPACK_SET_DESTDIR ON)
+
 sonar_vendor(OUTPUT_VARIABLE CPACK_PACKAGE_VENDOR)
 set(CPACK_PACKAGE_LICENSE "2017 jSonar Inc")  # @todo: calculate the year
 set(CPACK_PACKAGE_URL "http://www.jsonar.com")
