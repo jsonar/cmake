@@ -10,15 +10,15 @@ function(build_mongoc)
   ExternalProject_Add(mongoc
     GIT_REPOSITORY https://github.com/mongodb/mongo-c-driver.git
     GIT_TAG ${MONGOC_VERSION}
-    #UPDATE_DISCONNECTED 1 # uncomment for cmake 3.8
-    UPDATE_COMMAND ""
     CONFIGURE_COMMAND <SOURCE_DIR>/autogen.sh
       --with-libbson=bundled
       --enable-static
       --disable-sasl
       --disable-tests
-      --prefix=<INSTALL_DIR>
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmongoc-1.0.a <INSTALL_DIR>/lib/libbson-1.0.a
+    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/usr/local/lib/libmongoc-1.0.a
+      <INSTALL_DIR>/usr/local/lib/libbson-1.0.a
     )
   ExternalProject_Get_Property(mongoc install_dir)
   foreach(driver mongo bson)
@@ -29,12 +29,12 @@ function(build_mongoc)
     else()
       set(libname libbson-1.0)
     endif()
-    set(archive lib/${libname}.a)
-    set(include include/${libname})
+    set(archive usr/local/lib/${libname}.a)
+    set(include usr/local/include/${libname})
     add_library(${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(${lib} mongoc)
     set_property(TARGET ${lib} PROPERTY
-      IMPORTED_LOCATION ${install_dir}/${archive})
+      IMPORTED_LOCATION ${mongoc_install_dir}/${archive})
     target_include_external_directory(${lib} mongoc install_dir ${include})
   endforeach()
   # mongoc requires openssl, rt and bson::lib
@@ -69,22 +69,23 @@ function(build_aws)
   cmake_parse_arguments(AWS "" "VERSION" "COMPONENTS" ${ARGN})
   message(STATUS "Building aws-sdk-cpp-${AWS_VERSION} [${AWS_COMPONENTS}]")
   string(REPLACE ";" "<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
-  set(BUILD_BYPRODUCTS "<INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
+  set(BUILD_BYPRODUCTS "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
   foreach(component ${AWS_COMPONENTS})
-    list(APPEND BUILD_BYPRODUCTS "<INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
+    list(APPEND
+      BUILD_BYPRODUCTS
+      "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
   endforeach()
   ExternalProject_Add(aws
     GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
     GIT_TAG ${AWS_VERSION}
-    #UPDATE_DISCONNECTED 1
-    UPDATE_COMMAND ""
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_INSTALL_MESSAGE=LAZY
       -DBUILD_ONLY=${AWS_BUILD_ONLY}
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
       -DBUILD_OPENSSL=OFF
+    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
   )
@@ -99,7 +100,7 @@ function(build_aws)
   find_package(CURL REQUIRED)
   find_package(OpenSSL REQUIRED)
   set_target_properties(aws::core PROPERTIES
-    IMPORTED_LOCATION ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a)
+    IMPORTED_LOCATION ${aws_install_dir}/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a)
   set_property(TARGET aws::core PROPERTY
     INTERFACE_LINK_LIBRARIES
       Threads::Threads
@@ -107,17 +108,18 @@ function(build_aws)
       OpenSSL::SSL
       ZLIB::ZLIB
   )
-  target_include_external_directory(aws::core aws install_dir include)
+  target_include_external_directory(aws::core aws install_dir usr/local/include)
 
   foreach(component ${AWS_COMPONENTS})
     set(lib aws::${component})
     add_library(${lib} STATIC IMPORTED)
     add_dependencies(${lib} aws)
     set_target_properties(${lib} PROPERTIES
-      IMPORTED_LOCATION ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a)
+      IMPORTED_LOCATION
+        ${aws_install_dir}/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a)
     set_property(TARGET ${lib} PROPERTY
       INTERFACE_LINK_LIBRARIES aws::core)
-    target_include_external_directory(${lib} aws install_dir include)
+    target_include_external_directory(${lib} aws install_dir usr/local/include)
   endforeach()
 endfunction()
 
@@ -127,14 +129,14 @@ function(build_jsoncpp)
   # Generates jsoncpp::lib target to link with
   cmake_parse_arguments(JSONCPP "" "VERSION" "" ${ARGN})
   message(STATUS "Building jsoncpp-${JSONCPP_VERSION}")
-  set(jsoncpp_lib ${EXTERNAL_INSTALL_LIBDIR}/libjsoncpp.a)
+  set(jsoncpp_lib usr/local/${EXTERNAL_INSTALL_LIBDIR}/libjsoncpp.a)
   ExternalProject_Add(jsoncpp
     GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp
     GIT_TAG ${JSONCPP_VERSION}
-    UPDATE_COMMAND ""
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/${jsoncpp_lib}
   )
@@ -144,7 +146,7 @@ function(build_jsoncpp)
   add_dependencies(jsoncpp::lib jsoncpp)
   set_target_properties(jsoncpp::lib PROPERTIES
     IMPORTED_LOCATION ${jsoncpp_install_dir}/${jsoncpp_lib})
-  target_include_external_directory(jsoncpp::lib jsoncpp install_dir include)
+  target_include_external_directory(jsoncpp::lib jsoncpp install_dir usr/local/include)
 endfunction()
 
 function(build_sqlite3)
@@ -160,24 +162,26 @@ function(build_sqlite3)
   ExternalProject_Add(sqlite3
     URL ${SQLITE3_URL}
     URL_HASH SHA1=${SQLITE3_SHA1}
-    PATCH_COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.cmake <SOURCE_DIR>/CMakeLists.txt
-    UPDATE_COMMAND ""
+    PATCH_COMMAND
+      ${CMAKE_COMMAND} -E
+        copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.cmake <SOURCE_DIR>/CMakeLists.txt
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libsqlite3.a
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
+    BUILD_BYPRODUCTS <INSTALL_DIR>/usr/local/lib/libsqlite3.a
     )
   sonar_external_project_dirs(sqlite3 install_dir)
   add_library(sqlite3::lib STATIC IMPORTED)
   add_dependencies(sqlite3::lib sqlite3)
   set_target_properties(sqlite3::lib PROPERTIES
-    IMPORTED_LOCATION ${sqlite3_install_dir}/lib/libsqlite3.a
+    IMPORTED_LOCATION ${sqlite3_install_dir}/usr/local/lib/libsqlite3.a
     )
   set_property(TARGET sqlite3::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
       ${CMAKE_DL_LIBS}
     )
-  target_include_external_directory(sqlite3::lib sqlite3 install_dir include)
+  target_include_external_directory(sqlite3::lib sqlite3 install_dir usr/local/include)
 endfunction()
 
 
@@ -189,24 +193,24 @@ function(build_mongocxx)
   if(MONGOCXX_MONGOC_VERSION)
     build_mongoc(VERSION ${MONGOCXX_MONGOC_VERSION})
   endif()
-  if(MONGOCXX_PATCH_FILe)
+  if(MONGOCXX_PATCH_FILE)
     set(patch_command git checkout .
       COMMAND patch -p1 < ${MONGOCXX_PATCH_FILE})
   endif()
   ExternalProject_Add(mongocxx
     GIT_REPOSITORY https://github.com/mongodb/mongo-cxx-driver.git
     GIT_TAG r${MONGOCXX_VERSION}
-    #UPDATE_DISCONNECTED 1 # uncomment for cmake 3.8
-    UPDATE_COMMAND ""
     DEPENDS mongoc
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
-      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_PREFIX_PATH=${mongoc_install_dir}
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmongocxx.a <INSTALL_DIR>/lib/libbsoncxx.a
+    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/usr/local/lib/libmongocxx.a
+      <INSTALL_DIR>/usr/local/lib/libbsoncxx.a
     PATCH_COMMAND ${patch_command}
   )
   ExternalProject_Add_StepTargets(mongocxx update)
@@ -215,8 +219,8 @@ function(build_mongocxx)
   # generate mongocxx::lib and bsoncxx::lib targets
   foreach(driver mongo bson)
     set(libcxx ${driver}cxx::lib)
-    set(libcxx_file lib/lib${driver}cxx.a)
-    set(libcxx_include include/${driver}cxx/v_noabi)
+    set(libcxx_file usr/local/lib/lib${driver}cxx.a)
+    set(libcxx_include usr/local/include/${driver}cxx/v_noabi)
 
     add_library(${libcxx} STATIC IMPORTED)
     add_dependencies(${libcxx} mongocxx)
