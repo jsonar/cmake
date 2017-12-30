@@ -200,8 +200,8 @@ function(sonar_vendor)
 endfunction()
 
 function(set_package_file_name_for_component)
-  # set_package_file_name_for_component(autoparts CPACK_autoparts_FILE_NAME)
-  cmake_parse_arguments(PACKAGE "" "COMPONENT;OUTPUT_VARIABLE" "" ${ARGN})
+  # set_package_file_name_for_component(FILE_NAME autoparts COMPONENT autoparts)
+  cmake_parse_arguments(PKG "" "FILE_NAME;COMPONENT" "" ${ARGN})
   sonar_cpack_generator(generator)
   if(NOT DEFINED CPACK_PACKAGE_VERSION_MAJOR)
     sonar_cpack_version(CPACK_PACKAGE_VERSION_MAJOR
@@ -221,7 +221,7 @@ function(set_package_file_name_for_component)
       OUTPUT_STRIP_TRAILING_WHITESPACE)
     sonar_vendor(OUTPUT_VARIABLE vendor)
     set (package_file_name
-      "${PACKAGE_COMPONENT}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}.${RHEL}.${vendor}.${CPACK_RPM_PACKAGE_ARCHITECTURE}")
+      "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}.${RHEL}.${vendor}.${CPACK_RPM_PACKAGE_ARCHITECTURE}")
   elseif(generator STREQUAL "DEB")
 
     execute_process(COMMAND dpkg "--print-architecture"
@@ -240,12 +240,12 @@ function(set_package_file_name_for_component)
       OUTPUT_STRIP_TRAILING_WHITESPACE)
     set(DEBIAN_REVISION_NUMBER "${DEBIAN_REVISION}${DEBIAN_OS}")
     set(package_file_name
-      "${PACKAGE_COMPONENT}_${DEBIAN_VERSION_NUMBER}-${DEBIAN_REVISION_NUMBER}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+      "${PKG_FILE_NAME}_${DEBIAN_VERSION_NUMBER}-${DEBIAN_REVISION_NUMBER}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
   elseif(generator STREQUAL "TGZ")
     set (package_file_name
-      "${PACKAGE_COMPONENT}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}-Linux")
+      "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}-Linux")
   endif()
 
-  set(${PACKAGE_OUTPUT_VARIABLE} ${package_file_name} PARENT_SCOPE)
+  set(CPACK_${PKG_COMPONENT}_FILE_NAME ${package_file_name} PARENT_SCOPE)
 endfunction()
 
