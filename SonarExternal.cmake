@@ -10,17 +10,28 @@ function(build_mongoc)
   ExternalProject_Add(mongoc
     GIT_REPOSITORY https://github.com/mongodb/mongo-c-driver.git
     GIT_TAG ${MONGOC_VERSION}
-    CONFIGURE_COMMAND <SOURCE_DIR>/autogen.sh
+    CONFIGURE_COMMAND ""
+    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> make --silent install
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/usr/local/lib/libmongoc-1.0.a
+      <INSTALL_DIR>/usr/local/lib/libbson-1.0.a
+      )
+  sonar_external_project_dirs(mongoc binary_dir source_dir install_dir)
+  ExternalProject_Add_Step(mongoc prepare
+    # We use a custom step instead of using configure for this. configure runs
+    # every update, and this takes very long. We only need to run build on
+    # update, which is quick, so this prepare step depends on download, not
+    # update.
+    COMMENT "Preforming prepare step (autogen.sh) for mongoc"
+    COMMAND ${mongoc_source_dir}/autogen.sh
       --with-libbson=bundled
       --enable-static
       --disable-sasl
       --disable-tests
-    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> make install
-    BUILD_BYPRODUCTS
-      <INSTALL_DIR>/usr/local/lib/libmongoc-1.0.a
-      <INSTALL_DIR>/usr/local/lib/libbson-1.0.a
+    WORKING_DIRECTORY ${mongoc_binary_dir}
+    DEPENDEES download
+    DEPENDERS configure
     )
-  ExternalProject_Get_Property(mongoc install_dir)
   foreach(driver mongo bson)
     set(lib ${driver}::lib)
     if(driver STREQUAL mongo)
@@ -34,7 +45,7 @@ function(build_mongoc)
     add_library(${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(${lib} mongoc)
     set_property(TARGET ${lib} PROPERTY
-      IMPORTED_LOCATION ${install_dir}/${archive})
+      IMPORTED_LOCATION ${mongoc_install_dir}/${archive})
     target_include_external_directory(${lib} mongoc install_dir ${include})
   endforeach()
   # mongoc requires openssl, rt and bson::lib
