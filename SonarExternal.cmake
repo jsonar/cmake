@@ -15,7 +15,7 @@ function(build_mongoc)
       --enable-static
       --disable-sasl
       --disable-tests
-    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
+    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> make install
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/usr/local/lib/libmongoc-1.0.a
       <INSTALL_DIR>/usr/local/lib/libbson-1.0.a
