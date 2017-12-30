@@ -34,7 +34,7 @@ function(build_mongoc)
     add_library(${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(${lib} mongoc)
     set_property(TARGET ${lib} PROPERTY
-      IMPORTED_LOCATION ${mongoc_install_dir}/${archive})
+      IMPORTED_LOCATION ${install_dir}/${archive})
     target_include_external_directory(${lib} mongoc install_dir ${include})
   endforeach()
   # mongoc requires openssl, rt and bson::lib
@@ -197,6 +197,7 @@ function(build_mongocxx)
     set(patch_command git checkout .
       COMMAND patch -p1 < ${MONGOCXX_PATCH_FILE})
   endif()
+  sonar_external_project_dirs(mongoc install_dir)
   ExternalProject_Add(mongocxx
     GIT_REPOSITORY https://github.com/mongodb/mongo-cxx-driver.git
     GIT_TAG r${MONGOCXX_VERSION}
