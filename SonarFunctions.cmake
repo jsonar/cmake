@@ -246,5 +246,6 @@ function(set_package_file_name_for_component)
   endif()
 
   set(CPACK_${PKG_COMPONENT}_FILE_NAME ${package_file_name} PARENT_SCOPE)
+  set(CPACK_${generator}_${PKG_COMPONENT}_PACKAGE_NAME ${PKG_COMPONENT} PARENT_SCOPE)
 endfunction()
 
