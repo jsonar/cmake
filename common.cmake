@@ -31,7 +31,7 @@ if (NOT SONAR_COMPONENTS)
 endif()
 foreach(component ${SONAR_COMPONENTS})
   install(FILES ${CMAKE_CURRENT_LIST_DIR}/eula.txt
-    DESTINATION share/doc/${CMAKE_PROJECT_NAME_LOWER}
+    DESTINATION share/doc/${component}
     COMPONENT ${component}
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
     )
