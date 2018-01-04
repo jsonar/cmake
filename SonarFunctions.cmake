@@ -249,7 +249,7 @@ function(set_package_and_file_name_for_component)
   if(NOT DEFINED CPACK_PACKAGE_FILE_NAME)
     set(CPACK_PACKAGE_FILE_NAME ${package_file_name} PARENT_SCOPE)
   endif()
-  set(CPACK_${local_gen}_${PKG_COMPONENT}_FILE_NAME ${package_file_name} PARENT_SCOPE)
+  set(CPACK_${PKG_COMPONENT}_FILE_NAME ${package_file_name} PARENT_SCOPE)
   set(CPACK_${local_gen}_${PKG_COMPONENT}_PACKAGE_NAME ${PKG_COMPONENT} PARENT_SCOPE)
 endfunction()
 
