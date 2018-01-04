@@ -202,6 +202,7 @@ function(set_package_and_file_name_for_component)
   # set_package_and_file_name_for_component(FILE_NAME autoparts COMPONENT autoparts)
   cmake_parse_arguments(PKG "" "FILE_NAME;COMPONENT" "" ${ARGN})
   sonar_cpack_generator(generator)
+  set(local_gen ${generator})
   if(NOT DEFINED CPACK_PACKAGE_VERSION_MAJOR)
     sonar_cpack_version(CPACK_PACKAGE_VERSION_MAJOR
       CPACK_PACKAGE_VERSION_MINOR
@@ -222,7 +223,7 @@ function(set_package_and_file_name_for_component)
     set (package_file_name
       "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}.${RHEL}.${vendor}.${CPACK_RPM_PACKAGE_ARCHITECTURE}")
   elseif(generator STREQUAL "DEB")
-
+    set(local_gen "DEBIAN")
     execute_process(COMMAND dpkg "--print-architecture"
       OUTPUT_VARIABLE CPACK_DEBIAN_PACKAGE_ARCHITECTURE
       OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -245,7 +246,10 @@ function(set_package_and_file_name_for_component)
       "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}-Linux")
   endif()
 
-  set(CPACK_${PKG_COMPONENT}_FILE_NAME ${package_file_name} PARENT_SCOPE)
-  set(CPACK_${generator}_${PKG_COMPONENT}_PACKAGE_NAME ${PKG_COMPONENT} PARENT_SCOPE)
+  if(NOT DEFINED CPACK_PACKAGE_FILE_NAME)
+    set(CPACK_PACKAGE_FILE_NAME ${package_file_name} PARENT_SCOPE)
+  endif()
+  set(CPACK_${local_gen}_${PKG_COMPONENT}_FILE_NAME ${package_file_name} PARENT_SCOPE)
+  set(CPACK_${local_gen}_${PKG_COMPONENT}_PACKAGE_NAME ${PKG_COMPONENT} PARENT_SCOPE)
 endfunction()
 

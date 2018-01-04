@@ -36,6 +36,6 @@ foreach(component ${SONAR_COMPONENTS})
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
     )
 endforeach()
-foreach(gen RPM DEB)
+foreach(gen RPM DEBIAN)
   set(CPACK_${gen}_COMPONENT_INSTALL ON)
 endforeach()
