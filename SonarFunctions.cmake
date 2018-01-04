@@ -60,7 +60,7 @@ function(sonar_cpack_generator _cpack)
   if (os MATCHES "rhel")
     set(cpack_generator "RPM")
   elseif (os MATCHES "debian")
-    set(cpack_generator "DEB")
+    set(cpack_generator "DEBIAN")
   elseif (os MATCHES "arch")
     set(cpack_generator "TGZ")
   else()
@@ -221,7 +221,7 @@ function(set_package_and_file_name_for_component)
     sonar_vendor(OUTPUT_VARIABLE vendor)
     set (package_file_name
       "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}.${RHEL}.${vendor}.${CPACK_RPM_PACKAGE_ARCHITECTURE}")
-  elseif(generator STREQUAL "DEB")
+  elseif(generator STREQUAL "DEBIAN")
 
     execute_process(COMMAND dpkg "--print-architecture"
       OUTPUT_VARIABLE CPACK_DEBIAN_PACKAGE_ARCHITECTURE
