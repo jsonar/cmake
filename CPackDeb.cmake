@@ -520,13 +520,12 @@ function(cpack_deb_variable_fallback OUTPUT_VAR_NAME)
 endfunction()
 
 function(get_component_package_name var component)
-  string(TOUPPER "${component}" component_upcase)
-  if(CPACK_DEBIAN_${component_upcase}_PACKAGE_NAME)
-    string(TOLOWER "${CPACK_DEBIAN_${component_upcase}_PACKAGE_NAME}" package_name)
+  string(TOLOWER "${component}" component_case)
+  if(CPACK_DEBIAN_${component_case}_PACKAGE_NAME)
+    string(TOLOWER "${CPACK_DEBIAN_${component_case}_PACKAGE_NAME}" package_name)
   else()
     string(TOLOWER "${CPACK_DEBIAN_PACKAGE_NAME}-${component}" package_name)
   endif()
-
   set("${var}" "${package_name}" PARENT_SCOPE)
 endfunction()
 
@@ -563,7 +562,7 @@ function(cpack_deb_prepare_package_vars)
   # per component automatic discover: some of the component might not have
   # binaries.
   if(CPACK_DEB_PACKAGE_COMPONENT)
-    string(TOUPPER "${CPACK_DEB_PACKAGE_COMPONENT}" _local_component_name)
+    string(TOLOWER "${CPACK_DEB_PACKAGE_COMPONENT}" _local_component_name)
     set(_component_shlibdeps_var "CPACK_DEBIAN_${_local_component_name}_PACKAGE_SHLIBDEPS")
 
     # if set, overrides the global configuration
