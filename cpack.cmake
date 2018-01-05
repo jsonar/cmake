@@ -43,7 +43,7 @@ elseif(CPACK_GENERATOR STREQUAL "DEB")
 endif()
 set_property (GLOBAL PROPERTY TARGET_MESSAGES OFF)
 string(TOLOWER ${CPACK_GENERATOR} CPACK_PACKAGE_EXT)
-if(SONAR_COMPONENTS STREQUAL "${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME}")
+if(NOT SONAR_COMPONENTS)
   add_custom_target(package_file_name
     COMMAND echo ${CPACK_PACKAGE_FILE_NAME}.${CPACK_PACKAGE_EXT})
 else()
@@ -57,9 +57,6 @@ else()
       endif()
       add_custom_target(package_file_name-${component}
         COMMAND echo ${CPACK_${component}_FILE_NAME}.${CPACK_PACKAGE_EXT})
-    else()
-      add_custom_target(package_file_name-${component}
-        COMMAND echo ${CPACK_PACKAGE_FILE_NAME}-${component}.${CPACK_PACKAGE_EXT})
     endif()
     add_dependencies(package_file_name package_file_name-${component})
   endforeach()
