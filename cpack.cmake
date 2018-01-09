@@ -22,7 +22,8 @@ endif()
 set(CPACK_SET_DESTDIR ON)
 
 sonar_vendor(OUTPUT_VARIABLE CPACK_PACKAGE_VENDOR)
-set(CPACK_PACKAGE_LICENSE "2017 jSonar Inc")  # @todo: calculate the year
+string(TIMESTAMP this_year "%Y")
+set(CPACK_PACKAGE_LICENSE "${this_year} jSonar Inc") 
 set(CPACK_PACKAGE_URL "http://www.jsonar.com")
 set(CPACK_PACKAGE_CONTACT "jSonar Support <support@jsonar.com>")
 if (NOT DEFINED CPACK_PACKAGE_DESCRIPTION_SUMMARY)
