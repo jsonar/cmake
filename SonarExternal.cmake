@@ -138,12 +138,17 @@ function(build_jsoncpp)
   # Usage: build_jsoncpp(VERSION <version>)
   #
   # Generates jsoncpp::lib target to link with
-  cmake_parse_arguments(JSONCPP "" "VERSION" "" ${ARGN})
+  cmake_parse_arguments(JSONCPP "" "VERSION;PATCH_FILE" "" ${ARGN})
   message(STATUS "Building jsoncpp-${JSONCPP_VERSION}")
   set(jsoncpp_lib usr/local/${EXTERNAL_INSTALL_LIBDIR}/libjsoncpp.a)
+  if(JSONCPP_PATCH_FILE)
+    set(patch_command git checkout .
+      COMMAND patch -p1 < ${JSONCPP_PATCH_FILE})
+  endif()
   ExternalProject_Add(jsoncpp
     GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp
     GIT_TAG ${JSONCPP_VERSION}
+    PATCH_COMMAND ${patch_command}
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
@@ -253,4 +258,55 @@ function(build_mongocxx)
     PROPERTY INTERFACE_LINK_LIBRARIES bsoncxx::lib mongo::lib
     APPEND
     )
+endfunction()
+
+function(build_easylogging)
+  # Usage: build_easyloggingpp(VERSION <version> COMPILE_DEFINITIONS <compile definitions>)
+  #
+  # Generates easyloggingpp::lib target to link with
+  cmake_parse_arguments(EASYLOGGING "" "VERSION" "COMPILE_DEFINITIONS" ${ARGN})
+  message(STATUS "Building easylogging-${EASYLOGGING_VERSION}")
+  ExternalProject_Add(easylogging
+    GIT_REPOSITORY https://github.com/muflihun/easyloggingpp.git
+    GIT_TAG v${EASYLOGGING_VERSION}
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS <SOURCE_DIR>/src/easylogging++.cc
+    )
+  ExternalProject_Add_StepTargets(easylogging update)
+  sonar_external_project_dirs(easylogging source_dir)
+  add_library(easylogging::lib INTERFACE IMPORTED)
+  add_dependencies(easylogging::lib easylogging)
+  set(easyloggingcc ${easylogging_source_dir}/src/easylogging++.cc)
+  set_target_properties(easylogging::lib PROPERTIES INTERFACE_SOURCES ${easyloggingcc})
+  target_include_external_directory(easylogging::lib easylogging source_dir src)
+  set_property(TARGET easylogging::lib
+    PROPERTY
+      INTERFACE_COMPILE_DEFINITIONS
+        ELPP_FEATURE_CRASH_LOG
+        ELPP_NO_DEFAULT_LOG_FILE
+        ELPP_THREAD_SAFE
+        ${EASYLOGGING_COMPILE_DEFINITIONS}
+  )
+endfunction()
+
+function(build_pcre)
+  cmake_parse_arguments(PCRE "" "VERSION" "" ${ARGN})
+  ExternalProject_Add(pcre
+    URL https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VERSION}.tar.gz
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      --enable-jit
+      --enable-unicode-properties
+      --enable-utf
+      --prefix <INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libpcre.a
+    )
+  sonar_external_project_dirs(pcre install_dir)
+  add_library(pcre::lib STATIC IMPORTED)
+  add_dependencies(pcre::lib pcre)
+  set_property(TARGET pcre::lib
+    PROPERTY IMPORTED_LOCATION ${pcre_install_dir}/lib/libpcre.a
+    )
+  target_include_external_directory(pcre::lib pcre install_dir include)
 endfunction()
