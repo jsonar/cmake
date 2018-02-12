@@ -260,6 +260,12 @@ function(build_mongocxx)
     )
 endfunction()
 
+macro(use_easylogging)
+  sonar_external_project_dirs(easylogging source_dir)
+  set(easyloggingcc ${easylogging_source_dir}/src/easylogging++.cc)
+  set_property(SOURCE ${easyloggingcc} PROPERTY GENERATED 1)
+endmacro()
+
 function(build_easylogging)
   # Usage: build_easyloggingpp(VERSION <version> COMPILE_DEFINITIONS <compile definitions>)
   #
@@ -275,10 +281,9 @@ function(build_easylogging)
     BUILD_BYPRODUCTS <SOURCE_DIR>/src/easylogging++.cc
     )
   ExternalProject_Add_StepTargets(easylogging update)
-  sonar_external_project_dirs(easylogging source_dir)
   add_library(easylogging::lib INTERFACE IMPORTED)
   add_dependencies(easylogging::lib easylogging)
-  set(easyloggingcc ${easylogging_source_dir}/src/easylogging++.cc)
+  use_easylogging()
   set_target_properties(easylogging::lib PROPERTIES INTERFACE_SOURCES ${easyloggingcc})
   target_include_external_directory(easylogging::lib easylogging source_dir src)
   set_property(TARGET easylogging::lib
