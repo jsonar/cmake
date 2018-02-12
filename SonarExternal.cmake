@@ -310,3 +310,25 @@ function(build_pcre)
     )
   target_include_external_directory(pcre::lib pcre install_dir include)
 endfunction()
+
+function(use_asio_standalone)
+  cmake_parse_arguments(ASIO_STANDALONE "" "DIRECTORY" "COMPILE_DEFINITIONS" ${ARGN})
+  option(ASIO_HANDLER_TRACKING "Track handlers invoked by ASIO" OFF)
+  add_library(asio::lib INTERFACE IMPORTED)
+  set_property(TARGET asio::lib
+    PROPERTY
+      INTERFACE_INCLUDE_DIRECTORIES ${ASIO_STANDALONE_DIRECTORY}/asio/include)
+  set_property(TARGET asio::lib
+    PROPERTY
+      INTERFACE_COMPILE_DEFINITIONS ${ASIO_STANDALONE_COMPILE_DEFINITIONS})
+  find_package(Boost)
+  if (Boost_VERSION STRLESS_EQUAL 105300)
+    #
+    # asio standalone assumes BOOST_NOEXCEPT_OR_NOTHROW is defined, for boost
+    # 1.53, this is incorrect
+    #
+    set_property(TARGET asio::lib
+      PROPERTY INTERFACE_COMPILE_DEFINITIONS
+      BOOST_NOEXCEPT_OR_NOTHROW=noexcept)
+  endif()
+endfunction()
