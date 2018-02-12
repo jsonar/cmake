@@ -175,9 +175,12 @@ function(build_sqlite3)
     "install(TARGETS sqlite3 DESTINATION lib)\n"
     "install(FILES sqlite3.h DESTINATION include)\n")
   message(STATUS "Building sqlite3 from ${SQLITE3_URL}")
+  if (SQLITE3_SHA1)
+    set(url_hash SHA1=${SQLITE3_SHA1})
+  endif()
   ExternalProject_Add(sqlite3
     URL ${SQLITE3_URL}
-    URL_HASH SHA1=${SQLITE3_SHA1}
+    URL_HASH ${url_hash}
     PATCH_COMMAND
       ${CMAKE_COMMAND} -E
         copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.cmake <SOURCE_DIR>/CMakeLists.txt
