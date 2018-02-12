@@ -138,51 +138,6 @@ function(target_include_external_directory target external property dir)
     PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${include_dir} APPEND)
 endfunction()
 
-
-function(build_mongoc_git tag)
-  # builds mongoc as an external directory. Provides
-  # targets mongo::lib and bson::lib
-  include(ExternalProject)
-  ExternalProject_Add(mongoc
-    GIT_REPOSITORY https://github.com/mongodb/mongo-c-driver.git
-    GIT_TAG ${tag}
-    #UPDATE_DISCONNECTED 1 # uncomment for cmake 3.8
-    UPDATE_COMMAND ""
-    CONFIGURE_COMMAND <SOURCE_DIR>/autogen.sh
-      --with-libbson=bundled
-      --enable-static
-      --disable-sasl
-      --disable-tests
-      --prefix=<INSTALL_DIR>
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libmongoc-1.0.a <INSTALL_DIR>/lib/libbson-1.0.a
-    )
-  ExternalProject_Get_Property(mongoc install_dir)
-  foreach(driver mongo bson)
-    set(lib ${driver}::lib)
-    if(driver STREQUAL mongo)
-      # annoying inconsistency in library naming...
-      set(libname libmongoc-1.0)
-    else()
-      set(libname libbson-1.0)
-    endif()
-    set(archive lib/${libname}.a)
-    set(include include/${libname})
-    add_library(${lib} STATIC IMPORTED GLOBAL)
-    add_dependencies(${lib} mongoc)
-    set_property(TARGET ${lib} PROPERTY
-      IMPORTED_LOCATION ${install_dir}/${archive})
-    target_include_external_directory(${lib} mongoc install_dir ${include})
-  endforeach()
-  # mongoc requires openssl, rt and bson::lib
-  find_package(OpenSSL REQUIRED)
-  find_library(rt rt)
-  set_property(TARGET mongo::lib
-    PROPERTY
-    INTERFACE_LINK_LIBRARIES OpenSSL::SSL ${rt} bson::lib
-    APPEND
-  )
-endfunction()
-
 function(sonar_python3_package_dir _out)
   sonar_detect_distribution(os)
   if (os MATCHES "debian")
