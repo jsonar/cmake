@@ -8,45 +8,40 @@ function(build_mongoc)
   cmake_parse_arguments(MONGOC "" "VERSION" "" ${ARGN})
   message(STATUS "Building mongo-c-driver-${MONGOC_VERSION}")
   ExternalProject_Add(mongoc
-    GIT_REPOSITORY https://github.com/mongodb/mongo-c-driver.git
-    GIT_TAG ${MONGOC_VERSION}
-    CONFIGURE_COMMAND ""
-    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> make --silent install
-    BUILD_BYPRODUCTS
-      <INSTALL_DIR>/usr/local/lib/libmongoc-1.0.a
-      <INSTALL_DIR>/usr/local/lib/libbson-1.0.a
-      )
-  sonar_external_project_dirs(mongoc binary_dir source_dir install_dir)
-  ExternalProject_Add_Step(mongoc prepare
-    # We use a custom step instead of using configure for this. configure runs
-    # every update, and this takes very long. We only need to run build on
-    # update, which is quick, so this prepare step depends on download, not
-    # update.
-    COMMENT "Preforming prepare step (autogen.sh) for mongoc"
-    COMMAND ${mongoc_source_dir}/autogen.sh
+    URL https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_VERSION}/mongo-c-driver-${MONGOC_VERSION}.tar.gz
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      --disable-automatic-init-and-cleanup
       --with-libbson=bundled
       --enable-static
+      --disable-shared
       --disable-sasl
-      --disable-tests
-    WORKING_DIRECTORY ${mongoc_binary_dir}
-    DEPENDEES download
-    DEPENDERS configure
-    )
+      --prefix <INSTALL_DIR>
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/lib/libmongoc-1.0.a
+      <INSTALL_DIR>/lib/libbson-1.0.a
+      )
+  sonar_external_project_dirs(mongoc binary_dir source_dir install_dir)
   foreach(driver mongo bson)
     set(lib ${driver}::lib)
+    set(header ${driver}::header-only)
     if(driver STREQUAL mongo)
       # annoying inconsistency in library naming...
       set(libname libmongoc-1.0)
     else()
       set(libname libbson-1.0)
     endif()
-    set(archive usr/local/lib/${libname}.a)
-    set(include usr/local/include/${libname})
+    set(archive lib/${libname}.a)
+    set(include include/${libname})
     add_library(${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(${lib} mongoc)
     set_property(TARGET ${lib} PROPERTY
       IMPORTED_LOCATION ${mongoc_install_dir}/${archive})
     target_include_external_directory(${lib} mongoc install_dir ${include})
+
+    add_library(${header} INTERFACE IMPORTED)
+    add_dependencies(${header} mongoc)
+    target_include_external_directory(${header} mongoc install_dir ${include})
+
   endforeach()
   # mongoc requires openssl, rt and bson::lib
   find_package(OpenSSL REQUIRED)
@@ -60,7 +55,11 @@ function(build_mongoc)
       bson::lib
       Threads::Threads
     APPEND
-  )
+    )
+  set_property(TARGET mongo::header-only
+    PROPERTY INTERFACE_LINK_LIBRARIES
+      bson::header-only
+    )
 endfunction()
 
 function(build_aws)
@@ -89,6 +88,7 @@ function(build_aws)
   ExternalProject_Add(aws
     GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
     GIT_TAG ${AWS_VERSION}
+    UPDATE_DISCONNECTED 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
@@ -149,6 +149,7 @@ function(build_jsoncpp)
     GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp
     GIT_TAG ${JSONCPP_VERSION}
     PATCH_COMMAND ${patch_command}
+    UPDATE_DISCONNECTED 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
@@ -279,6 +280,7 @@ function(build_easylogging)
     GIT_REPOSITORY https://github.com/muflihun/easyloggingpp.git
     GIT_TAG v${EASYLOGGING_VERSION}
     CONFIGURE_COMMAND ""
+    UPDATE_DISCONNECTED 1
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS <SOURCE_DIR>/src/easylogging++.cc
