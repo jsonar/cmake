@@ -63,4 +63,17 @@ else()
   endforeach()
 endif()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  # Do not strip debug symbols from the package.
+  #
+  # collected from various posts in the rpm and cmake mailing lists. Not sure
+  # all three defs are needed, but it works.
+  #
+  set(CPACK_RPM_SPEC_MORE_DEFINE "
+%define debug_package %{nil}
+%define __strip /bin/true
+%define __spec_install_port /usr/lib/rpm/brp-compress
+")
+endif()
+
 include(CPack)
