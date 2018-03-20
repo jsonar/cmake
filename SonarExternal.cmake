@@ -101,7 +101,7 @@ function(build_aws)
       BUILD_BYPRODUCTS
       "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
   endforeach()
-  build_curl(VERSION ${CURL_VERSION})
+  build_curl(VERSION ${AWS_CURL_VERSION})
   sonar_external_project_dirs(curl install_dir)
   ExternalProject_Add(aws
     GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
