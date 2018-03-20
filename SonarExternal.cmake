@@ -342,7 +342,6 @@ endfunction()
 
 function(use_asio_standalone)
   cmake_parse_arguments(ASIO_STANDALONE "" "DIRECTORY" "COMPILE_DEFINITIONS" ${ARGN})
-  option(ASIO_HANDLER_TRACKING "Track handlers invoked by ASIO" OFF)
   add_library(asio::lib INTERFACE IMPORTED)
   set_property(TARGET asio::lib
     PROPERTY
