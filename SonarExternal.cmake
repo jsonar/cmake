@@ -62,9 +62,25 @@ function(build_mongoc)
     )
 endfunction()
 
+function(build_curl)
+  cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
+  message(STATUS "Building curl-${CURL_VERSION}")
+  ExternalProject_Add(curl
+    URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      --disable-shared
+      --without-nss
+      --prefix <INSTALL_DIR>
+      --disable-manual
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcurl.a
+    )
+endfunction()
+
 function(build_aws)
   #[====[
-  Usage: build_aws(VERSION <version> COMPONENTS <component1> <component2>...)
+  Usage: build_aws(VERSION <version>
+                   CURL_VERSION <curl_version>
+                   COMPONENTS <component1> <component2>...)
 
   Will build aws and provide the targets aws::core and aws::<component> for each component listed.
 
@@ -76,7 +92,7 @@ function(build_aws)
   target_link_libraries(mytarget aws::logs aws::s3)
   #]====]
 
-  cmake_parse_arguments(AWS "" "VERSION" "COMPONENTS" ${ARGN})
+  cmake_parse_arguments(AWS "" "VERSION;CURL_VERSION" "COMPONENTS" ${ARGN})
   message(STATUS "Building aws-sdk-cpp-${AWS_VERSION} [${AWS_COMPONENTS}]")
   string(REPLACE ";" "<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
   set(BUILD_BYPRODUCTS "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
@@ -85,6 +101,8 @@ function(build_aws)
       BUILD_BYPRODUCTS
       "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
   endforeach()
+  build_curl(VERSION ${CURL_VERSION})
+  sonar_external_project_dirs(curl install_dir)
   ExternalProject_Add(aws
     GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
     GIT_TAG ${AWS_VERSION}
@@ -96,6 +114,7 @@ function(build_aws)
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
       -DBUILD_OPENSSL=OFF
+      -DCMAKE_PREFIX_PATH=${curl_install_dir}
     INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
