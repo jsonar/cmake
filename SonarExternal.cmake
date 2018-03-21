@@ -74,6 +74,12 @@ function(build_curl)
       --disable-manual
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcurl.a
     )
+  add_library(curl::lib STATIC IMPORTED)
+  add_dependencies(curl::lib curl)
+  sonar_external_project_dirs(curl install_dir)
+  set_target_properties(curl::lib PROPERTIES
+    IMPORTED_LOCATION ${curl_install_dir}/lib/libcurl.a)
+  target_include_external_directory(curl::lib curl install_dir include)
 endfunction()
 
 function(build_aws)
@@ -131,14 +137,12 @@ function(build_aws)
   add_dependencies(aws::core aws)
   find_package(Threads REQUIRED)
   find_package(ZLIB REQUIRED)
-  find_package(CURL REQUIRED)
   find_package(OpenSSL REQUIRED)
   set_target_properties(aws::core PROPERTIES
     IMPORTED_LOCATION ${aws_install_dir}/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a)
   set_property(TARGET aws::core PROPERTY
     INTERFACE_LINK_LIBRARIES
       Threads::Threads
-      ${CURL_LIBRARIES}
       OpenSSL::SSL
       ZLIB::ZLIB
   )
