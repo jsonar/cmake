@@ -63,15 +63,30 @@ function(build_mongoc)
 endfunction()
 
 function(build_curl)
+  set(OPENSSL_USE_STATIC_LIBS ON)
+  find_package(OpenSSL REQUIRED)
+  find_package(ZLIB REQUIRED)
   cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
   message(STATUS "Building curl-${CURL_VERSION}")
   ExternalProject_Add(curl
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
-      --disable-shared
-      --without-nss
-      --prefix <INSTALL_DIR>
+      --disable-ldap
+      --disable-ldaps
       --disable-manual
+      --disable-shared
+      --disable-sspi
+      --disable-tls-srp
+      --prefix <INSTALL_DIR>
+      --without-brtoli
+      --without-gssapi
+      --without-libidn2
+      --without-libmetalink
+      --without-libpsl
+      --without-librtmp
+      --without-libssh2
+      --without-nghttp2
+      --without-nss
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcurl.a
     )
   add_library(curl::lib STATIC IMPORTED)
@@ -80,6 +95,11 @@ function(build_curl)
   set_target_properties(curl::lib PROPERTIES
     IMPORTED_LOCATION ${curl_install_dir}/lib/libcurl.a)
   target_include_external_directory(curl::lib curl install_dir include)
+  set_property(TARGET curl::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      OpenSSL::SSL
+      ZLIB::ZLIB
+      )
 endfunction()
 
 function(build_aws)
@@ -136,15 +156,12 @@ function(build_aws)
   add_library(aws::core STATIC IMPORTED)
   add_dependencies(aws::core aws)
   find_package(Threads REQUIRED)
-  find_package(ZLIB REQUIRED)
-  find_package(OpenSSL REQUIRED)
   set_target_properties(aws::core PROPERTIES
     IMPORTED_LOCATION ${aws_install_dir}/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a)
   set_property(TARGET aws::core PROPERTY
     INTERFACE_LINK_LIBRARIES
       Threads::Threads
-      OpenSSL::SSL
-      ZLIB::ZLIB
+      curl::lib
   )
   target_include_external_directory(aws::core aws install_dir usr/local/include)
 
