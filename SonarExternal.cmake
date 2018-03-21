@@ -101,11 +101,15 @@ function(build_aws)
       BUILD_BYPRODUCTS
       "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
   endforeach()
+  if(NOT AWS_CURL_VERSION)
+    set(AWS_CURL_VERSION 7.59.0)
+  endif()
   build_curl(VERSION ${AWS_CURL_VERSION})
   sonar_external_project_dirs(curl install_dir)
   ExternalProject_Add(aws
     GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
     GIT_TAG ${AWS_VERSION}
+    DEPENDS curl
     UPDATE_DISCONNECTED 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
