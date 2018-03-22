@@ -54,6 +54,9 @@ function(build_mongoc)
       ${rt}
       bson::lib
       Threads::Threads
+      resolv
+      z
+      snappy
     APPEND
     )
   set_property(TARGET mongo::header-only
