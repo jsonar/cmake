@@ -66,7 +66,6 @@ function(build_mongoc)
 endfunction()
 
 function(build_curl)
-  set(OPENSSL_USE_STATIC_LIBS ON)
   find_package(OpenSSL REQUIRED)
   find_package(ZLIB REQUIRED)
   cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
