@@ -2,6 +2,34 @@ include(ExternalProject)
 include(GNUInstallDirs)
 string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
 
+function(build_openssl)
+  cmake_parse_arguments(OPENSSL "" "VERSION" "" ${ARGN})
+  message(STATUS "Building openssl-${OPENSSL_VERSION}")
+  ExternalProject_Add(openssl
+    URL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND ./config
+      --prefix=<INSTALL_DIR>
+      zlib
+      no-shared
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/lib/libssl.a
+      <INSTALL_DIR>/lib/libcrypto.a
+      )
+  sonar_external_project_dirs(openssl install_dir)
+  add_library(openssl::ssl STATIC IMPORTED)
+  add_dependencies(openssl::ssl openssl)
+  set_target_properties(openssl::ssl PROPERTIES
+    IMPORTED_LOCATION ${openssl_install_dir}/lib/libssl.a)
+  target_include_external_directory(openssl::ssl openssl install_dir include)
+
+  add_library(openssl::crypto STATIC IMPORTED)
+  add_dependencies(openssl::crypto openssl)
+  set_target_properties(openssl::crypto PROPERTIES
+    IMPORTED_LOCATION ${openssl_install_dir}/lib/libcrypto.a)
+  target_include_external_directory(openssl::crypto openssl install_dir include)
+endfunction()
+
 function(build_mongoc)
   # builds mongoc as an external project. Provides
   # targets mongo::lib and bson::lib
@@ -54,11 +82,18 @@ function(build_mongoc)
       ${rt}
       bson::lib
       Threads::Threads
-      resolv
-      z
-      snappy
     APPEND
     )
+  if(MONGOC_VERSION VERSION_GREATER_EQUAL 1.7.0)
+    set_property(TARGET mongo::lib
+      PROPERTY
+      INTERFACE_LINK_LIBRARIES
+        resolv
+        z
+        snappy
+      APPEND
+      )
+  endif()
   set_property(TARGET mongo::header-only
     PROPERTY INTERFACE_LINK_LIBRARIES
       bson::header-only
@@ -66,13 +101,15 @@ function(build_mongoc)
 endfunction()
 
 function(build_curl)
-  set(OPENSSL_USE_STATIC_LIBS ON)
-  find_package(OpenSSL REQUIRED)
   find_package(ZLIB REQUIRED)
+  # build_openssl()
+  # sonar_external_project_dirs(openssl install_dir)
+  find_package(OpenSSL REQUIRED)
   cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
   message(STATUS "Building curl-${CURL_VERSION}")
   ExternalProject_Add(curl
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
+    # DEPENDS openssl
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --disable-ldap
       --disable-ldaps
@@ -90,6 +127,7 @@ function(build_curl)
       --without-libssh2
       --without-nghttp2
       --without-nss
+      # --with-ssl=${openssl_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcurl.a
     )
   add_library(curl::lib STATIC IMPORTED)
@@ -100,7 +138,7 @@ function(build_curl)
   target_include_external_directory(curl::lib curl install_dir include)
   set_property(TARGET curl::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
-      OpenSSL::SSL
+      OpenSSL::SSL # remove if building openssl ourselves
       ZLIB::ZLIB
       )
 endfunction()
@@ -135,11 +173,13 @@ function(build_aws)
   endif()
   build_curl(VERSION ${AWS_CURL_VERSION})
   sonar_external_project_dirs(curl install_dir)
+  # sonar_external_project_dirs(openssl install_dir)
   ExternalProject_Add(aws
     GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
     GIT_TAG ${AWS_VERSION}
-    DEPENDS curl
+    DEPENDS curl # openssl
     UPDATE_DISCONNECTED 1
+    LIST_SEPARATOR |
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
@@ -147,6 +187,7 @@ function(build_aws)
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
       -DBUILD_OPENSSL=OFF
+      # -DCMAKE_PREFIX_PATH=${openssl_install_dir}|${curl_install_dir}
       -DCMAKE_PREFIX_PATH=${curl_install_dir}
     INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
