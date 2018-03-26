@@ -175,11 +175,11 @@ function(build_aws)
   sonar_external_project_dirs(curl install_dir)
   # sonar_external_project_dirs(openssl install_dir)
   ExternalProject_Add(aws
-    GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
-    GIT_TAG ${AWS_VERSION}
+    URL https://github.com/aws/aws-sdk-cpp/archive/${AWS_VERSION}.tar.gz
     DEPENDS curl # openssl
     UPDATE_DISCONNECTED 1
-    LIST_SEPARATOR |
+    LIST_SEPARATOR |  # maybe can use <SEMICOLON>
+    CMAKE_COMMAND GIT_CEILING_DIRECTORIES=<INSTALL_DIR> ${CMAKE_COMMAND}
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
@@ -428,4 +428,39 @@ function(use_asio_standalone)
       PROPERTY INTERFACE_COMPILE_DEFINITIONS
       BOOST_NOEXCEPT_OR_NOTHROW=noexcept)
   endif()
+endfunction()
+
+
+function(build_google_api)
+  # creates google-api::<component> for each component listed
+  cmake_parse_arguments(GOOGLE_API "" "URL" "COMPONENTS" ${ARGN})
+  get_filename_component(basename ${GOOGLE_API_URL} NAME)
+  message(STATUS "Building google-api from ${basename} [${GOOGLE_API_COMPONENTS}]")
+  ExternalProject_Add(google_api
+    URL ${GOOGLE_API_URL}
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+    )
+  sonar_external_project_dirs(google_api binary_dir source_dir)
+  # google-api::lib is the core target that depends on all the core libs
+  add_library(google-api-core INTERFACE)
+  add_dependencies(google-api-core google_api)
+  target_include_directories(google-api-core INTERFACE
+    ${google_api_binary_dir}/include)
+  foreach(lib jsoncpp curl_http http oauth2 utils openssl_codec internal jsoncpp)
+    target_link_libraries(google-api-core INTERFACE
+      ${google_api_binary_dir}/lib/libgoogleapis_${lib}.a
+      )
+  endforeach()
+  foreach(component ${GOOGLE_API_COMPONENTS})
+    set(library google-api::${component})
+    add_library(${library} STATIC IMPORTED)
+    add_dependencies(${library} google-api-core)
+    set_target_properties(${library} PROPERTIES
+      IMPORTED_LOCATION ${google_api_binary_dir}/lib/libgoogle_${component}_api.a
+      INTERFACE_INCLUDE_DIRECTORIES ${google_api_source_dir}/service_apis/${component}
+      INTERFACE_LINK_LIBRARIES google-api-core
+      )
+  endforeach()
 endfunction()
