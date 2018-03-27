@@ -159,7 +159,7 @@ function(build_aws)
   target_link_libraries(mytarget aws::logs aws::s3)
   #]====]
 
-  cmake_parse_arguments(AWS "" "VERSION;CURL_VERSION" "COMPONENTS" ${ARGN})
+  cmake_parse_arguments(AWS "" "VERSION" "COMPONENTS" ${ARGN})
   message(STATUS "Building aws-sdk-cpp-${AWS_VERSION} [${AWS_COMPONENTS}]")
   string(REPLACE ";" "<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
   set(BUILD_BYPRODUCTS "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
@@ -168,10 +168,9 @@ function(build_aws)
       BUILD_BYPRODUCTS
       "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
   endforeach()
-  if(NOT AWS_CURL_VERSION)
-    set(AWS_CURL_VERSION 7.59.0)
+  if(NOT TARGET curl)
+    build_curl(VERSION 7.59.0)
   endif()
-  build_curl(VERSION ${AWS_CURL_VERSION})
   sonar_external_project_dirs(curl install_dir)
   # sonar_external_project_dirs(openssl install_dir)
   ExternalProject_Add(aws
@@ -436,31 +435,54 @@ function(build_google_api)
   cmake_parse_arguments(GOOGLE_API "" "URL" "COMPONENTS" ${ARGN})
   get_filename_component(basename ${GOOGLE_API_URL} NAME)
   message(STATUS "Building google-api from ${basename} [${GOOGLE_API_COMPONENTS}]")
+  find_library(glog glog)
+  if(NOT TARGET curl)
+    build_curl(VERSION 7.59.0)
+  endif()
+  sonar_external_project_dirs(curl install_dir)
+  if(NOT TARGET jsoncpp)
+    build_jsoncpp(VERSION 1.8.4)
+  endif()
+  sonar_external_project_dirs(jsoncpp install_dir)
   ExternalProject_Add(google_api
     URL ${GOOGLE_API_URL}
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_PREFIX_PATH=${curl_install_dir}<SEMICOLON>${jsoncpp_install_dir}
     )
   sonar_external_project_dirs(google_api binary_dir source_dir)
   # google-api::lib is the core target that depends on all the core libs
   add_library(google-api-core INTERFACE)
   add_dependencies(google-api-core google_api)
-  target_include_directories(google-api-core INTERFACE
-    ${google_api_binary_dir}/include)
-  foreach(lib jsoncpp curl_http http oauth2 utils openssl_codec internal jsoncpp)
-    target_link_libraries(google-api-core INTERFACE
-      ${google_api_binary_dir}/lib/libgoogleapis_${lib}.a
+  target_include_directories(google-api-core
+    INTERFACE
+      ${google_api_source_dir}/src
+    )
+  foreach(lib curl_http oauth2 openssl_codec jsoncpp json http utils internal)
+    target_link_libraries(google-api-core
+      INTERFACE
+        ${google_api_binary_dir}/lib/libgoogleapis_${lib}.a
       )
   endforeach()
   foreach(component ${GOOGLE_API_COMPONENTS})
     set(library google-api::${component})
     add_library(${library} STATIC IMPORTED)
     add_dependencies(${library} google-api-core)
-    set_target_properties(${library} PROPERTIES
+    set_property(TARGET ${library} PROPERTY
       IMPORTED_LOCATION ${google_api_binary_dir}/lib/libgoogle_${component}_api.a
-      INTERFACE_INCLUDE_DIRECTORIES ${google_api_source_dir}/service_apis/${component}
-      INTERFACE_LINK_LIBRARIES google-api-core
+      )
+    set_property(TARGET ${library} PROPERTY
+      INTERFACE_INCLUDE_DIRECTORIES
+        ${google_api_source_dir}/service_apis/${component}
+      )
+    set_property(TARGET ${library} PROPERTY
+      INTERFACE_LINK_LIBRARIES
+        google-api-core
+        ${glog}
+        Threads::Threads
+        curl::lib
+        jsoncpp::lib
       )
   endforeach()
 endfunction()
