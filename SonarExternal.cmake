@@ -118,7 +118,7 @@ function(build_curl)
       --disable-sspi
       --disable-tls-srp
       --prefix <INSTALL_DIR>
-      --without-brtoli
+      --without-brotli
       --without-gssapi
       --without-libidn2
       --without-libmetalink
