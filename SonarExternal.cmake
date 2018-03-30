@@ -449,6 +449,7 @@ function(build_google_api)
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       -DCMAKE_PREFIX_PATH=${curl_install_dir}<SEMICOLON>${jsoncpp_install_dir}
     )
   sonar_external_project_dirs(google_api binary_dir source_dir)
