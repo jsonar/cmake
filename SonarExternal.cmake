@@ -177,7 +177,6 @@ function(build_aws)
     URL https://github.com/aws/aws-sdk-cpp/archive/${AWS_VERSION}.tar.gz
     DEPENDS curl # openssl
     UPDATE_DISCONNECTED 1
-    LIST_SEPARATOR |  # maybe can use <SEMICOLON>
     CMAKE_COMMAND GIT_CEILING_DIRECTORIES=<INSTALL_DIR> ${CMAKE_COMMAND}
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -186,7 +185,7 @@ function(build_aws)
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
       -DBUILD_OPENSSL=OFF
-      # -DCMAKE_PREFIX_PATH=${openssl_install_dir}|${curl_install_dir}
+      # -DCMAKE_PREFIX_PATH=${openssl_install_dir}<SEMICOLON>${curl_install_dir}
       -DCMAKE_PREFIX_PATH=${curl_install_dir}
     INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
@@ -446,6 +445,7 @@ function(build_google_api)
   sonar_external_project_dirs(jsoncpp install_dir)
   ExternalProject_Add(google_api
     URL ${GOOGLE_API_URL}
+    DEPENDS curl jsoncpp
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
@@ -456,10 +456,7 @@ function(build_google_api)
   # google-api::lib is the core target that depends on all the core libs
   add_library(google-api-core INTERFACE)
   add_dependencies(google-api-core google_api)
-  target_include_directories(google-api-core
-    INTERFACE
-      ${google_api_source_dir}/src
-    )
+  target_include_external_directory(google-api-core google_api source_dir src)
   foreach(lib curl_http oauth2 openssl_codec jsoncpp json http utils internal)
     target_link_libraries(google-api-core
       INTERFACE
@@ -473,10 +470,7 @@ function(build_google_api)
     set_property(TARGET ${library} PROPERTY
       IMPORTED_LOCATION ${google_api_binary_dir}/lib/libgoogle_${component}_api.a
       )
-    set_property(TARGET ${library} PROPERTY
-      INTERFACE_INCLUDE_DIRECTORIES
-        ${google_api_source_dir}/service_apis/${component}
-      )
+    target_include_external_directory(${library} google_api source_dir service_apis/${component})
     set_property(TARGET ${library} PROPERTY
       INTERFACE_LINK_LIBRARIES
         google-api-core
