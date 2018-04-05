@@ -7,6 +7,7 @@ function(build_openssl)
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
   ExternalProject_Add(openssl
     URL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND ./config
       --prefix=<INSTALL_DIR>
@@ -37,6 +38,7 @@ function(build_mongoc)
   message(STATUS "Building mongo-c-driver-${MONGOC_VERSION}")
   ExternalProject_Add(mongoc
     URL https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_VERSION}/mongo-c-driver-${MONGOC_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --disable-automatic-init-and-cleanup
       --with-libbson=bundled
@@ -109,6 +111,7 @@ function(build_curl)
   message(STATUS "Building curl-${CURL_VERSION}")
   ExternalProject_Add(curl
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     # DEPENDS openssl
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --disable-ldap
@@ -175,6 +178,7 @@ function(build_aws)
   # sonar_external_project_dirs(openssl install_dir)
   ExternalProject_Add(aws
     URL https://github.com/aws/aws-sdk-cpp/archive/${AWS_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     DEPENDS curl # openssl
     UPDATE_DISCONNECTED 1
     CMAKE_COMMAND GIT_CEILING_DIRECTORIES=<INSTALL_DIR> ${CMAKE_COMMAND}
@@ -233,6 +237,7 @@ function(build_jsoncpp)
   endif()
   ExternalProject_Add(jsoncpp
     URL https://github.com/open-source-parsers/jsoncpp/archive/${JSONCPP_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     PATCH_COMMAND ${patch_command}
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
@@ -266,6 +271,7 @@ function(build_sqlite3)
   endif()
   ExternalProject_Add(sqlite3
     URL ${SQLITE3_URL}
+    DOWNLOAD_NO_PROGRESS 1
     URL_HASH ${url_hash}
     PATCH_COMMAND
       ${CMAKE_COMMAND} -E
@@ -390,6 +396,7 @@ function(build_pcre)
   cmake_parse_arguments(PCRE "" "VERSION" "" ${ARGN})
   ExternalProject_Add(pcre
     URL https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --enable-jit
       --enable-unicode-properties
@@ -432,6 +439,7 @@ function(build_glog)
   message(STATUS "Building glog-${GLOG_VERSION}")
   ExternalProject_Add(glog
     URL https://github.com/google/glog/archive/v${GLOG_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -452,6 +460,7 @@ function(build_gflags)
   message(STATUS "Building gflags-${GFLAGS_VERSION}")
   ExternalProject_Add(gflags
     URL https://github.com/gflags/gflags/archive/v${GFLAGS_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DBUILD_SHARED_LIBS=OFF
