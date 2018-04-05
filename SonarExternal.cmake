@@ -161,7 +161,7 @@ function(build_aws)
 
   cmake_parse_arguments(AWS "" "VERSION" "COMPONENTS" ${ARGN})
   message(STATUS "Building aws-sdk-cpp-${AWS_VERSION} [${AWS_COMPONENTS}]")
-  string(REPLACE ";" "<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
+  string(REPLACE ";" "$<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
   set(BUILD_BYPRODUCTS "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
   foreach(component ${AWS_COMPONENTS})
     list(APPEND
@@ -185,7 +185,7 @@ function(build_aws)
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
       -DBUILD_OPENSSL=OFF
-      # -DCMAKE_PREFIX_PATH=${openssl_install_dir}<SEMICOLON>${curl_install_dir}
+      # -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}
       -DCMAKE_PREFIX_PATH=${curl_install_dir}
     INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
@@ -226,20 +226,19 @@ function(build_jsoncpp)
   # Generates jsoncpp::lib target to link with
   cmake_parse_arguments(JSONCPP "" "VERSION;PATCH_FILE" "" ${ARGN})
   message(STATUS "Building jsoncpp-${JSONCPP_VERSION}")
-  set(jsoncpp_lib usr/local/${EXTERNAL_INSTALL_LIBDIR}/libjsoncpp.a)
+  set(jsoncpp_lib ${EXTERNAL_INSTALL_LIBDIR}/libjsoncpp.a)
   if(JSONCPP_PATCH_FILE)
-    set(patch_command git checkout .
-      COMMAND patch -p1 < ${JSONCPP_PATCH_FILE})
+    set(patch_command #git checkout . COMMAND
+      patch -p1 < ${JSONCPP_PATCH_FILE})
   endif()
   ExternalProject_Add(jsoncpp
-    GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp
-    GIT_TAG ${JSONCPP_VERSION}
+    URL https://github.com/open-source-parsers/jsoncpp/archive/${JSONCPP_VERSION}.tar.gz
     PATCH_COMMAND ${patch_command}
-    UPDATE_DISCONNECTED 1
     CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
-    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/${jsoncpp_lib}
   )
@@ -249,7 +248,7 @@ function(build_jsoncpp)
   add_dependencies(jsoncpp::lib jsoncpp)
   set_target_properties(jsoncpp::lib PROPERTIES
     IMPORTED_LOCATION ${jsoncpp_install_dir}/${jsoncpp_lib})
-  target_include_external_directory(jsoncpp::lib jsoncpp install_dir usr/local/include)
+  target_include_external_directory(jsoncpp::lib jsoncpp install_dir include)
 endfunction()
 
 function(build_sqlite3)
@@ -428,13 +427,42 @@ function(use_asio_standalone)
   endif()
 endfunction()
 
+function(build_glog)
+  cmake_parse_arguments(GLOG "" "VERSION" "" ${ARGN})
+  message(STATUS "Building glog-${GLOG_VERSION}")
+  ExternalProject_Add(glog
+    URL https://github.com/google/glog/archive/v${GLOG_VERSION}.tar.gz
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DWITH_GFLAGS=NO
+      -DBUILD_SHARED_LIBS=OFF
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libglog.a
+    )
+  sonar_external_project_dirs(glog install_dir)
+  add_library(glog::lib STATIC IMPORTED)
+  add_dependencies(glog::lib glog)
+  set_target_properties(glog::lib PROPERTIES
+    IMPORTED_LOCATION ${glog_install_dir}/lib/libglog.a)
+  target_include_external_directory(glog::lib glog install_dir include)
+endfunction()
+
+function(build_gflags)
+  cmake_parse_arguments(GFLAGS "" "VERSION" "" ${ARGN})
+  message(STATUS "Building gflags-${GFLAGS_VERSION}")
+  ExternalProject_Add(gflags
+    URL https://github.com/gflags/gflags/archive/v${GFLAGS_VERSION}.tar.gz
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    )
+endfunction()
 
 function(build_google_api)
   # creates google-api::<component> for each component listed
-  cmake_parse_arguments(GOOGLE_API "" "URL" "COMPONENTS" ${ARGN})
-  get_filename_component(basename ${GOOGLE_API_URL} NAME)
-  message(STATUS "Building google-api from ${basename} [${GOOGLE_API_COMPONENTS}]")
-  find_library(glog glog)
+  cmake_parse_arguments(GOOGLE_API "" "SOURCE_DIR" "COMPONENTS" ${ARGN})
+  message(STATUS "Building google-api from ${GOOGLE_API_SOURCE_DIR} [${GOOGLE_API_COMPONENTS}]")
   if(NOT TARGET curl)
     build_curl(VERSION 7.59.0)
   endif()
@@ -443,14 +471,31 @@ function(build_google_api)
     build_jsoncpp(VERSION 1.8.4)
   endif()
   sonar_external_project_dirs(jsoncpp install_dir)
+  if(NOT TARGET glog)
+    build_glog(VERSION 0.3.5)
+  endif()
+  sonar_external_project_dirs(glog install_dir)
+  if(NOT TARGET gflags)
+    build_gflags(VERSION 2.2.1)
+  endif()
+  sonar_external_project_dirs(gflags install_dir)
+  set(google_libs curl_http oauth2 openssl_codec jsoncpp json http utils internal)
+  foreach(lib ${google_libs})
+    list(APPEND byproducts "<BINARY_DIR>/lib/libgoogleapis_${lib}.a")
+  endforeach()
+  foreach(component ${GOOGLE_API_COMPONENTS})
+    list(APPEND byproducts "<BINARY_DIR>/lib/libgoogle_${component}_api.a")
+  endforeach()
   ExternalProject_Add(google_api
-    URL ${GOOGLE_API_URL}
-    DEPENDS curl jsoncpp
+    SOURCE_DIR ${GOOGLE_API_SOURCE_DIR}
+    DEPENDS curl jsoncpp glog gflags
     CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DCMAKE_PREFIX_PATH=${curl_install_dir}<SEMICOLON>${jsoncpp_install_dir}
+      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}
+    BUILD_BYPRODUCTS ${byproducts}
     )
   sonar_external_project_dirs(google_api binary_dir source_dir)
   # google-api::lib is the core target that depends on all the core libs
@@ -474,7 +519,7 @@ function(build_google_api)
     set_property(TARGET ${library} PROPERTY
       INTERFACE_LINK_LIBRARIES
         google-api-core
-        ${glog}
+        glog::lib
         Threads::Threads
         curl::lib
         jsoncpp::lib
