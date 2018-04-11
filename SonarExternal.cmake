@@ -585,6 +585,7 @@ function(build_s2)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_PREFIX_PATH=${openssl_install_dir}
     PATCH_COMMAND ${patch_command}
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libs2.a
     )
   sonar_external_project_dirs(s2 install_dir)
   add_library(s2::lib STATIC IMPORTED)
@@ -608,12 +609,13 @@ function(build_bid)
     CONFIGURE_COMMAND ""
     BUILD_COMMAND make
       -C <SOURCE_DIR>/LIBRARY
-      CC=${CMAKE_C_COMPILER}
+      CC=gcc
       CALL_BY_REF=0
       GLOBAL_RND=1
       GLOBAL_FLAGS=1
       UNCHANGED_BINARY_FLAGS=0
     INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS <SOURCE_DIR>/LIBRARY/libbid.a
     )
   add_library(bid::lib STATIC IMPORTED)
   add_dependencies(bid::lib bid)
