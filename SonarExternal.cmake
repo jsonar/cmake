@@ -2,6 +2,28 @@ include(ExternalProject)
 include(GNUInstallDirs)
 string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
 
+function(sonar_external_project_dirs project)
+  # set variables project_<dir> for each of the requested properties
+  # Usage:
+  #  sonar_external_project_dirs myproject install_dir source_dir...
+  #
+  #  will create variables myproject_install_dir, myproject_source_dir,...
+  #
+  string(REPLACE - _ project_var ${project})
+  foreach(prop ${ARGN})
+    ExternalProject_Get_Property(${project} ${prop})
+    set(${project_var}_${prop} ${${prop}} PARENT_SCOPE)
+  endforeach()
+endfunction()
+
+function(target_include_external_directory target external property dir)
+  ExternalProject_Get_Property(${external} ${property})
+  set(include_dir ${${property}}/${dir})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${include_dir})
+  set_property(TARGET ${target}
+    PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${include_dir} APPEND)
+endfunction()
+
 function(build_openssl)
   cmake_parse_arguments(OPENSSL "" "VERSION" "" ${ARGN})
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
@@ -29,6 +51,13 @@ function(build_openssl)
   set_target_properties(openssl::crypto PROPERTIES
     IMPORTED_LOCATION ${openssl_install_dir}/lib/libcrypto.a)
   target_include_external_directory(openssl::crypto openssl install_dir include)
+  find_package(ZLIB)
+  set_property(TARGET openssl::crypto
+    PROPERTY
+      INTERFACE_LINK_LIBRARIES
+        ${CMAKE_DL_LIBS}
+        ZLIB::ZLIB
+    )
 endfunction()
 
 function(build_mongoc)
@@ -534,4 +563,62 @@ function(build_google_api)
         jsoncpp::lib
       )
   endforeach()
+endfunction()
+
+function(build_s2)
+  cmake_parse_arguments(S2 "" "VERSION;PATCH_FILE" "" ${ARGN})
+  message(STATUS "Building s2-${S2_VERSION}")
+  if(S2_PATCH_FILE)
+    set(patch_command patch -p1 < ${S2_PATCH_FILE})
+  endif()
+  if(NOT TARGET openssl)
+    build_openssl(VERSION 1.0.2o)
+  endif()
+  sonar_external_project_dirs(openssl install_dir)
+  ExternalProject_Add(s2
+    URL https://github.com/google/s2geometry/archive/${S2_VERSION}.zip
+    DOWNLOAD_NO_PROGRESS 1
+    DEPENDS openssl
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+    PATCH_COMMAND ${patch_command}
+    )
+  sonar_external_project_dirs(s2 install_dir)
+  add_library(s2::lib STATIC IMPORTED)
+  add_dependencies(s2::lib s2)
+  set_property(TARGET s2::lib
+    PROPERTY IMPORTED_LOCATION ${s2_install_dir}/lib/libs2.a
+    )
+  set_property(TARGET s2::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      openssl::crypto
+    )
+  target_include_external_directory(s2::lib s2 install_dir include)
+endfunction()
+
+function(build_bid)
+
+  ExternalProject_Add(bid
+    URL https://software.intel.com/sites/default/files/m/d/4/1/d/8/IntelRDFPMathLib20U1.tar.gz
+    URL_MD5 c9384d2e03a13b35d15e54cf20492cf5
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND make
+      -C <SOURCE_DIR>/LIBRARY
+      CC=${CMAKE_C_COMPILER}
+      CALL_BY_REF=0
+      GLOBAL_RND=1
+      GLOBAL_FLAGS=1
+      UNCHANGED_BINARY_FLAGS=0
+    INSTALL_COMMAND ""
+    )
+  add_library(bid::lib STATIC IMPORTED)
+  add_dependencies(bid::lib bid)
+  sonar_external_project_dirs(bid source_dir)
+  set_property(TARGET bid::lib
+    PROPERTY IMPORTED_LOCATION ${bid_source_dir}/LIBRARY/libbid.a)
+  target_include_external_directory(bid::lib bid source_dir LIBRARY/src)
 endfunction()

@@ -109,33 +109,12 @@ function(sonar_find_libraries)
   endif()
 endfunction()
 
-function(sonar_external_project_dirs project)
-  # set variables project_<dir> for each of the requested properties
-  # Usage:
-  #  sonar_external_project_dirs myproject install_dir source_dir...
-  #
-  #  will create variables myproject_install_dir, myproject_source_dir,...
-  #
-  foreach(prop ${ARGN})
-    ExternalProject_Get_Property(${project} ${prop})
-    set(${project}_${prop} ${${prop}} PARENT_SCOPE)
-  endforeach()
-endfunction()
-
 function(sonar_deps _out deps)
   foreach(dep ${ARGN})
     list(APPEND deps ${dep})
   endforeach()
   string(REPLACE ";" ", " _deps "${deps}")
   set(${_out} ${_deps} PARENT_SCOPE)
-endfunction()
-
-function(target_include_external_directory target external property dir)
-  ExternalProject_Get_Property(${external} ${property})
-  set(include_dir ${${property}}/${dir})
-  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${include_dir})
-  set_property(TARGET ${target}
-    PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${include_dir} APPEND)
 endfunction()
 
 function(sonar_python3_package_dir _out)
