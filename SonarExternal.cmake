@@ -397,10 +397,8 @@ function(build_easylogging)
   cmake_parse_arguments(EASYLOGGING "" "VERSION" "COMPILE_DEFINITIONS" ${ARGN})
   message(STATUS "Building easylogging-${EASYLOGGING_VERSION}")
   ExternalProject_Add(easylogging
-    GIT_REPOSITORY https://github.com/muflihun/easyloggingpp.git
-    GIT_TAG v${EASYLOGGING_VERSION}
+    URL https://github.com/muflihun/easyloggingpp/archive/v${EASYLOGGING_VERSION}.tar.gz
     CONFIGURE_COMMAND ""
-    UPDATE_DISCONNECTED 1
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS <SOURCE_DIR>/src/easylogging++.cc
@@ -601,7 +599,6 @@ function(build_s2)
 endfunction()
 
 function(build_bid)
-
   ExternalProject_Add(bid
     URL https://software.intel.com/sites/default/files/m/d/4/1/d/8/IntelRDFPMathLib20U1.tar.gz
     URL_MD5 c9384d2e03a13b35d15e54cf20492cf5
@@ -617,10 +614,37 @@ function(build_bid)
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS <SOURCE_DIR>/LIBRARY/libbid.a
     )
-  add_library(bid::lib STATIC IMPORTED)
+  add_library(bid::lib STATIC IMPORTED GLOBAL)
   add_dependencies(bid::lib bid)
   sonar_external_project_dirs(bid source_dir)
   set_property(TARGET bid::lib
     PROPERTY IMPORTED_LOCATION ${bid_source_dir}/LIBRARY/libbid.a)
   target_include_external_directory(bid::lib bid source_dir LIBRARY/src)
+endfunction()
+
+function(build_jemalloc)
+  cmake_parse_arguments(JEMALLOC "" "VERSION" "" ${ARGN})
+  message(STATUS "Building jemalloc-${JEMALLOC_VERSION}")
+  ExternalProject_Add(jemalloc
+    URL https://github.com/jemalloc/jemalloc/releases/download/${JEMALLOC_VERSION}/jemalloc-${JEMALLOC_VERSION}.tar.bz2
+    DOWNLOAD_NO_PROGRESS 1
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+    --prefix <INSTALL_DIR>
+    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM}
+      install_bin
+      install_lib
+      install_include
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libjemalloc.a
+    )
+  add_library(jemalloc::lib STATIC IMPORTED)
+  add_dependencies(jemalloc::lib jemalloc)
+  sonar_external_project_dirs(jemalloc install_dir)
+  set_property(TARGET jemalloc::lib
+    PROPERTY IMPORTED_LOCATION ${jemalloc_install_dir}/lib/libjemalloc.a)
+  target_include_external_directory(jemalloc::lib jemalloc install_dir include)
+  find_package(Threads)
+  set_property(TARGET jemalloc::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      Threads::Threads
+    )
 endfunction()
