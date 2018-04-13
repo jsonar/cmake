@@ -398,6 +398,7 @@ function(build_easylogging)
   message(STATUS "Building easylogging-${EASYLOGGING_VERSION}")
   ExternalProject_Add(easylogging
     URL https://github.com/muflihun/easyloggingpp/archive/v${EASYLOGGING_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -602,7 +603,7 @@ function(build_bid)
   ExternalProject_Add(bid
     URL https://software.intel.com/sites/default/files/m/d/4/1/d/8/IntelRDFPMathLib20U1.tar.gz
     URL_MD5 c9384d2e03a13b35d15e54cf20492cf5
-    DOWNLOAD_NO_PROGRESS ON
+    DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND ""
     BUILD_COMMAND make
       -C <SOURCE_DIR>/LIBRARY
@@ -629,14 +630,14 @@ function(build_jemalloc)
     URL https://github.com/jemalloc/jemalloc/releases/download/${JEMALLOC_VERSION}/jemalloc-${JEMALLOC_VERSION}.tar.bz2
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
-    --prefix <INSTALL_DIR>
+      --prefix <INSTALL_DIR>
     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM}
       install_bin
       install_lib
       install_include
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libjemalloc.a
     )
-  add_library(jemalloc::lib STATIC IMPORTED)
+  add_library(jemalloc::lib STATIC IMPORTED GLOBAL)
   add_dependencies(jemalloc::lib jemalloc)
   sonar_external_project_dirs(jemalloc install_dir)
   set_property(TARGET jemalloc::lib
@@ -646,5 +647,84 @@ function(build_jemalloc)
   set_property(TARGET jemalloc::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
       Threads::Threads
+    )
+endfunction()
+
+function(build_stxxl)
+  cmake_parse_arguments(STXXL "" "VERSION" "" ${ARGN})
+  message(STATUS "Building stxxl-${STXXL_VERSION}")
+  ExternalProject_Add(stxxl
+    URL https://github.com/stxxl/stxxl/releases/download/${STXXL_VERSION}/stxxl-${STXXL_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=OFF
+      -DBUILD_STATIC_LIBS=ON
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_MESSAGES=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libstxxl.a
+    )
+  add_library(stxxl::lib STATIC IMPORTED)
+  add_dependencies(stxxl::lib stxxl)
+  sonar_external_project_dirs(stxxl install_dir)
+  set_property(TARGET stxxl::lib
+    PROPERTY IMPORTED_LOCATION ${stxxl_install_dir}/lib/libstxxl.a)
+  target_include_external_directory(stxxl::lib stxxl install_dir include)
+  find_package(OpenMP REQUIRED)
+  set_property(TARGET stxxl::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      ${OpenMP_CXX_LIBRARIES}
+    )
+endfunction()
+
+function(build_sparsehash)
+  cmake_parse_arguments(SPARSEHASH "" "VERSION" "" ${ARGN})
+  message(STATUS "Building header-only sparsehash-${SPARSEHASH_VERSION}")
+  ExternalProject_Add(sparsehash
+    URL https://github.com/sparsehash/sparsehash/archive/sparsehash-${SPARSEHASH_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    PATCH_COMMAND
+      sed -i s/google::/GOOGLE_NAMESPACE::/
+        src/simple_test.cc
+        src/simple_compat_test.cc
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      --prefix <INSTALL_DIR>
+      --enable-namespace=sparsehash
+    )
+  add_library(sparsehash::header-only INTERFACE IMPORTED)
+  add_dependencies(sparsehash::header-only sparsehash)
+  sonar_external_project_dirs(sparsehash install_dir)
+  target_include_external_directory(sparsehash::header-only sparsehash install_dir include)
+endfunction()
+
+function(build_hdfs3)
+  cmake_parse_arguments(HDFS3 "" "VERSION;PATCH_FILE" "" ${ARGN})
+  message(STATUS "Building hdfs3-${HDFS3_VERSION}")
+  if(HDFS3_PATCH_FILE)
+    set(patch_command patch -p1 < ${HDFS3_PATCH_FILE})
+  endif()
+  ExternalProject_Add(hdfs3
+    URL https://github.com/jsonar/pivotalrd-libhdfs3/archive/${HDFS3_VERSION}.zip
+    DOWNLOAD_NO_PROGRESS 1
+    PATCH_COMMAND ${patch_command}
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_MESSAGES=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DBUILD_SHARED_LIBS=0
+      -DBUILD_STATIC_LIBS=1
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libhdfs3.a
+    )
+  add_library(hdfs3::lib STATIC IMPORTED)
+  add_dependencies(hdfs3::lib hdfs3)
+  sonar_external_project_dirs(hdfs3 install_dir)
+  set_property(TARGET hdfs3::lib
+    PROPERTY IMPORTED_LOCATION ${hdfs3_install_dir}/lib/libhdfs3.a)
+  target_include_external_directory(hdfs3::lib hdfs3 install_dir include)
+  set_property(TARGET hdfs3::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      krb5
+      protobuf
+      uuid
     )
 endfunction()
