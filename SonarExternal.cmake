@@ -40,13 +40,13 @@ function(build_openssl)
       <INSTALL_DIR>/lib/libcrypto.a
       )
   sonar_external_project_dirs(openssl install_dir)
-  add_library(openssl::ssl STATIC IMPORTED)
+  add_library(openssl::ssl STATIC IMPORTED GLOBAL)
   add_dependencies(openssl::ssl openssl)
   set_target_properties(openssl::ssl PROPERTIES
     IMPORTED_LOCATION ${openssl_install_dir}/lib/libssl.a)
   target_include_external_directory(openssl::ssl openssl install_dir include)
 
-  add_library(openssl::crypto STATIC IMPORTED)
+  add_library(openssl::crypto STATIC IMPORTED GLOBAL)
   add_dependencies(openssl::crypto openssl)
   set_target_properties(openssl::crypto PROPERTIES
     IMPORTED_LOCATION ${openssl_install_dir}/lib/libcrypto.a)
@@ -204,12 +204,14 @@ function(build_aws)
     build_curl(VERSION 7.59.0)
   endif()
   sonar_external_project_dirs(curl install_dir)
-  # sonar_external_project_dirs(openssl install_dir)
+  if(NOT TARGET openssl)
+    build_openssl(VERSION 1.0.2o)
+  endif()
+  sonar_external_project_dirs(openssl install_dir)
   ExternalProject_Add(aws
     URL https://github.com/aws/aws-sdk-cpp/archive/${AWS_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS curl # openssl
-    UPDATE_DISCONNECTED 1
+    DEPENDS curl openssl
     CMAKE_COMMAND GIT_CEILING_DIRECTORIES=<INSTALL_DIR> ${CMAKE_COMMAND}
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -218,15 +220,12 @@ function(build_aws)
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
       -DBUILD_OPENSSL=OFF
-      # -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}
-      -DCMAKE_PREFIX_PATH=${curl_install_dir}
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}
+      # -DCMAKE_PREFIX_PATH=${curl_install_dir}
     INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
   )
-  # create aws-update target that can be used when changing versions. run `make
-  # aws-update` to update the repo
-  ExternalProject_Add_StepTargets(aws update)
   sonar_external_project_dirs(aws install_dir)
   add_library(aws::core STATIC IMPORTED)
   add_dependencies(aws::core aws)
@@ -237,6 +236,8 @@ function(build_aws)
     INTERFACE_LINK_LIBRARIES
       Threads::Threads
       curl::lib
+      openssl::crypto
+      openssl::ssl
   )
   target_include_external_directory(aws::core aws install_dir usr/local/include)
 
@@ -290,8 +291,7 @@ function(build_sqlite3)
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.cmake
     "cmake_minimum_required(VERSION 3.8)\n"
     "project(sqlite LANGUAGES C)\n"
-    "add_library(sqlite3 STATIC sqlite3.c)\n"
-    "set_property(TARGET sqlite3 PROPERTY POSITION_INDEPENDENT_CODE ON)\n"
+    "add_library(sqlite3 sqlite3.c)\n"
     "install(TARGETS sqlite3 DESTINATION lib)\n"
     "install(FILES sqlite3.h DESTINATION include)\n")
   message(STATUS "Building sqlite3 from ${SQLITE3_URL}")
@@ -307,6 +307,8 @@ function(build_sqlite3)
         copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.cmake <SOURCE_DIR>/CMakeLists.txt
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       -DCMAKE_INSTALL_MESSAGE=LAZY
     INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS <INSTALL_DIR>/usr/local/lib/libsqlite3.a
@@ -384,12 +386,6 @@ function(build_mongocxx)
     )
 endfunction()
 
-macro(use_easylogging)
-  sonar_external_project_dirs(easylogging source_dir)
-  set(easyloggingcc ${easylogging_source_dir}/src/easylogging++.cc)
-  set_property(SOURCE ${easyloggingcc} PROPERTY GENERATED 1)
-endmacro()
-
 function(build_easylogging)
   # Usage: build_easyloggingpp(VERSION <version> COMPILE_DEFINITIONS <compile definitions>)
   #
@@ -399,24 +395,21 @@ function(build_easylogging)
   ExternalProject_Add(easylogging
     URL https://github.com/muflihun/easyloggingpp/archive/v${EASYLOGGING_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    BUILD_BYPRODUCTS <SOURCE_DIR>/src/easylogging++.cc
-    )
-  ExternalProject_Add_StepTargets(easylogging update)
-  add_library(easylogging::lib INTERFACE IMPORTED)
-  add_dependencies(easylogging::lib easylogging)
-  use_easylogging()
-  set_target_properties(easylogging::lib PROPERTIES INTERFACE_SOURCES ${easyloggingcc})
-  target_include_external_directory(easylogging::lib easylogging source_dir src)
-  set_property(TARGET easylogging::lib
-    PROPERTY
-      INTERFACE_COMPILE_DEFINITIONS
-        ELPP_FEATURE_CRASH_LOG
-        ELPP_NO_DEFAULT_LOG_FILE
-        ELPP_THREAD_SAFE
-        ${EASYLOGGING_COMPILE_DEFINITIONS}
+    CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      )
+  sonar_external_project_dirs(easylogging install_dir)
+  set(easyloggingcc ${easylogging_install_dir}/include/easylogging++.cc)
+  add_library(easylogging-lib STATIC ${easyloggingcc})
+  add_dependencies(easylogging-lib easylogging)
+  set_property(SOURCE ${easyloggingcc} PROPERTY GENERATED 1)
+  target_include_directories(easylogging-lib SYSTEM PUBLIC ${easylogging_install_dir}/include)
+  target_compile_definitions(easylogging-lib
+  PUBLIC
+    ELPP_FEATURE_CRASH_LOG
+    ELPP_NO_DEFAULT_LOG_FILE
+    ELPP_THREAD_SAFE
+    ${EASYLOGGING_COMPILE_DEFINITIONS}
   )
 endfunction()
 
@@ -493,7 +486,15 @@ function(build_gflags)
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    )
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/lib/libgflags.a
+      )
+  sonar_external_project_dirs(gflags install_dir)
+  add_library(gflags::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(gflags::lib gflags)
+  set_target_properties(gflags::lib PROPERTIES
+    IMPORTED_LOCATION ${gflags_install_dir}/lib/libgflags.a)
+  target_include_external_directory(gflags::lib gflags install_dir include)
 endfunction()
 
 function(build_google_api)
@@ -631,7 +632,7 @@ function(build_jemalloc)
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --prefix <INSTALL_DIR>
-    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM}
+    INSTALL_COMMAND make
       install_bin
       install_lib
       install_include
@@ -659,7 +660,7 @@ function(build_stxxl)
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
       -DBUILD_STATIC_LIBS=ON
-      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_BUILD_TYPE=Release
       -DCMAKE_INSTALL_MESSAGES=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libstxxl.a
@@ -726,5 +727,91 @@ function(build_hdfs3)
       krb5
       protobuf
       uuid
+    )
+endfunction()
+
+function(build_rdkafka)
+  cmake_parse_arguments(RDKAFKA "" "VERSION" "" ${ARGN})
+  message(STATUS "Building rdkafka-${RDKAFKA_VERSION}")
+  if(NOT TARGET openssl)
+    build_openssl(VERSION 1.0.2o)
+  endif()
+  sonar_external_project_dirs(openssl install_dir)
+  ExternalProject_Add(rdkafka
+    URL https://github.com/edenhill/librdkafka/archive/v${RDKAFKA_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    DEPENDS openssl
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+      -DRDKAFKA_BUILD_EXAMPLES=OFF
+      -DRDKAFKA_BUILD_TESTS=OFF
+      -DRDKAFKA_BUILD_STATIC=ON
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/librdkafka.a
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/librdkafka++.a
+      )
+  sonar_external_project_dirs(rdkafka install_dir)
+  add_library(rdkafka::c STATIC IMPORTED)
+  add_dependencies(rdkafka::c rdkafka)
+  set_property(TARGET rdkafka::c
+    PROPERTY IMPORTED_LOCATION ${rdkafka_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/librdkafka.a
+    )
+  target_include_external_directory(rdkafka::c rdkafka install_dir include)
+
+  add_library(rdkafka::cpp STATIC IMPORTED)
+  add_dependencies(rdkafka::cpp rdkafka::c)
+  set_property(TARGET rdkafka::cpp
+    PROPERTY IMPORTED_LOCATION ${rdkafka_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/librdkafka++.a
+    )
+  set_property(TARGET rdkafka::cpp PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      rdkafka::c
+    )
+  # kafka requires sasl2 if it is found in the system
+  find_library(sasl2 sasl2)
+  if (sasl2)
+    set_property(TARGET rdkafka::cpp APPEND PROPERTY
+      INTERFACE_LINK_LIBRARIES
+      sasl2
+      )
+  endif()
+endfunction()
+
+function(build_geos)
+  cmake_parse_arguments(GEOS "" "VERSION" "" ${ARGN})
+  message(STATUS "Building geos-${GEOS_VERSION}")
+  ExternalProject_Add(geos
+    URL https://github.com/OSGeo/geos/archive/${GEOS_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DGEOS_BUILD_STATIC=1
+    BUILD_BYPRODUCTS <INSTALL_DIR>/libgeos.a
+    )
+endfunction()
+
+function(build_spatialite)
+  cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
+  message(STATUS "Building spatialite-${SPATIALITE_VERSION}")
+  if(NOT TARGET geos)
+    build_geos(VERSION 3.6.2)
+  endif()
+  sonar_external_project_dirs(geos install_dir)
+  ExternalProject_Add(spatialite
+    URL https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      --disable-examples
+      --disable-freexl
+      --disable-gcp
+      --disable-libxml2
+      --disable-lwgeom
+      --with-geosconfig=${geos_install_dir}/bin/geos-config
+      --prefix <INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libspatialite.so
     )
 endfunction()
