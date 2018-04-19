@@ -2,7 +2,7 @@ include(ExternalProject)
 include(GNUInstallDirs)
 string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
 
-function(sonar_external_project_dirs project)
+macro(sonar_external_project_dirs project)
   # set variables project_<dir> for each of the requested properties
   # Usage:
   #  sonar_external_project_dirs myproject install_dir source_dir...
@@ -12,9 +12,10 @@ function(sonar_external_project_dirs project)
   string(REPLACE - _ project_var ${project})
   foreach(prop ${ARGN})
     ExternalProject_Get_Property(${project} ${prop})
+    set(${project_var}_${prop} ${${prop}})
     set(${project_var}_${prop} ${${prop}} PARENT_SCOPE)
   endforeach()
-endfunction()
+endmacro()
 
 function(target_include_external_directory target external property dir)
   ExternalProject_Get_Property(${external} ${property})
@@ -26,6 +27,13 @@ endfunction()
 
 function(build_openssl)
   cmake_parse_arguments(OPENSSL "" "VERSION" "" ${ARGN})
+  if(TARGET openssl)
+    sonar_external_project_dirs(openssl install_dir)
+    return()
+  endif()
+  if(NOT OPENSSL_VERSION)
+    set(OPENSSL_VERSION 1.0.2o)
+  endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
   ExternalProject_Add(openssl
     URL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
@@ -33,8 +41,9 @@ function(build_openssl)
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND ./config
       --prefix=<INSTALL_DIR>
-      zlib
+      -fPIC
       no-shared
+      zlib
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libssl.a
       <INSTALL_DIR>/lib/libcrypto.a
@@ -65,15 +74,21 @@ function(build_mongoc)
   # targets mongo::lib and bson::lib
   cmake_parse_arguments(MONGOC "" "VERSION" "" ${ARGN})
   message(STATUS "Building mongo-c-driver-${MONGOC_VERSION}")
+  build_openssl()
   ExternalProject_Add(mongoc
     URL https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_VERSION}/mongo-c-driver-${MONGOC_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+    DEPENDS openssl
+    CONFIGURE_COMMAND PKG_CONFIG_PATH=${openssl_install_dir}/lib/pkgconfig <SOURCE_DIR>/configure
       --disable-automatic-init-and-cleanup
       --with-libbson=bundled
       --enable-static
       --disable-shared
       --disable-sasl
+      --disable-examples
+      --disable-man-pages
+      --disable-tests
+      #--with-gnu-ld
       --prefix <INSTALL_DIR>
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libmongoc-1.0.a
@@ -103,15 +118,15 @@ function(build_mongoc)
 
   endforeach()
   # mongoc requires openssl, rt and bson::lib
-  find_package(OpenSSL REQUIRED)
   find_package(Threads REQUIRED)
   find_library(rt rt)
   set_property(TARGET mongo::lib
     PROPERTY
     INTERFACE_LINK_LIBRARIES
-      OpenSSL::SSL
+      openssl::ssl
       ${rt}
       bson::lib
+      openssl::crypto
       Threads::Threads
     APPEND
     )
@@ -132,16 +147,21 @@ function(build_mongoc)
 endfunction()
 
 function(build_curl)
+  if(TARGET curl)
+    sonar_external_project_dirs(curl install_dir)
+    return()
+  endif()
   find_package(ZLIB REQUIRED)
-  # build_openssl()
-  # sonar_external_project_dirs(openssl install_dir)
-  find_package(OpenSSL REQUIRED)
+  build_openssl()
   cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
+  if(NOT CURL_VERSION)
+    set(CURL_VERSION 7.59.0)
+  endif()
   message(STATUS "Building curl-${CURL_VERSION}")
   ExternalProject_Add(curl
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    # DEPENDS openssl
+    DEPENDS openssl
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --disable-ldap
       --disable-ldaps
@@ -159,7 +179,7 @@ function(build_curl)
       --without-libssh2
       --without-nghttp2
       --without-nss
-      # --with-ssl=${openssl_install_dir}
+      --with-ssl=${openssl_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcurl.a
     )
   add_library(curl::lib STATIC IMPORTED)
@@ -170,7 +190,8 @@ function(build_curl)
   target_include_external_directory(curl::lib curl install_dir include)
   set_property(TARGET curl::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
-      OpenSSL::SSL # remove if building openssl ourselves
+      openssl::ssl
+      openssl::crypto
       ZLIB::ZLIB
       )
 endfunction()
@@ -200,14 +221,8 @@ function(build_aws)
       BUILD_BYPRODUCTS
       "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
   endforeach()
-  if(NOT TARGET curl)
-    build_curl(VERSION 7.59.0)
-  endif()
-  sonar_external_project_dirs(curl install_dir)
-  if(NOT TARGET openssl)
-    build_openssl(VERSION 1.0.2o)
-  endif()
-  sonar_external_project_dirs(openssl install_dir)
+  build_openssl()
+  build_curl()
   ExternalProject_Add(aws
     URL https://github.com/aws/aws-sdk-cpp/archive/${AWS_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
@@ -219,9 +234,7 @@ function(build_aws)
       -DBUILD_ONLY=${AWS_BUILD_ONLY}
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
-      -DBUILD_OPENSSL=OFF
       -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}
-      # -DCMAKE_PREFIX_PATH=${curl_install_dir}
     INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
@@ -236,8 +249,8 @@ function(build_aws)
     INTERFACE_LINK_LIBRARIES
       Threads::Threads
       curl::lib
-      openssl::crypto
       openssl::ssl
+      openssl::crypto
   )
   target_include_external_directory(aws::core aws install_dir usr/local/include)
 
@@ -258,7 +271,14 @@ function(build_jsoncpp)
   # Usage: build_jsoncpp(VERSION <version>)
   #
   # Generates jsoncpp::lib target to link with
+  if(TARGET jsoncpp)
+    sonar_external_project_dirs(jsoncpp install_dir)
+    return()
+  endif()
   cmake_parse_arguments(JSONCPP "" "VERSION;PATCH_FILE" "" ${ARGN})
+  if(NOT JSONCPP_VERSION)
+    set(JSONCPP_VERSION 1.8.4)
+  endif()
   message(STATUS "Building jsoncpp-${JSONCPP_VERSION}")
   set(jsoncpp_lib ${EXTERNAL_INSTALL_LIBDIR}/libjsoncpp.a)
   if(JSONCPP_PATCH_FILE)
@@ -397,9 +417,11 @@ function(build_easylogging)
     DOWNLOAD_NO_PROGRESS 1
     CMAKE_ARGS
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       )
   sonar_external_project_dirs(easylogging install_dir)
   set(easyloggingcc ${easylogging_install_dir}/include/easylogging++.cc)
+  set(CMAKE_POSITION_INDEPENDENT_CODE 1)
   add_library(easylogging-lib STATIC ${easyloggingcc})
   add_dependencies(easylogging-lib easylogging)
   set_property(SOURCE ${easyloggingcc} PROPERTY GENERATED 1)
@@ -456,7 +478,14 @@ function(use_asio_standalone)
 endfunction()
 
 function(build_glog)
+  if(TARGET glog)
+    sonar_external_project_dirs(glog install_dir)
+    return()
+  endif()
   cmake_parse_arguments(GLOG "" "VERSION" "" ${ARGN})
+  if(NOT GLOG_VERSION)
+    set(GLOG_VERSION 0.3.5)
+  endif()
   message(STATUS "Building glog-${GLOG_VERSION}")
   ExternalProject_Add(glog
     URL https://github.com/google/glog/archive/v${GLOG_VERSION}.tar.gz
@@ -477,7 +506,14 @@ function(build_glog)
 endfunction()
 
 function(build_gflags)
+  if(TARGET gflags)
+    sonar_external_project_dirs(gflags install_dir)
+    return()
+  endif()
   cmake_parse_arguments(GFLAGS "" "VERSION" "" ${ARGN})
+  if(NOT GFLAGS_VERSION)
+    set(GFLAGS_VERSION 2.2.1)
+  endif()
   message(STATUS "Building gflags-${GFLAGS_VERSION}")
   ExternalProject_Add(gflags
     URL https://github.com/gflags/gflags/archive/v${GFLAGS_VERSION}.tar.gz
@@ -501,22 +537,11 @@ function(build_google_api)
   # creates google-api::<component> for each component listed
   cmake_parse_arguments(GOOGLE_API "" "SOURCE_DIR" "COMPONENTS" ${ARGN})
   message(STATUS "Building google-api from ${GOOGLE_API_SOURCE_DIR} [${GOOGLE_API_COMPONENTS}]")
-  if(NOT TARGET curl)
-    build_curl(VERSION 7.59.0)
-  endif()
-  sonar_external_project_dirs(curl install_dir)
-  if(NOT TARGET jsoncpp)
-    build_jsoncpp(VERSION 1.8.4)
-  endif()
-  sonar_external_project_dirs(jsoncpp install_dir)
-  if(NOT TARGET glog)
-    build_glog(VERSION 0.3.5)
-  endif()
-  sonar_external_project_dirs(glog install_dir)
-  if(NOT TARGET gflags)
-    build_gflags(VERSION 2.2.1)
-  endif()
-  sonar_external_project_dirs(gflags install_dir)
+  build_openssl()
+  build_curl()
+  build_jsoncpp()
+  build_glog()
+  build_gflags()
   set(google_libs curl_http oauth2 openssl_codec jsoncpp json http utils internal)
   foreach(lib ${google_libs})
     list(APPEND byproducts "<BINARY_DIR>/lib/libgoogleapis_${lib}.a")
@@ -526,13 +551,13 @@ function(build_google_api)
   endforeach()
   ExternalProject_Add(google_api
     SOURCE_DIR ${GOOGLE_API_SOURCE_DIR}
-    DEPENDS curl jsoncpp glog gflags
+    DEPENDS curl jsoncpp glog gflags openssl
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}
+      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}$<SEMICOLON>${openssl_install_dir}
     BUILD_BYPRODUCTS ${byproducts}
     )
   sonar_external_project_dirs(google_api binary_dir source_dir)
@@ -561,6 +586,8 @@ function(build_google_api)
         Threads::Threads
         curl::lib
         jsoncpp::lib
+        openssl::ssl
+        openssl::crypto
       )
   endforeach()
 endfunction()
@@ -571,10 +598,7 @@ function(build_s2)
   if(S2_PATCH_FILE)
     set(patch_command patch -p1 < ${S2_PATCH_FILE})
   endif()
-  if(NOT TARGET openssl)
-    build_openssl(VERSION 1.0.2o)
-  endif()
-  sonar_external_project_dirs(openssl install_dir)
+  build_openssl()
   ExternalProject_Add(s2
     URL https://github.com/google/s2geometry/archive/${S2_VERSION}.zip
     DOWNLOAD_NO_PROGRESS 1
@@ -733,10 +757,7 @@ endfunction()
 function(build_rdkafka)
   cmake_parse_arguments(RDKAFKA "" "VERSION" "" ${ARGN})
   message(STATUS "Building rdkafka-${RDKAFKA_VERSION}")
-  if(NOT TARGET openssl)
-    build_openssl(VERSION 1.0.2o)
-  endif()
-  sonar_external_project_dirs(openssl install_dir)
+  build_openssl()
   ExternalProject_Add(rdkafka
     URL https://github.com/edenhill/librdkafka/archive/v${RDKAFKA_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
@@ -792,15 +813,13 @@ function(build_geos)
       -DGEOS_BUILD_STATIC=1
     BUILD_BYPRODUCTS <INSTALL_DIR>/libgeos.a
     )
+  sonar_external_project_dirs(geos install_dir)
 endfunction()
 
 function(build_spatialite)
   cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
   message(STATUS "Building spatialite-${SPATIALITE_VERSION}")
-  if(NOT TARGET geos)
-    build_geos(VERSION 3.6.2)
-  endif()
-  sonar_external_project_dirs(geos install_dir)
+  build_geos(VERSION 3.6.2)
   ExternalProject_Add(spatialite
     URL https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
@@ -813,5 +832,44 @@ function(build_spatialite)
       --with-geosconfig=${geos_install_dir}/bin/geos-config
       --prefix <INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libspatialite.so
+    )
+endfunction()
+
+function(build_xerces)
+  cmake_parse_arguments(XERCES "" "VERSION;PATCH_FILE" "" ${ARGN})
+  if(NOT XERCES_VERSION)
+    set(XERCES_VERSION 3.2.1)
+  endif()
+  if(XERCES_PATCH_FILE)
+    set(patch_command patch -p1 < ${XERCES_PATCH_FILE})
+  endif()
+  message(STATUS "Building xerces-c-${XERCES_VERSION}")
+  build_curl()
+  find_package(ICU COMPONENTS uc)
+  ExternalProject_Add(xerces
+    URL https://www.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
+    DOWNLOAD_NO_PROGRESS 1
+    DEPENDS curl
+    PATCH_COMMAND ${patch_command}
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${curl_install_dir}
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c-3.2.a
+    )
+  sonar_external_project_dirs(xerces install_dir)
+  add_library(xerces::lib STATIC IMPORTED)
+  add_dependencies(xerces::lib xerces)
+  set_property(TARGET xerces::lib
+    PROPERTY IMPORTED_LOCATION ${xerces_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c-3.2.a
+    )
+  target_include_external_directory(xerces::lib xerces install_dir include)
+  set_property(TARGET xerces::lib APPEND PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      ICU::uc
+      curl::lib
+      openssl::ssl
+      openssl::crypto
     )
 endfunction()
