@@ -35,15 +35,28 @@ function(build_openssl)
     set(OPENSSL_VERSION 1.0.2o)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
+  if(CMAKE_BUILD_TYPE STREQUAL Debug)
+    set(build_flags
+      -d
+      no-asm
+      -g3
+      -O0
+      -fno-omit-frame-pointer
+      -fno-inline-functions
+      # The following helps avoid valgrind errors, but might affect correctness (I don't know)
+      # -DPURIFY
+      )
+  endif()
   ExternalProject_Add(openssl
     URL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND ./config
+      ${build_flags}
+      --openssldir=<INSTALL_DIR>
       --prefix=<INSTALL_DIR>
       -fPIC
       no-shared
-      zlib
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libssl.a
       <INSTALL_DIR>/lib/libcrypto.a
@@ -88,7 +101,7 @@ function(build_mongoc)
       --disable-examples
       --disable-man-pages
       --disable-tests
-      #--with-gnu-ld
+      $<$<CONFIG:Debug>:--enable-debug>
       --prefix <INSTALL_DIR>
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libmongoc-1.0.a
@@ -561,7 +574,7 @@ function(build_google_api)
     BUILD_BYPRODUCTS ${byproducts}
     )
   sonar_external_project_dirs(google_api binary_dir source_dir)
-  # google-api::lib is the core target that depends on all the core libs
+  # google-api-core is the core target that depends on all the core libs
   add_library(google-api-core INTERFACE)
   add_dependencies(google-api-core google_api)
   target_include_external_directory(google-api-core google_api source_dir src)
@@ -685,7 +698,7 @@ function(build_stxxl)
       -DBUILD_SHARED_LIBS=OFF
       -DBUILD_STATIC_LIBS=ON
       -DCMAKE_BUILD_TYPE=Release
-      -DCMAKE_INSTALL_MESSAGES=LAZY
+      -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libstxxl.a
     )
@@ -734,7 +747,7 @@ function(build_hdfs3)
     PATCH_COMMAND ${patch_command}
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_INSTALL_MESSAGES=LAZY
+      -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DBUILD_SHARED_LIBS=0
       -DBUILD_STATIC_LIBS=1
@@ -844,18 +857,18 @@ function(build_xerces)
     set(patch_command patch -p1 < ${XERCES_PATCH_FILE})
   endif()
   message(STATUS "Building xerces-c-${XERCES_VERSION}")
-  build_curl()
   find_package(ICU COMPONENTS uc)
   ExternalProject_Add(xerces
     URL https://www.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS curl
     PATCH_COMMAND ${patch_command}
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${curl_install_dir}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -Dnetwork:BOOL=OFF
+      -Dtranscoder=icu
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c-3.2.a
     )
   sonar_external_project_dirs(xerces install_dir)
@@ -868,8 +881,5 @@ function(build_xerces)
   set_property(TARGET xerces::lib APPEND PROPERTY
     INTERFACE_LINK_LIBRARIES
       ICU::uc
-      curl::lib
-      openssl::ssl
-      openssl::crypto
     )
 endfunction()
