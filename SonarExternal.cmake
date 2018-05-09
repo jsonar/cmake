@@ -638,11 +638,16 @@ function(build_s2)
 endfunction()
 
 function(build_bid)
+  cmake_parse_arguments(BID "" "PATCH_FILE" "" ${ARGN})
+  if(BID_PATCH_FILE)
+    set(patch_command patch -p1 < ${BID_PATCH_FILE})
+  endif()
   ExternalProject_Add(bid
     URL https://software.intel.com/sites/default/files/m/d/4/1/d/8/IntelRDFPMathLib20U1.tar.gz
     URL_MD5 c9384d2e03a13b35d15e54cf20492cf5
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND ""
+    PATCH_COMMAND ${patch_command}
     BUILD_COMMAND make
       -C <SOURCE_DIR>/LIBRARY
       CC=gcc
@@ -708,11 +713,13 @@ function(build_stxxl)
   set_property(TARGET stxxl::lib
     PROPERTY IMPORTED_LOCATION ${stxxl_install_dir}/lib/libstxxl.a)
   target_include_external_directory(stxxl::lib stxxl install_dir include)
-  find_package(OpenMP REQUIRED)
-  set_property(TARGET stxxl::lib PROPERTY
-    INTERFACE_LINK_LIBRARIES
-      ${OpenMP_CXX_LIBRARIES}
-    )
+  find_package(OpenMP)
+  if(OpenMP_CXX_FOUND)
+    set_property(TARGET stxxl::lib PROPERTY
+      INTERFACE_LINK_LIBRARIES
+        ${OpenMP_CXX_LIBRARIES}
+      )
+  endif()
 endfunction()
 
 function(build_sparsehash)
