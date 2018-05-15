@@ -674,6 +674,7 @@ function(build_jemalloc)
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --prefix <INSTALL_DIR>
+      --enable-munmap
     INSTALL_COMMAND make
       install_bin
       install_lib
