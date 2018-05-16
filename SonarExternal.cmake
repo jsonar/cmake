@@ -168,7 +168,7 @@ function(build_curl)
   build_openssl()
   cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
   if(NOT CURL_VERSION)
-    set(CURL_VERSION 7.59.0)
+    set(CURL_VERSION 7.60.0)
   endif()
   message(STATUS "Building curl-${CURL_VERSION}")
   ExternalProject_Add(curl
@@ -890,4 +890,39 @@ function(build_xerces)
     INTERFACE_LINK_LIBRARIES
       ICU::uc
     )
+endfunction()
+
+function(build_jwt_cpp)
+  cmake_parse_arguments(JWT_CPP "" "GIT_HASH" "" ${ARGN})
+  if (NOT JWT_CPP_GIT_HASH)
+    set(JWT_CPP_GIT_HASH 4f09c53)
+  endif()
+  message(STATUS "Building jwt-cpp-${JWT_CPP_GIT_HASH}")
+  build_openssl()
+  ExternalProject_Add(jwt_cpp
+    URL https://github.com/pokowaka/jwt-cpp/archive/${JWT_CPP_GIT_HASH}.zip
+    DOWNLOAD_NO_PROGRESS 1
+    DEPENDS openssl
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DENABLE_TESTS=OFF
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libjwt.a
+    )
+  sonar_external_project_dirs(jwt_cpp install_dir)
+  add_library(jwt-cpp::lib STATIC IMPORTED)
+  add_dependencies(jwt-cpp::lib jwt_cpp)
+  set(libname jwt)
+  if(CMAKE_BUILD_TYPE STREQUAL Debug)
+    string(APPEND libname d)
+  endif()
+  set_target_properties(jwt-cpp::lib PROPERTIES
+    IMPORTED_LOCATION ${jwt_cpp_install_dir}/lib/lib${libname}.a
+    INTERFACE_LINK_LIBRARIES "openssl::ssl;openssl::crypto"
+    )
+  target_include_external_directory(jwt-cpp::lib jwt_cpp install_dir include)
 endfunction()
