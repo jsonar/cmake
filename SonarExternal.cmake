@@ -159,6 +159,49 @@ function(build_mongoc)
     )
 endfunction()
 
+function(build_libssh2)
+  if(TARGET libssh2)
+    sonar_external_project_dirs(libssh2 install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(LIBSSH2 "" "VERSION" "" ${ARGN})
+  if(NOT LIBSSH2_VERSION)
+    set(LIBSSH2_VERSION 1.8.0)
+  endif()
+  build_openssl()
+  message(STATUS "Building libssh2-${LIBSSH2_VERSION}")
+  ExternalProject_Add(libssh2
+    URL https://www.libssh2.org/download/libssh2-${LIBSSH2_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    DEPENDS openssl
+    CMAKE_ARGS
+      -DBUILD_EXAMPLES=OFF
+      -DBUILD_SHARED_LIBS=OFF
+      -DBUILD_TESTING=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+      -DCRYPTO_BACKEND=OpenSSL
+      -DENABLE_ZLIB_COMPRESSION=ON
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libssh2.a
+    )
+  add_library(libssh2::lib STATIC IMPORTED)
+  add_dependencies(libssh2::lib libssh2)
+  sonar_external_project_dirs(libssh2 install_dir)
+  set_target_properties(libssh2::lib PROPERTIES
+    IMPORTED_LOCATION ${libssh2_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libssh2.a
+    )
+  target_include_external_directory(libssh2::lib libssh2 install_dir include)
+  set_property(TARGET libssh2::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      openssl::ssl
+      openssl::crypto
+      ZLIB::ZLIB
+    )
+endfunction()
+
 function(build_curl)
   if(TARGET curl)
     sonar_external_project_dirs(curl install_dir)
@@ -166,6 +209,7 @@ function(build_curl)
   endif()
   find_package(ZLIB REQUIRED)
   build_openssl()
+  build_libssh2()
   cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
   if(NOT CURL_VERSION)
     set(CURL_VERSION 7.60.0)
@@ -174,7 +218,7 @@ function(build_curl)
   ExternalProject_Add(curl
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS openssl
+    DEPENDS openssl libssh2
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --disable-ldap
       --disable-ldaps
@@ -189,7 +233,7 @@ function(build_curl)
       --without-libmetalink
       --without-libpsl
       --without-librtmp
-      --without-libssh2
+      --with-libssh2=${libssh2_install_dir}
       --without-nghttp2
       --without-nss
       --with-ssl=${openssl_install_dir}
@@ -203,6 +247,7 @@ function(build_curl)
   target_include_external_directory(curl::lib curl install_dir include)
   set_property(TARGET curl::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
+      libssh2::lib
       openssl::ssl
       openssl::crypto
       ZLIB::ZLIB
@@ -551,6 +596,7 @@ function(build_google_api)
   cmake_parse_arguments(GOOGLE_API "" "SOURCE_DIR" "COMPONENTS" ${ARGN})
   message(STATUS "Building google-api from ${GOOGLE_API_SOURCE_DIR} [${GOOGLE_API_COMPONENTS}]")
   build_openssl()
+  build_libssh2()
   build_curl()
   build_jsoncpp()
   build_glog()
@@ -570,7 +616,7 @@ function(build_google_api)
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}$<SEMICOLON>${openssl_install_dir}
+      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}$<SEMICOLON>${openssl_install_dir}$<SEMICOLON>${libssh2_install_dir}
     BUILD_BYPRODUCTS ${byproducts}
     )
   sonar_external_project_dirs(google_api binary_dir source_dir)
@@ -925,4 +971,40 @@ function(build_jwt_cpp)
     INTERFACE_LINK_LIBRARIES "openssl::ssl;openssl::crypto"
     )
   target_include_external_directory(jwt-cpp::lib jwt_cpp install_dir include)
+endfunction()
+
+function(build_tbb)
+  cmake_parse_arguments(TBB "" "VERSION" "" ${ARGN})
+  if (NOT TBB_VERSION)
+    set(TBB_VERSION 2018_U3)
+  endif()
+  message(STATUS "Building tbb-${TBB_VERSION}")
+  ExternalProject_Add(tbb
+    URL https://github.com/01org/tbb/archive/${TBB_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND make
+      -C <SOURCE_DIR>
+      CC=gcc
+      CXX=g++
+      extra_inc=big_iron.inc
+      tbb_build_prefix=out
+      tbb
+    INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS
+      <BINARY_DIR>/build/out_release/libtbb.a
+      <BINARY_DIR>/build/out_debug/libtbb.a
+    )
+  sonar_external_project_dirs(tbb source_dir)
+  add_library(tbb::lib STATIC IMPORTED)
+  add_dependencies(tbb::lib tbb)
+  if(CMAKE_BUILD_TYPE STREQUAL Debug)
+    set(suffix debug)
+  else()
+    set(suffix release)
+  endif()
+  set_target_properties(tbb::lib PROPERTIES
+    IMPORTED_LOCATION ${tbb_source_dir}/build/out_${suffix}/libtbb.a
+    )
+  target_include_external_directory(tbb::lib tbb source_dir include)
 endfunction()
