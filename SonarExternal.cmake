@@ -1,6 +1,9 @@
 include(ExternalProject)
 include(GNUInstallDirs)
 string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
+if(EXTERNAL_INSTALL_LIBDIR STREQUAL lib64)
+  set(LIBSUFF 64)
+endif()
 
 macro(sonar_external_project_dirs project)
   # set variables project_<dir> for each of the requested properties
@@ -219,7 +222,7 @@ function(build_curl)
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     DEPENDS openssl libssh2
-    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+    CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
       --disable-ldap
       --disable-ldaps
       --disable-manual
