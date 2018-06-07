@@ -1011,3 +1011,46 @@ function(build_tbb)
     )
   target_include_external_directory(tbb::lib tbb source_dir include)
 endfunction()
+
+
+function(build_yaml)
+  # Usage: build_yaml(VERSION <version>)
+  #
+  # Generates yaml::lib target to link with
+  if(TARGET yaml)
+    sonar_external_project_dirs(jsoncpp install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(YAML "" "VERSION;PATCH_FILE" "" ${ARGN})
+  if(NOT YAML_VERSION)
+    set(YAML_VERSION 0.1.7)
+  endif()
+  message(STATUS "Building yaml-${YAML_VERSION}")
+  set(yaml_lib ${EXTERNAL_INSTALL_LIBDIR}/libyaml.a)
+  if(YAML_PATCH_FILE)
+    set(patch_command #git checkout . COMMAND
+      patch -p1 < ${YAML_PATCH_FILE})
+  endif()
+  ExternalProject_Add(yaml
+    URL https://github.com/yaml/libyaml/archive/${YAML_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    PATCH_COMMAND ${patch_command}
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/${yaml_lib}
+    INSTALL_COMMAND ""
+  )
+# ExternalProject_Add_StepTargets(yaml update)
+  sonar_external_project_dirs(yaml install_dir)
+  add_library(yaml::lib STATIC IMPORTED)
+  add_dependencies(yaml::lib yaml)
+  sonar_external_project_dirs(yaml source_dir)
+  set_property(TARGET yaml::lib
+    PROPERTY IMPORTED_LOCATION ${yaml_source_dir}/libbid.a)
+  target_include_external_directory(yaml::lib yaml source_dir include)
+endfunction()
+
