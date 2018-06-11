@@ -60,7 +60,7 @@ else()
   endforeach()
   string(REPLACE ";" "\\\\n" package_file_names_lines "${package_file_names}")
   add_custom_target(package_file_name
-    COMMAND echo -e "${package_file_names_lines}")
+    COMMAND printf "${package_file_names_lines}")
 endif()
 
 
