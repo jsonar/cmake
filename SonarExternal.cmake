@@ -1012,7 +1012,6 @@ function(build_tbb)
   target_include_external_directory(tbb::lib tbb source_dir include)
 endfunction()
 
-
 function(build_yaml)
   # Usage: build_yaml(VERSION <version>)
   #
@@ -1038,3 +1037,21 @@ function(build_yaml)
   target_include_external_directory(yaml::lib yaml source_dir include)
 endfunction()
 
+function(build_catch2)
+  cmake_parse_arguments(CATCH2 "" VERSION "" ${ARGN})
+  message(STATUS "Using headers from catch2-${CATCH2_VERSION}")
+  if(NOT CATCH2_VERSION)
+    set(CATCH2_VERSION 2.2.3)
+  endif()
+  ExternalProject_Add(catch2
+    URL https://github.com/catchorg/Catch2/archive/v${CATCH2_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    )
+  add_library(catch2::header-only INTERFACE IMPORTED)
+  add_dependencies(catch2::header-only catch2)
+  sonar_external_project_dirs(catch2 source_dir)
+  target_include_external_directory(catch2::header-only catch2 source_dir single_include)
+endfunction()

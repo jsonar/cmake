@@ -48,20 +48,21 @@ if(NOT SONAR_COMPONENTS)
   add_custom_target(package_file_name
     COMMAND echo ${CPACK_PACKAGE_FILE_NAME}.${CPACK_PACKAGE_EXT})
 else()
-  add_custom_target(package_file_name)
   foreach(component ${SONAR_COMPONENTS})
     if(CPACK_${component}_FILE_NAME)
       if (CPACK_GENERATOR STREQUAL "DEB")
-        set(CPACK_DEBIAN_${component}_FILE_NAME ${CPACK_${component}_FILE_NAME}.${CPACK_PACKAGE_EXT}) 
+        set(CPACK_DEBIAN_${component}_FILE_NAME ${CPACK_${component}_FILE_NAME}.${CPACK_PACKAGE_EXT})
       else()
-        set(CPACK_${CPACK_GENERATOR}_${component}_FILE_NAME ${CPACK_${component}_FILE_NAME}.${CPACK_PACKAGE_EXT}) 
+        set(CPACK_${CPACK_GENERATOR}_${component}_FILE_NAME ${CPACK_${component}_FILE_NAME}.${CPACK_PACKAGE_EXT})
       endif()
-      add_custom_target(package_file_name-${component}
-        COMMAND echo ${CPACK_${component}_FILE_NAME}.${CPACK_PACKAGE_EXT})
+      list(APPEND package_file_names ${CPACK_${component}_FILE_NAME}.${CPACK_PACKAGE_EXT})
     endif()
-    add_dependencies(package_file_name package_file_name-${component})
   endforeach()
+  string(REPLACE ";" "\\\\n" package_file_names_lines "${package_file_names}")
+  add_custom_target(package_file_name
+    COMMAND printf "${package_file_names_lines}")
 endif()
+
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Do not strip debug symbols from the package.
