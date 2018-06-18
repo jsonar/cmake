@@ -117,14 +117,17 @@ function(sonar_deps _out deps)
   set(${_out} ${_deps} PARENT_SCOPE)
 endfunction()
 
-function(sonar_python3_package_dir _out)
-  sonar_detect_distribution(os)
-  if (os MATCHES "debian")
-    set(python_path lib/python3/dist-packages)
+function(sonar_python_version output)
+  sonar_set_version(version)
+  set(regex "([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)-(.*)")
+  if(version MATCHES ${regex})
+    # we have a long version, that is incompatible with python versioning
+    # (PEP-400). Fix it.
+    string(REGEX REPLACE "${regex}" "\\1.\\2+\\3" python_version ${version})
   else()
-    set(python_path lib/python3.4/site-packages)
+    set(python_version ${version})
   endif()
-  set(${_out} ${python_path} PARENT_SCOPE)
+  set(${output} ${python_version} PARENT_SCOPE)
 endfunction()
 
 function(sonar_vendor)
