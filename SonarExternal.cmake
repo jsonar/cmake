@@ -60,6 +60,7 @@ function(build_openssl)
       --prefix=<INSTALL_DIR>
       -fPIC
       no-shared
+      no-dso
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libssl.a
       <INSTALL_DIR>/lib/libcrypto.a
@@ -89,39 +90,76 @@ function(build_mongoc)
   # builds mongoc as an external project. Provides
   # targets mongo::lib and bson::lib
   cmake_parse_arguments(MONGOC "" "VERSION" "" ${ARGN})
+  if(NOT MONGOC_VERSION)
+    set(MONGOC_VERSION 1.10.3)
+  endif()
   message(STATUS "Building mongo-c-driver-${MONGOC_VERSION}")
   build_openssl()
-  ExternalProject_Add(mongoc
-    URL https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_VERSION}/mongo-c-driver-${MONGOC_VERSION}.tar.gz
-    DOWNLOAD_NO_PROGRESS 1
-    DEPENDS openssl
-    CONFIGURE_COMMAND PKG_CONFIG_PATH=${openssl_install_dir}/lib/pkgconfig <SOURCE_DIR>/configure
-      --disable-automatic-init-and-cleanup
-      --with-libbson=bundled
-      --enable-static
-      --disable-shared
-      --disable-sasl
-      --disable-examples
-      --disable-man-pages
-      --disable-tests
-      $<$<CONFIG:Debug>:--enable-debug>
-      --prefix <INSTALL_DIR>
-    BUILD_BYPRODUCTS
-      <INSTALL_DIR>/lib/libmongoc-1.0.a
-      <INSTALL_DIR>/lib/libbson-1.0.a
+  set(mongoc_url
+    https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_VERSION}/mongo-c-driver-${MONGOC_VERSION}.tar.gz)
+  set(mongoc_build_byproducts
+        <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libmongoc-static-1.0.a
+        <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libbson-static-1.0.a)
+  if(MONGOC_VERSION VERSION_GREATER_EQUAL 1.10.0)
+    set(libmongoc ${EXTERNAL_INSTALL_LIBDIR}/libmongoc-static-1.0.a)
+    set(libbson ${EXTERNAL_INSTALL_LIBDIR}/libbson-static-1.0.a)
+    # build using cmake
+    ExternalProject_Add(mongoc
+      URL ${mongoc_url}
+      DOWNLOAD_NO_PROGRESS 1
+      DEPENDS openssl
+      CMAKE_ARGS
+        -DBUILD_SHARED_LIBS=OFF
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_INSTALL_MESSAGE=LAZY
+        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+        -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF
+        -DENABLE_BSON=ON
+        -DENABLE_EXAMPLES=OFF
+        -DENABLE_HTML_DOCS=OFF
+        -DENABLE_MAN_PAGES=OFF
+        -DENABLE_MONGOC=ON
+        -DENABLE_STATIC=ON
+        -DENABLE_TESTS=OFF
+        $<$<CONFIG:Debug>:-DENABLE_TRACING=ON>
+      BUILD_BYPRODUCTS ${libmongoc} ${libbson}
       )
+  else()
+    set(libmongoc ${EXTERNAL_INSTALL_LIBDIR}/libmongoc-1.0.a)
+    set(libbson ${EXTERNAL_INSTALL_LIBDIR}/libbson-1.0.a)
+    # build using autotools
+    ExternalProject_Add(mongoc
+      URL ${mongoc_url}
+      DOWNLOAD_NO_PROGRESS 1
+      DEPENDS openssl
+      CONFIGURE_COMMAND PKG_CONFIG_PATH=${openssl_install_dir}/lib/pkgconfig <SOURCE_DIR>/configure
+        --disable-automatic-init-and-cleanup
+        --with-libbson=bundled
+        --enable-static
+        --disable-shared
+        --disable-sasl
+        --disable-examples
+        --disable-man-pages
+        --disable-tests
+        $<$<CONFIG:Debug>:--enable-debug>
+        --prefix <INSTALL_DIR>
+      BUILD_BYPRODUCTS ${libmongoc} ${libbson}
+      )
+  endif()
   sonar_external_project_dirs(mongoc binary_dir source_dir install_dir)
   foreach(driver mongo bson)
     set(lib ${driver}::lib)
     set(header ${driver}::header-only)
     if(driver STREQUAL mongo)
       # annoying inconsistency in library naming...
-      set(libname libmongoc-1.0)
+      set(archive ${libmongoc})
+      set(include include/libmongoc-1.0)
     else()
-      set(libname libbson-1.0)
+      set(archive ${libbson})
+      set(include include/libbson-1.0)
     endif()
-    set(archive lib/${libname}.a)
-    set(include include/${libname})
     add_library(${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(${lib} mongoc)
     set_property(TARGET ${lib} PROPERTY
@@ -153,6 +191,15 @@ function(build_mongoc)
         resolv
         z
         snappy
+      APPEND
+      )
+  endif()
+  if(MONGOC_VERSION VERSION_GREATER_EQUAL 1.10.0)
+    find_library(sasl NAMES sasl sasl2)
+    set_property(TARGET mongo::lib
+      PROPERTY
+      INTERFACE_LINK_LIBRARIES
+        ${sasl}
       APPEND
       )
   endif()
@@ -415,23 +462,24 @@ function(build_mongocxx)
   message(STATUS "Building mongocxx-${MONGOCXX_VERSION}")
   if(MONGOCXX_MONGOC_VERSION)
     build_mongoc(VERSION ${MONGOCXX_MONGOC_VERSION})
+  else()
+    build_mongoc()
   endif()
   if(MONGOCXX_PATCH_FILE)
-    set(patch_command git checkout .
-      COMMAND patch -p1 < ${MONGOCXX_PATCH_FILE})
+    set(patch_command patch -p1 < ${MONGOCXX_PATCH_FILE})
   endif()
-  sonar_external_project_dirs(mongoc install_dir)
+  build_openssl()
   ExternalProject_Add(mongocxx
-    GIT_REPOSITORY https://github.com/mongodb/mongo-cxx-driver.git
-    GIT_TAG r${MONGOCXX_VERSION}
-    DEPENDS mongoc
+    URL https://github.com/mongodb/mongo-cxx-driver/archive/r${MONGOCXX_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    DEPENDS mongoc openssl
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_MESSAGE=LAZY
-      -DCMAKE_PREFIX_PATH=${mongoc_install_dir}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
+      -DCMAKE_PREFIX_PATH=${mongoc_install_dir}$<SEMICOLON>${openssl_install_dir}
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/usr/local/lib/libmongocxx.a
       <INSTALL_DIR>/usr/local/lib/libbsoncxx.a
@@ -443,8 +491,8 @@ function(build_mongocxx)
   # generate mongocxx::lib and bsoncxx::lib targets
   foreach(driver mongo bson)
     set(libcxx ${driver}cxx::lib)
-    set(libcxx_file usr/local/lib/lib${driver}cxx.a)
-    set(libcxx_include usr/local/include/${driver}cxx/v_noabi)
+    set(libcxx_file ${EXTERNAL_INSTALL_LIBDIR}/lib${driver}cxx-static.a)
+    set(libcxx_include include/${driver}cxx/v_noabi)
 
     add_library(${libcxx} STATIC IMPORTED)
     add_dependencies(${libcxx} mongocxx)
