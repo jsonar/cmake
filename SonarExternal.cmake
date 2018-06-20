@@ -121,6 +121,7 @@ function(build_mongoc)
         -DENABLE_HTML_DOCS=OFF
         -DENABLE_MAN_PAGES=OFF
         -DENABLE_MONGOC=ON
+        -DENABLE_SASL=OFF
         -DENABLE_STATIC=ON
         -DENABLE_TESTS=OFF
         $<$<CONFIG:Debug>:-DENABLE_TRACING=ON>
@@ -195,17 +196,6 @@ function(build_mongoc)
         snappy
       APPEND
       )
-  endif()
-  if(MONGOC_VERSION VERSION_GREATER_EQUAL 1.10.0)
-    find_library(sasl NAMES sasl sasl2)
-    if(${sasl})
-      set_property(TARGET mongo::lib
-        PROPERTY
-        INTERFACE_LINK_LIBRARIES
-          ${sasl}
-        APPEND
-        )
-    endif()
   endif()
   set_property(TARGET mongo::header-only
     PROPERTY INTERFACE_LINK_LIBRARIES
