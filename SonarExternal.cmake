@@ -124,11 +124,12 @@ function(build_mongoc)
         -DENABLE_STATIC=ON
         -DENABLE_TESTS=OFF
         $<$<CONFIG:Debug>:-DENABLE_TRACING=ON>
-      BUILD_BYPRODUCTS ${libmongoc} ${libbson}
+      BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
+                       <INSTALL_DIR>/${libbson}
       )
   else()
-    set(libmongoc ${EXTERNAL_INSTALL_LIBDIR}/libmongoc-1.0.a)
-    set(libbson ${EXTERNAL_INSTALL_LIBDIR}/libbson-1.0.a)
+    set(libmongoc lib/libmongoc-1.0.a)
+    set(libbson lib/libbson-1.0.a)
     # build using autotools
     ExternalProject_Add(mongoc
       URL ${mongoc_url}
@@ -145,10 +146,11 @@ function(build_mongoc)
         --disable-tests
         $<$<CONFIG:Debug>:--enable-debug>
         --prefix <INSTALL_DIR>
-      BUILD_BYPRODUCTS ${libmongoc} ${libbson}
+      BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
+                       <INSTALL_DIR>/${libbson}
       )
   endif()
-  sonar_external_project_dirs(mongoc binary_dir source_dir install_dir)
+  sonar_external_project_dirs(mongoc install_dir)
   foreach(driver mongo bson)
     set(lib ${driver}::lib)
     set(header ${driver}::header-only)
@@ -481,8 +483,8 @@ function(build_mongocxx)
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       -DCMAKE_PREFIX_PATH=${mongoc_install_dir}$<SEMICOLON>${openssl_install_dir}
     BUILD_BYPRODUCTS
-      <INSTALL_DIR>/usr/local/lib/libmongocxx.a
-      <INSTALL_DIR>/usr/local/lib/libbsoncxx.a
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libmongocxx-static.a
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libbsoncxx-static.a
     PATCH_COMMAND ${patch_command}
   )
   ExternalProject_Add_StepTargets(mongocxx update)
