@@ -198,12 +198,14 @@ function(build_mongoc)
   endif()
   if(MONGOC_VERSION VERSION_GREATER_EQUAL 1.10.0)
     find_library(sasl NAMES sasl sasl2)
-    set_property(TARGET mongo::lib
-      PROPERTY
-      INTERFACE_LINK_LIBRARIES
-        ${sasl}
-      APPEND
-      )
+    if(${sasl})
+      set_property(TARGET mongo::lib
+        PROPERTY
+        INTERFACE_LINK_LIBRARIES
+          ${sasl}
+        APPEND
+        )
+    endif()
   endif()
   set_property(TARGET mongo::header-only
     PROPERTY INTERFACE_LINK_LIBRARIES
