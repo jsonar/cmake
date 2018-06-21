@@ -130,6 +130,35 @@ function(sonar_python_version output)
   set(${output} ${python_version} PARENT_SCOPE)
 endfunction()
 
+
+macro(add_python_target target source_dir)
+  if(EXISTS ${source_dir}/setup.py.in)
+    configure_file(${source_dir}/setup.py.in setup.py)
+    set(working_directory ${CMAKE_CURRENT_BINARY_DIR})
+  else()
+    set(working_directory ${source_dir})
+  endif()
+  set(timestamp ${CMAKE_CURRENT_BINARY_DIR}/timestamp)
+  add_custom_command(OUTPUT ${timestamp}
+    COMMAND ${PYTHON_EXECUTABLE} setup.py build
+    COMMAND ${CMAKE_COMMAND} -E touch ${timestamp}
+    WORKING_DIRECTORY ${working_directory}
+    )
+  add_custom_target(${target} ALL
+    DEPENDS ${timestamp}
+    )
+  install(CODE "
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE}
+        setup.py install
+          --force
+          --root=\$ENV{DESTDIR}
+          --prefix=${CMAKE_INSTALL_PREFIX}
+      WORKING_DIRECTORY ${working_directory}
+      )"
+    )
+endmacro()
+
 function(sonar_vendor)
   cmake_parse_arguments(VENDOR "" "OUTPUT_VARIABLE" "" ${ARGN})
   set(${VENDOR_OUTPUT_VARIABLE} jsonar PARENT_SCOPE)
