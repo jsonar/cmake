@@ -230,10 +230,12 @@ function(add_supported_compiler_options)
     set(quiet TRUE)
   endif()
   foreach(option ${COMPILER_OPTION_OPTIONS})
-    set(CMAKE_REQUIRED_LIBRARIES ${option}) # -fsanizite=X is needed in linkage as well
+    # compilers don't always warn for unsupported negative options. Make it positive instead
+    string(REGEX REPLACE "^(-.)no-(.+$)" "\\1\\2" pos_option ${option})
+    set(CMAKE_REQUIRED_LIBRARIES ${pos_option}) # -fsanizite=X is needed in linkage as well
     set(CMAKE_REQUIRED_QUIET ${quiet})
     string(REPLACE - _ option_name ${option})
-    check_cxx_compiler_flag("${option}" has_flag_${option_name})
+    check_cxx_compiler_flag("${pos_option}" has_flag_${option_name})
     if(has_flag_${option_name})
       message(STATUS "Adding compiler option ${option}")
       target_compile_options(${COMPILER_OPTION_TARGET} ${COMPILER_OPTION_SCOPE} ${option})
