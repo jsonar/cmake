@@ -1028,8 +1028,8 @@ function(build_tbb)
     URL https://github.com/01org/tbb/archive/${TBB_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
     BUILD_COMMAND make
-      -C <SOURCE_DIR>
       CC=gcc
       CXX=g++
       extra_inc=big_iron.inc
@@ -1037,19 +1037,13 @@ function(build_tbb)
       tbb
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS
-      <BINARY_DIR>/build/out_release/libtbb.a
-      <BINARY_DIR>/build/out_debug/libtbb.a
+      <SOURCE_DIR>/build/out_release/libtbb.a
     )
   sonar_external_project_dirs(tbb source_dir)
   add_library(tbb::lib STATIC IMPORTED)
   add_dependencies(tbb::lib tbb)
-  if(CMAKE_BUILD_TYPE STREQUAL Debug)
-    set(suffix debug)
-  else()
-    set(suffix release)
-  endif()
   set_target_properties(tbb::lib PROPERTIES
-    IMPORTED_LOCATION ${tbb_source_dir}/build/out_${suffix}/libtbb.a
+    IMPORTED_LOCATION ${tbb_source_dir}/build/out_release/libtbb.a
     )
   target_include_external_directory(tbb::lib tbb source_dir include)
 endfunction()
