@@ -991,6 +991,10 @@ function(build_jwt_cpp)
   endif()
   message(STATUS "Building jwt-cpp-${JWT_CPP_GIT_HASH}")
   build_openssl()
+  set(libname jwt)
+  if(CMAKE_BUILD_TYPE STREQUAL Debug)
+    string(APPEND libname d)
+  endif()
   ExternalProject_Add(jwt_cpp
     URL https://github.com/pokowaka/jwt-cpp/archive/${JWT_CPP_GIT_HASH}.zip
     DOWNLOAD_NO_PROGRESS 1
@@ -1003,15 +1007,11 @@ function(build_jwt_cpp)
       -DCMAKE_PREFIX_PATH=${openssl_install_dir}
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       -DENABLE_TESTS=OFF
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libjwt.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/lib${libname}.a
     )
   sonar_external_project_dirs(jwt_cpp install_dir)
   add_library(jwt-cpp::lib STATIC IMPORTED)
   add_dependencies(jwt-cpp::lib jwt_cpp)
-  set(libname jwt)
-  if(CMAKE_BUILD_TYPE STREQUAL Debug)
-    string(APPEND libname d)
-  endif()
   set_target_properties(jwt-cpp::lib PROPERTIES
     IMPORTED_LOCATION ${jwt_cpp_install_dir}/lib/lib${libname}.a
     INTERFACE_LINK_LIBRARIES "openssl::ssl;openssl::crypto"
