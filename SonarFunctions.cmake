@@ -249,3 +249,45 @@ function(add_supported_compiler_options)
     endif()
   endforeach()
 endfunction()
+
+function(build_docs product)
+  # Usage: build-docs(<name> PRODUCT <product> VENDOR <vendor>)
+  cmake_parse_arguments(PARSE_ARGV 1 DOCS "" "PRODUCT;VENDOR" "")
+
+  find_package(Sphinx)
+  if(SPHINX_EXECUTABLE)
+    message(STATUS "Building docs for ${product}: ${DOCS_VENDOR} ${DOCS_PRODUCT}")
+  else()
+    message(WARNING "Sphinx executable not found - not building docs for ${product}")
+    return()
+  endif()
+
+  sonar_cpack_version(DOCS_VERSION_MAJOR DOCS_VERSION_MINOR DOCS_VERSION_PATCH)
+  if(NOT DEFINED SPHINX_THEME)
+    set(SPHINX_THEME nature)
+  endif()
+
+  execute_process(COMMAND date +%Y
+    OUTPUT_VARIABLE year
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+  add_custom_target(docs-${product})
+  add_dependencies(docs docs-${product})
+  set(index ${product}-index)
+  set(title "${DOCS_VENDOR} ${DOCS_PRODUCT}")
+  set(Product ${DOCS_PRODUCT})
+  configure_file(conf.py.in ${product}/conf.py)
+  foreach(format html pdf)
+    add_custom_target(docs-${product}-${format}
+      COMMAND ${SPHINX_EXECUTABLE}
+        -q
+        -b ${format}
+        -c ${CMAKE_CURRENT_BINARY_DIR}/${product}
+        -d ${product}/_doctrees
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}/${product}/${format}
+      COMMENT "Building docs-${product} ${format} documentation with Sphinx")
+    add_dependencies(docs-${product} docs-${product}-${format})
+  endforeach()
+endfunction()
+
