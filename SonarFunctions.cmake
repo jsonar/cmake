@@ -252,7 +252,7 @@ endfunction()
 
 function(build_docs product)
   # Usage: build-docs(<name> PRODUCT <product> VENDOR <vendor>)
-  cmake_parse_arguments(PARSE_ARGV 1 DOCS "" "PRODUCT;VENDOR" "")
+  cmake_parse_arguments(PARSE_ARGV 1 DOCS "" "PRODUCT;VENDOR;TARGET" "")
 
   find_package(Sphinx)
   if(SPHINX_EXECUTABLE)
@@ -271,8 +271,11 @@ function(build_docs product)
     OUTPUT_VARIABLE year
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+  if(NOT DOCS_TARGET)
+    set(DOCS_TARGET docs)
+  endif()
   add_custom_target(docs-${product})
-  add_dependencies(docs docs-${product})
+  add_dependencies(${DOCS_TARGET} docs-${product})
   set(index ${product}-index)
   set(title "${DOCS_VENDOR} ${DOCS_PRODUCT}")
   set(Product ${DOCS_PRODUCT})
