@@ -915,38 +915,56 @@ endfunction()
 
 function(build_geos)
   cmake_parse_arguments(GEOS "" "VERSION" "" ${ARGN})
-  message(STATUS "Building geos-${GEOS_VERSION}")
-  ExternalProject_Add(geos
-    URL https://github.com/OSGeo/geos/archive/${GEOS_VERSION}.tar.gz
-    DOWNLOAD_NO_PROGRESS 1
-    CMAKE_ARGS
-      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DGEOS_BUILD_STATIC=1
-    BUILD_BYPRODUCTS <INSTALL_DIR>/libgeos.a
-    )
+  if (NOT TARGET geos)
+    message(STATUS "Building geos-${GEOS_VERSION}")
+    ExternalProject_Add(geos
+      URL https://github.com/OSGeo/geos/archive/${GEOS_VERSION}.tar.gz
+      DOWNLOAD_NO_PROGRESS 1
+      CMAKE_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        -DGEOS_BUILD_STATIC=1
+      BUILD_BYPRODUCTS <INSTALL_DIR>/libgeos.a
+      )
+  endif()
   sonar_external_project_dirs(geos install_dir)
 endfunction()
 
 function(build_spatialite)
-  cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
-  message(STATUS "Building spatialite-${SPATIALITE_VERSION}")
+  if(NOT TARGET sqlite3)
+    message(FATAL_ERROR "Cannot build spatialite without building sqlite3 first")
+  endif()
   build_geos(VERSION 3.6.2)
+  sonar_external_project_dirs(sqlite3 install_dir)
+  cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
+  if(NOT SPATIALITE_VERSION)
+    set(SPATIALITE_VERSION 4.3.0a)
+  endif()
+  message(STATUS "Building spatialite-${SPATIALITE_VERSION}")
   ExternalProject_Add(spatialite
     URL https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
-      --disable-examples
+      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>
+      LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>
+      LIBS=-ldl\ -lpthread
+      --prefix <INSTALL_DIR>
       --disable-freexl
-      --disable-gcp
       --disable-libxml2
       --disable-lwgeom
+      --disable-gcp
       --with-geosconfig=${geos_install_dir}/bin/geos-config
-      --prefix <INSTALL_DIR>
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libspatialite.so
+      BUILD_BYPRODUCTS
+        <INSTALL_DIR>/lib/mod_spatialite.so.7.1.0
+        <INSTALL_DIR>/lib/mod_spatialite.so.7
+        <INSTALL_DIR>/lib/mod_spatialite.so
     )
+  add_custom_target(mod-spatialite ALL)
+  add_dependencies(mod-spatialite spatialite)
+  sonar_external_project_dirs(spatialite install_dir)
 endfunction()
+
 
 function(build_xerces)
   cmake_parse_arguments(XERCES "" "VERSION;PATCH_FILE" "" ${ARGN})
