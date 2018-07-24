@@ -118,12 +118,21 @@ function(sonar_deps _out deps)
 endfunction()
 
 function(sonar_python_version output)
+  cmake_parse_arguments(PARSE_ARGV 1 PYTHON "" "SETUPTOOLS_VERSION" "")
+  if(NOT PYTHON_SETUPTOOLS_VERSION)
+    set(PYTHON_SETUPTOOLS_VERSION "0.9.8")
+  endif()
   sonar_set_version(version)
   set(regex "([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)-(.*)")
   if(version MATCHES ${regex})
     # we have a long version, that is incompatible with python versioning
-    # (PEP-400). Fix it.
-    string(REGEX REPLACE "${regex}" "\\1.\\2+\\3" python_version ${version})
+    if (PYTHON_SETUPTOOLS_VERSION VERSION_GREATER_EQUAL 8.0.0)
+      # We are building for python-setuptools >= 8.0.0, which supports PEP-440
+      string(REGEX REPLACE "${regex}" "\\1.\\2+\\3" python_version ${version})
+    else()
+      # older python-setuptools, PEP-440 not supported, so use short version
+      string(REGEX REPLACE "${regex}" "\\1.\\2" python_version ${version})
+    endif()
   else()
     set(python_version ${version})
   endif()
