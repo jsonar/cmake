@@ -945,6 +945,7 @@ function(build_spatialite)
   ExternalProject_Add(spatialite
     URL https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
+    DEPENDS sqlite3 geos
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>
       LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>
