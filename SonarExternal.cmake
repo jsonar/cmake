@@ -917,6 +917,7 @@ function(build_geos)
   cmake_parse_arguments(GEOS "" "VERSION" "" ${ARGN})
   if (NOT TARGET geos)
     message(STATUS "Building geos-${GEOS_VERSION}")
+    message(FATAL_ERROR "geos builds geos_c.so if with GEOS_BUILD_STATIC=1. We can't use it unless we also install it with the project. Make sure you know what you're doing before removing this error."
     ExternalProject_Add(geos
       URL https://github.com/OSGeo/geos/archive/${GEOS_VERSION}.tar.gz
       DOWNLOAD_NO_PROGRESS 1
@@ -935,7 +936,8 @@ function(build_spatialite)
   if(NOT TARGET sqlite3)
     message(FATAL_ERROR "Cannot build spatialite without building sqlite3 first")
   endif()
-  build_geos(VERSION 3.6.2)
+  # Do not build geos from source. See error message in build_geos()
+  # build_geos(VERSION 3.6.2)
   sonar_external_project_dirs(sqlite3 install_dir)
   cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
   if(NOT SPATIALITE_VERSION)
@@ -945,7 +947,7 @@ function(build_spatialite)
   ExternalProject_Add(spatialite
     URL https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS sqlite3 geos
+    DEPENDS sqlite3 #geos
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>
       LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>
@@ -955,7 +957,7 @@ function(build_spatialite)
       --disable-libxml2
       --disable-lwgeom
       --disable-gcp
-      --with-geosconfig=${geos_install_dir}/bin/geos-config
+      #--with-geosconfig=${geos_install_dir}/bin/geos-config
       BUILD_BYPRODUCTS
         <INSTALL_DIR>/lib/mod_spatialite.so.7.1.0
         <INSTALL_DIR>/lib/mod_spatialite.so.7
