@@ -295,7 +295,7 @@ function(build_docs product)
         -q
         -b ${format}
         -c ${CMAKE_CURRENT_BINARY_DIR}/${product}
-        -d ${product}/_doctrees
+        -d ${product}/${format}_doctrees
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}/${product}/${format}
       COMMENT "Building docs-${product} ${format} documentation with Sphinx")
