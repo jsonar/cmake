@@ -917,7 +917,7 @@ function(build_geos)
   cmake_parse_arguments(GEOS "" "VERSION" "" ${ARGN})
   if (NOT TARGET geos)
     message(STATUS "Building geos-${GEOS_VERSION}")
-    message(FATAL_ERROR "geos builds geos_c.so if with GEOS_BUILD_STATIC=1. We can't use it unless we also install it with the project. Make sure you know what you're doing before removing this error."
+    message(FATAL_ERROR "geos builds geos_c.so if with GEOS_BUILD_STATIC=1. We can't use it unless we also install it with the project. Make sure you know what you're doing before removing this error.")
     ExternalProject_Add(geos
       URL https://github.com/OSGeo/geos/archive/${GEOS_VERSION}.tar.gz
       DOWNLOAD_NO_PROGRESS 1
