@@ -10,7 +10,7 @@ include(InstallRequiredSystemLibraries)
 include(FindPkgConfig)
 
 if (NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type" FORCE)
 endif()
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
