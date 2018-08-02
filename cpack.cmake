@@ -64,8 +64,8 @@ else()
 endif()
 
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR
-    CMAKE_BUILD_TYPE STREQUAE "RelWithDebInfo")
+if ((CMAKE_BUILD_TYPE STREQUAL "Debug") OR
+    (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
   # Do not strip debug symbols from the package.
   #
   # collected from various posts in the rpm and cmake mailing lists. Not sure
