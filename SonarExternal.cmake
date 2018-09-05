@@ -302,7 +302,8 @@ function(build_aws)
   #[====[
   Usage: build_aws(VERSION <version>
                    CURL_VERSION <curl_version>
-                   COMPONENTS <component1> <component2>...)
+                   COMPONENTS <component1> <component2>...
+                   PATCH_FILE <filepath>)
 
   Will build aws and provide the targets aws::core and aws::<component> for each component listed.
 
@@ -314,7 +315,7 @@ function(build_aws)
   target_link_libraries(mytarget aws::logs aws::s3)
   #]====]
 
-  cmake_parse_arguments(AWS "" "VERSION" "COMPONENTS" ${ARGN})
+  cmake_parse_arguments(AWS "" "VERSION;PATCH_FILE" "COMPONENTS" ${ARGN})
   message(STATUS "Building aws-sdk-cpp-${AWS_VERSION} [${AWS_COMPONENTS}]")
   string(REPLACE ";" "$<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
   set(BUILD_BYPRODUCTS "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
@@ -325,9 +326,13 @@ function(build_aws)
   endforeach()
   build_openssl()
   build_curl()
+  if (AWS_PATCH_FILE)
+    set(patch_command patch -p1 < ${AWS_PATCH_FILE})
+  endif()
   ExternalProject_Add(aws
     URL https://github.com/aws/aws-sdk-cpp/archive/${AWS_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
+    PATCH_COMMAND ${patch_command}
     DEPENDS curl openssl
     CMAKE_COMMAND GIT_CEILING_DIRECTORIES=<INSTALL_DIR> ${CMAKE_COMMAND}
     CMAKE_ARGS
