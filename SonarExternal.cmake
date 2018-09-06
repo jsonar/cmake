@@ -1118,3 +1118,32 @@ function(build_catch2)
   sonar_external_project_dirs(catch2 source_dir)
   target_include_external_directory(catch2::header-only catch2 source_dir single_include)
 endfunction()
+
+function(build_cpp_redis)
+  # Usage: build_cpp_redis(VERSION <version>)
+  #
+  # Generates cpp_redis::lib target to link with
+  cmake_parse_arguments(REDISCPP "" "VERSION" "" ${ARGN})
+  if(NOT CPPREDIS_VERSION)
+    set(CPPREDIS_VERSION  1.0)
+  endif()
+  message(STATUS "Building cpp_redis-${CPPREDIS_VERSION}")
+  ExternalProject_Add(cpp_redis
+    GIT_REPOSITORY https://github.com/Cylix/cpp_redis.git
+    DOWNLOAD_NO_PROGRESS 1
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS <BINARY_DIR>/libcpp_redis.a
+  )
+  add_library(cpp_redis::lib STATIC IMPORTED)
+  add_library(tacopie::lib STATIC IMPORTED)
+  add_dependencies(cpp_redis::lib cpp_redis)
+  sonar_external_project_dirs(cpp_redis binary_dir source_dir)
+  set_property(TARGET cpp_redis::lib
+    PROPERTY IMPORTED_LOCATION ${cpp_redis_binary_dir}/lib/libcpp_redis.a)
+  set_property(TARGET tacopie::lib
+    PROPERTY IMPORTED_LOCATION ${cpp_redis_binary_dir}/lib/libtacopie.a)
+  target_include_external_directory(cpp_redis::lib cpp_redis source_dir includes)
+  target_include_external_directory(cpp_redis::lib cpp_redis source_dir tacopie/includes)
+endfunction()
