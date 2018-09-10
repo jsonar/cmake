@@ -1147,3 +1147,23 @@ function(build_cpp_redis)
   target_include_external_directory(cpp_redis::lib cpp_redis source_dir includes)
   target_include_external_directory(cpp_redis::lib cpp_redis source_dir tacopie/includes)
 endfunction()
+
+function(build_analytics)
+  # builds analytics as an external java project
+  # version is not used for now as library is new
+  cmake_parse_arguments(ANALYTICS "" "VERSION" "" ${ARGN})
+  if (NOT ANALYTICS_VERSION)
+    set(ANALYTICS_VERSION 1.0.2)
+  endif()
+  message(STATUS "Building analytics-${ANALYTICS_VERSION}")
+  ExternalProject_Add(analytics
+    GIT_REPOSITORY https://github.com/jsonar/analytics.git
+    DOWNLOAD_NO_PROGRESS 1
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_PREFIX=
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
+    )
+  sonar_external_project_dirs(analytics install_dir)
+endfunction()
