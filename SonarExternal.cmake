@@ -1162,3 +1162,29 @@ function(build_cpp_redis)
   target_include_external_directory(cpp_redis::lib cpp_redis source_dir includes)
   target_include_external_directory(cpp_redis::lib cpp_redis source_dir tacopie/includes)
 endfunction()
+
+function(build_uri)
+  cmake_parse_arguments(URI "" VERSION "" ${ARGN})
+  if (NOT URI_VERSION)
+    set(URI_VERSION 1.0.1)
+  endif()
+  ExternalProject_Add(uri
+    URL https://github.com/cpp-netlib/uri/archive/${URI_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DBUILD_SHARED_LIBS=OFF
+      -DUri_BUILD_TESTS=OFF
+      -DUri_DISABLE_LIBCXX=ON
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libnetwork-uri.a
+    )
+  add_library(uri::lib STATIC IMPORTED)
+  add_dependencies(uri::lib uri)
+  sonar_external_project_dirs(uri install_dir)
+  set_property(TARGET uri::lib PROPERTY
+    IMPORTED_LOCATION ${uri_install_dir}/lib/libnetwork-uri.a)
+  target_include_external_directory(uri::lib uri install_dir include)
+endfunction()
