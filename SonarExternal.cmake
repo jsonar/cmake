@@ -145,6 +145,7 @@ function(build_mongoc)
         --disable-examples
         --disable-man-pages
         --disable-tests
+        --with-pic
         $<$<CONFIG:Debug>:--enable-debug>
         --prefix <INSTALL_DIR>
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
@@ -194,6 +195,15 @@ function(build_mongoc)
         resolv
         z
         snappy
+      APPEND
+      )
+  endif()
+  if (MONGOC_VERSION VERSION_GREATER_EQUAL 1.12.0)
+    find_package(ICU COMPONENTS data uc)
+    set_property(TARGET mongo::lib
+      PROPERTY INTERFACE_LINK_LIBRARIES
+        ICU::data
+        ICU::uc
       APPEND
       )
   endif()
