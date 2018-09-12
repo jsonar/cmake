@@ -557,6 +557,10 @@ endfunction()
 
 function(build_pcre)
   cmake_parse_arguments(PCRE "" "VERSION" "" ${ARGN})
+  if (NOT PCRE_VERSION)
+    set(PCRE_VERSION 8.42)
+  endif()
+  message(STATUS "Building pcre-${PCRE_VERSION}")
   ExternalProject_Add(pcre
     URL https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
