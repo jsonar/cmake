@@ -1149,7 +1149,9 @@ function(build_cpp_redis)
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     INSTALL_COMMAND ""
-    BUILD_BYPRODUCTS <BINARY_DIR>/libcpp_redis.a
+    BUILD_BYPRODUCTS
+      <BINARY_DIR>/lib/libcpp_redis.a
+      <BINARY_DIR>/lib/libtacopie.a
   )
   add_library(cpp_redis::lib STATIC IMPORTED)
   add_library(tacopie::lib STATIC IMPORTED)
