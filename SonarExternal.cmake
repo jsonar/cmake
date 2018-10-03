@@ -1131,7 +1131,7 @@ function(build_catch2)
   add_library(catch2::header-only INTERFACE IMPORTED)
   add_dependencies(catch2::header-only catch2)
   sonar_external_project_dirs(catch2 source_dir)
-  target_include_external_directory(catch2::header-only catch2 source_dir single_include)
+  target_include_external_directory(catch2::header-only catch2 source_dir single_include/catch2)
 endfunction()
 
 function(build_cpp_redis)
