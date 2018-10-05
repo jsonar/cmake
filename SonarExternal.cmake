@@ -78,10 +78,12 @@ function(build_openssl)
     IMPORTED_LOCATION ${openssl_install_dir}/lib/libcrypto.a)
   target_include_external_directory(openssl::crypto openssl install_dir include)
   find_package(ZLIB)
+  find_package(Threads)
   set_property(TARGET openssl::crypto
     PROPERTY
       INTERFACE_LINK_LIBRARIES
         ${CMAKE_DL_LIBS}
+        Threads::Threads
         ZLIB::ZLIB
     )
 endfunction()
