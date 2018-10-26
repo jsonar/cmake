@@ -1192,3 +1192,26 @@ function(build_uri)
     IMPORTED_LOCATION ${uri_install_dir}/lib/libnetwork-uri.a)
   target_include_external_directory(uri::lib uri install_dir include)
 endfunction()
+
+function(build_rapidjson)
+  cmake_parse_arguments(RAPIDJSON "" "VERSION;PATCH_FILE" "" ${ARGN})
+  if (NOT RAPIDJSON_VERSION)
+    set(RAPIDJSON_VERSION v1.1.0)
+  endif()
+  if(RAPIDJSON_PATCH_FILE)
+    set(patch_command patch -p1 < ${RAPIDJSON_PATCH_FILE})
+  endif()
+  message(STATUS "Building header-only rapidjson-${RAPIDJSON_VERSION}")
+  ExternalProject_Add(rapidjson
+    URL https://github.com/Tencent/rapidjson/archive/${RAPIDJSON_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CMAKE_ARGS
+      -DRAPIDJSON_BUILD_DOC=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    )
+  add_library(rapidjson::header-only INTERFACE IMPORTED)
+  add_dependencies(rapidjson::header-only rapidjson)
+  sonar_external_project_dirs(rapidjson install_dir)
+  target_include_external_directory(rapidjson::header-only rapidjson install_dir include)
+endfunction()
