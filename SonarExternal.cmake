@@ -1204,7 +1204,9 @@ function(build_rapidjson)
   message(STATUS "Building header-only rapidjson-${RAPIDJSON_VERSION}")
   ExternalProject_Add(rapidjson
     URL https://github.com/Tencent/rapidjson/archive/${RAPIDJSON_VERSION}.tar.gz
-    DOWNLOAD_NO_PROGRESS 1
+    DOWNLOAD_NO_PROGRESS ON
+    PATCH_COMMAND ${patch_command}
+    TEST_BEFORE_INSTALL ON
     CMAKE_ARGS
       -DRAPIDJSON_BUILD_DOC=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
