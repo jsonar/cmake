@@ -1217,3 +1217,25 @@ function(build_rapidjson)
   sonar_external_project_dirs(rapidjson install_dir)
   target_include_external_directory(rapidjson::header-only rapidjson install_dir include)
 endfunction()
+
+function(build_date)
+  cmake_parse_arguments(DATE "" "VERSION" "" ${ARGN})
+  if (NOT DATE_VERSION)
+    set(DATE_VERSION 2.4.1)
+  endif()
+  message(STATUS "Building date.h ${DATE_VERSION}")
+  ExternalProject_Add(date
+    URL https://github.com/HowardHinnant/date/archive/v${DATE_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libtz.a
+    )
+  add_library(date::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(date::lib date)
+  sonar_external_project_dirs(date install_dir)
+  set_property(TARGET date::lib
+    PROPERTY IMPORTED_LOCATION ${date_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libtz.a)
+  target_include_external_directory(date::lib date install_dir include)
+endfunction()
