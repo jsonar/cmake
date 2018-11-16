@@ -1258,8 +1258,6 @@ function(build_boost)
   string(REPLACE "." "_" BOOST_VERSION_UNDERSCORES ${BOOST_VERSION})
   ExternalProject_Add(boost
     PREFIX ${BOOST_PREFIX}
-    #GIT_REPOSITORY https://github.com/boostorg/boost.git
-    #GIT_TAG boost-${BOOST_VERSION}
     URL https://dl.bintray.com/boostorg/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ./bootstrap.sh
@@ -1267,13 +1265,7 @@ function(build_boost)
       --with-libraries=${WITH_LIBRARIES}
     BUILD_IN_SOURCE YES
     BUILD_COMMAND ./b2 -j8
-    #  -sBOOST_ROOT=<SOURCE_DIR>
-    #  -sBOOST_BUILD_PATH=<BINARY_DIR>
     INSTALL_COMMAND ./b2 install
-    #  -sBOOST_ROOT=<SOURCE_DIR>
-    #  -sBOOST_BUILD_PATH=<BINARY_DIR>      
-    #  install
-    #BUILD_BYPRODUCTS ...
     )
   sonar_external_project_dirs(boost install_dir)
   # header only library
