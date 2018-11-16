@@ -818,6 +818,7 @@ function(build_stxxl)
       -DBUILD_SHARED_LIBS=OFF
       -DBUILD_STATIC_LIBS=ON
       -DCMAKE_BUILD_TYPE=Release
+      -DSTXXL_VERBOSE_LEVEL=-10
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libstxxl.a
@@ -1121,7 +1122,7 @@ function(build_catch2)
   cmake_parse_arguments(CATCH2 "" VERSION "" ${ARGN})
   message(STATUS "Using headers from catch2-${CATCH2_VERSION}")
   if(NOT CATCH2_VERSION)
-    set(CATCH2_VERSION 2.2.3)
+    set(CATCH2_VERSION 2.4.2)
   endif()
   ExternalProject_Add(catch2
     URL https://github.com/catchorg/Catch2/archive/v${CATCH2_VERSION}.tar.gz
