@@ -1240,3 +1240,60 @@ function(build_date)
     PROPERTY IMPORTED_LOCATION ${date_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libtz.a)
   target_include_external_directory(date::lib date install_dir include)
 endfunction()
+
+function(build_boost)
+  if(TARGET boost)
+    sonar_external_project_dirs(boost install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(BOOST "" "VERSION;PREFIX" "COMPONENTS" ${ARGN})
+  if (NOT BOOST_VERSION)
+    set(BOOST_VERSION 1.68.0)
+  endif()
+  if (NOT BOOST_PREFIX)
+    set(BOOST_PREFIX $ENV{HOME}/.cache/sonar/build/boost/${BOOST_VERSION})
+  endif()
+  message(STATUS "Building boost-${BOOST_VERSION} [${BOOST_COMPONENTS}]")
+  string(REPLACE ";" "," WITH_LIBRARIES "${BOOST_COMPONENTS}")
+  string(REPLACE "." "_" BOOST_VERSION_UNDERSCORES ${BOOST_VERSION})
+  ExternalProject_Add(boost
+    PREFIX ${BOOST_PREFIX}
+    #GIT_REPOSITORY https://github.com/boostorg/boost.git
+    #GIT_TAG boost-${BOOST_VERSION}
+    URL https://dl.bintray.com/boostorg/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND ./bootstrap.sh
+      --prefix=<INSTALL_DIR>
+      --with-libraries=${WITH_LIBRARIES}
+    BUILD_IN_SOURCE YES
+    BUILD_COMMAND ./b2 -j8
+    #  -sBOOST_ROOT=<SOURCE_DIR>
+    #  -sBOOST_BUILD_PATH=<BINARY_DIR>
+    INSTALL_COMMAND ./b2 install
+    #  -sBOOST_ROOT=<SOURCE_DIR>
+    #  -sBOOST_BUILD_PATH=<BINARY_DIR>      
+    #  install
+    #BUILD_BYPRODUCTS ...
+    )
+  sonar_external_project_dirs(boost install_dir)
+  # header only library
+  add_library(boost::boost INTERFACE IMPORTED GLOBAL)
+  add_dependencies(boost::boost boost)
+  target_include_external_directory(boost::boost boost install_dir include)
+  # system library
+  add_library(boost::system STATIC IMPORTED GLOBAL)
+  add_dependencies(boost::system boost)
+  set_target_properties(boost::system PROPERTIES
+    IMPORTED_LOCATION ${boost_install_dir}/lib/libboost_system.a
+    INTERFACE_LINK_LIBRARIES boost::boost)
+  target_include_external_directory(boost::system boost install_dir include)
+  foreach(component ${BOOST_COMPONENTS})
+    set(lib boost::${component})
+    add_library(${lib} STATIC IMPORTED GLOBAL)
+    add_dependencies(${lib} boost)
+    set_target_properties(${lib} PROPERTIES
+      IMPORTED_LOCATION ${boost_install_dir}/lib/libboost_${component}.a
+      INTERFACE_LINK_LIBRARIES boost::system)
+    target_include_external_directory(${lib} boost install_dir include)
+  endforeach()
+endfunction()
