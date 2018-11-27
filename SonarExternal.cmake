@@ -1244,8 +1244,11 @@ endfunction()
 
 function(build_boost)
   if(TARGET boost)
-    sonar_external_project_dirs(boost install_dir)
-    return()
+    # We must fail if we already built boost. We don't know if all the
+    # components are the same, or even if it's the same version. Best course
+    # at the moment is to bail, and ask the user to call build_boost() only
+    # once within a project.
+    message(FATAL_ERROR "Cannot call build_boost more than once. Sorry")
   endif()
   cmake_parse_arguments(BOOST "" "VERSION;PREFIX" "COMPONENTS" ${ARGN})
   if (NOT BOOST_VERSION)
