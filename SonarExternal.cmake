@@ -330,11 +330,11 @@ function(build_aws)
   cmake_parse_arguments(AWS "" "VERSION;PATCH_FILE" "COMPONENTS" ${ARGN})
   message(STATUS "Building aws-sdk-cpp-${AWS_VERSION} [${AWS_COMPONENTS}]")
   string(REPLACE ";" "$<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
-  set(BUILD_BYPRODUCTS "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
+  set(BUILD_BYPRODUCTS "<INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
   foreach(component ${AWS_COMPONENTS})
     list(APPEND
       BUILD_BYPRODUCTS
-      "<INSTALL_DIR>/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
+      "<INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
   endforeach()
   build_openssl()
   build_curl()
@@ -353,8 +353,8 @@ function(build_aws)
       -DBUILD_ONLY=${AWS_BUILD_ONLY}
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}
-    INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
   )
@@ -363,7 +363,7 @@ function(build_aws)
   add_dependencies(aws::core aws)
   find_package(Threads REQUIRED)
   set_target_properties(aws::core PROPERTIES
-    IMPORTED_LOCATION ${aws_install_dir}/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a)
+    IMPORTED_LOCATION ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a)
   set_property(TARGET aws::core PROPERTY
     INTERFACE_LINK_LIBRARIES
       Threads::Threads
@@ -371,7 +371,7 @@ function(build_aws)
       openssl::ssl
       openssl::crypto
   )
-  target_include_external_directory(aws::core aws install_dir usr/local/include)
+  target_include_external_directory(aws::core aws install_dir include)
 
   foreach(component ${AWS_COMPONENTS})
     set(lib aws::${component})
@@ -379,10 +379,10 @@ function(build_aws)
     add_dependencies(${lib} aws)
     set_target_properties(${lib} PROPERTIES
       IMPORTED_LOCATION
-        ${aws_install_dir}/usr/local/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a)
+        ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a)
     set_property(TARGET ${lib} PROPERTY
       INTERFACE_LINK_LIBRARIES aws::core)
-    target_include_external_directory(${lib} aws install_dir usr/local/include)
+    target_include_external_directory(${lib} aws install_dir include)
   endforeach()
 endfunction()
 
@@ -1260,6 +1260,10 @@ function(build_boost)
   message(STATUS "Building boost-${BOOST_VERSION} [${BOOST_COMPONENTS}]")
   string(REPLACE ";" "," WITH_LIBRARIES "${BOOST_COMPONENTS}")
   string(REPLACE "." "_" BOOST_VERSION_UNDERSCORES ${BOOST_VERSION})
+  set(BUILD_BYPRODUCTS "<INSTALL_DIR>/lib/libboost_system.a")
+  foreach(component ${BOOST_COMPONENTS})
+    list(APPEND BUILD_BYPRODUCTS "<INSTALL_DIR>/lib/libboost_${component}.a")
+  endforeach()
   ExternalProject_Add(boost
     PREFIX ${BOOST_PREFIX}
     URL https://dl.bintray.com/boostorg/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2
@@ -1270,19 +1274,17 @@ function(build_boost)
     BUILD_IN_SOURCE YES
     BUILD_COMMAND ./b2 -j8
     INSTALL_COMMAND ./b2 install
+    BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
     )
   sonar_external_project_dirs(boost install_dir)
   # header only library
   add_library(boost::boost INTERFACE IMPORTED GLOBAL)
   add_dependencies(boost::boost boost)
   target_include_external_directory(boost::boost boost install_dir include)
-  # system library
-  add_library(boost::system STATIC IMPORTED GLOBAL)
-  add_dependencies(boost::system boost)
-  set_target_properties(boost::system PROPERTIES
-    IMPORTED_LOCATION ${boost_install_dir}/lib/libboost_system.a
-    INTERFACE_LINK_LIBRARIES boost::boost)
-  target_include_external_directory(boost::system boost install_dir include)
+  if (NOT system IN_LIST BOOST_COMPONENTS)
+    # always build system library
+    LIST(APPEND BOOST_COMPONENTS system)
+  endif()
   foreach(component ${BOOST_COMPONENTS})
     set(lib boost::${component})
     add_library(${lib} STATIC IMPORTED GLOBAL)
