@@ -1264,9 +1264,14 @@ function(build_boost)
   foreach(component ${BOOST_COMPONENTS})
     list(APPEND BUILD_BYPRODUCTS "<INSTALL_DIR>/lib/libboost_${component}.a")
   endforeach()
+  if (BOOST_VERSION VERSION_GREATER 1.63.0)
+    set(URL https://dl.bintray.com/boostorg/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2)
+  else()
+    set(URL https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2/download)
+  endif()
   ExternalProject_Add(boost
     PREFIX ${BOOST_PREFIX}
-    URL https://dl.bintray.com/boostorg/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2
+    URL ${URL}
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ./bootstrap.sh
       --prefix=<INSTALL_DIR>
