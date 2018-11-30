@@ -1,3 +1,5 @@
+cmake_policy(SET CMP0057 NEW) # if (.. IN_LIST ..)
+
 include(ExternalProject)
 include(GNUInstallDirs)
 string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
