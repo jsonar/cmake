@@ -141,6 +141,9 @@ endfunction()
 
 
 macro(add_python_target target source_dir)
+  if(NOT PYTHON_EXECUTABLE)
+    find_package(PythonInterp 3 REQUIRED)
+  endif()
   if(EXISTS ${source_dir}/setup.py.in)
     configure_file(${source_dir}/setup.py.in setup.py)
     set(working_directory ${CMAKE_CURRENT_BINARY_DIR})
