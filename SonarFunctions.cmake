@@ -170,7 +170,9 @@ macro(add_python_target)
       DEPENDS ${wheel}
       )
     install(FILES ${wheel} DESTINATION lib/sonar/wheels)
-    list(APPEND CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/lib/sonar/wheels)
+    set(filelist ${CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION})
+    list(APPEND filelist /usr/lib/sonar/wheels /usr/lib/sonar)
+    set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION ${filelist} PARENT_SCOPE)
   else()
     # installing directly onto the system
     set(timestamp ${PYTHON_PACKAGE_NAME}-timestamp)
