@@ -140,35 +140,60 @@ function(sonar_python_version output)
 endfunction()
 
 
-macro(add_python_target target source_dir)
+macro(add_python_target)
+  cmake_parse_arguments(PYTHON_PACKAGE "BUILD_WHEEL" "NAME" "" ${ARGN})
+  sonar_python_version(PYTHON_PACKAGE_VERSION)
   if(NOT PYTHON_EXECUTABLE)
     find_package(PythonInterp 3 REQUIRED)
   endif()
-  if(EXISTS ${source_dir}/setup.py.in)
-    configure_file(${source_dir}/setup.py.in setup.py)
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in)
+    configure_file(setup.py.in setup.py)
     set(working_directory ${CMAKE_CURRENT_BINARY_DIR})
   else()
-    set(working_directory ${source_dir})
+    set(working_directory ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
-  set(timestamp ${CMAKE_CURRENT_BINARY_DIR}/timestamp)
-  add_custom_command(OUTPUT ${timestamp}
-    COMMAND ${PYTHON_EXECUTABLE} setup.py build
-    COMMAND ${CMAKE_COMMAND} -E touch ${timestamp}
-    WORKING_DIRECTORY ${working_directory}
-    )
-  add_custom_target(${target} ALL
-    DEPENDS ${timestamp}
-    )
-  install(CODE "
-    execute_process(
-      COMMAND ${PYTHON_EXECUTABLE}
-        setup.py install
-          --force
-          --root=\$ENV{DESTDIR}
-          --prefix=${CMAKE_INSTALL_PREFIX}
+  if(PYTHON_PACKAGE_BUILD_WHEEL)
+    message(STATUS "Building python wheel for ${PYTHON_PACKAGE_NAME}-${PYTHON_PACKAGE_VERSION}")
+    string(REPLACE "-" "_" PYTHON_WHEEL_FILENAME ${PYTHON_PACKAGE_NAME})
+    string(APPEND
+      PYTHON_WHEEL_FILENAME
+        "-"
+        ${PYTHON_PACKAGE_VERSION}
+        "-py3-none-any.whl"
+      )
+    set(wheel ${working_directory}/dist/${PYTHON_WHEEL_FILENAME})
+    add_custom_command(OUTPUT ${wheel}
+      COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel
       WORKING_DIRECTORY ${working_directory}
-      )"
-    )
+      )
+    add_custom_target(${PYTHON_PACKAGE_NAME} ALL
+      DEPENDS ${wheel}
+      )
+    install(FILES ${wheel} DESTINATION lib/sonar/wheels)
+    list(APPEND CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/lib/sonar/wheels)
+  else()
+    # installing directly onto the system
+    set(timestamp ${PYTHON_PACKAGE_NAME}-timestamp)
+    add_custom_command(OUTPUT ${timestamp}
+      COMMAND ${PYTHON_EXECUTABLE} setup.py ${cmd}
+      COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/${timestamp}
+      WORKING_DIRECTORY ${working_directory}
+      )
+    # there is no one file generated, so we use a timestamp
+    add_custom_target(${PYTHON_PACKAGE_NAME} ALL
+      DEPENDS ${timestamp}
+      )
+    install(CODE "
+      execute_process(
+        COMMAND ${PYTHON_EXECUTABLE}
+          setup.py install
+            --force
+            --root=\$ENV{DESTDIR}
+            --prefix=${CMAKE_INSTALL_PREFIX}
+        WORKING_DIRECTORY ${working_directory}
+        )"
+      )
+  endif()
 endmacro()
 
 function(sonar_vendor)
