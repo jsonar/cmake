@@ -1053,6 +1053,7 @@ function(build_jwt_cpp)
       -DCMAKE_PREFIX_PATH=${openssl_install_dir}
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       -DENABLE_TESTS=OFF
+      -DENABLE_DOC=OFF
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/lib${libname}.a
     )
   sonar_external_project_dirs(jwt_cpp install_dir)
@@ -1271,6 +1272,8 @@ function(build_boost)
   else()
     set(URL https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2/download)
   endif()
+  include(ProcessorCount)
+  ProcessorCount(NPROC)
   ExternalProject_Add(boost
     PREFIX ${BOOST_PREFIX}
     URL ${URL}
@@ -1279,7 +1282,12 @@ function(build_boost)
       --prefix=<INSTALL_DIR>
       --with-libraries=${WITH_LIBRARIES}
     BUILD_IN_SOURCE YES
-    BUILD_COMMAND ./b2 -j8
+    BUILD_COMMAND ./b2
+      -j${NPROC}
+      variant=release
+      link=static
+      threading=multi
+      cxxflags=-fPIC
     INSTALL_COMMAND ./b2 install
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
     )
