@@ -1280,7 +1280,7 @@ function(build_boost)
       --with-libraries=${WITH_LIBRARIES}
     BUILD_IN_SOURCE YES
     BUILD_COMMAND ./b2 -j8
-    INSTALL_COMMAND ./b2 install
+    INSTALL_COMMAND ./bjam cxxflags=-fPIC cflags=-fPIC -a install
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
     )
   sonar_external_project_dirs(boost install_dir)
