@@ -1177,7 +1177,7 @@ function(build_uri)
     set(URI_VERSION 1.0.1)
   endif()
   ExternalProject_Add(uri
-    URL https://github.com/cpp-netlib/uri/archive/${URI_VERSION}.tar.gz
+    URL https://github.com/cpp-netlib/uri/archive/v${URI_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -1186,6 +1186,7 @@ function(build_uri)
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       -DBUILD_SHARED_LIBS=OFF
       -DUri_BUILD_TESTS=OFF
+      -DUri_BUILD_DOCS=OFF
       -DUri_DISABLE_LIBCXX=ON
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libnetwork-uri.a
     )
