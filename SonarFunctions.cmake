@@ -153,6 +153,14 @@ macro(add_python_target)
     set(working_directory ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
   if(PYTHON_PACKAGE_BUILD_WHEEL)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} -m wheel version
+      RESULT_VARIABLE NOT_HAS_WHEEL)
+    if(NOT_HAS_WHEEL)
+      execute_process(COMMAND ${PYTHON_EXECUTABLE} -m pip install wheel
+        RESULT_VARIABLE NOT_INSTALL_WHEEL)
+      if(NOT_INSTALL_WHEEL)
+        message(FATAL_ERROR "Cannot find nor install python wheel. Please install it manually. Try: ${PYTHON_EXECUTABLE} -m pip install wheel")
+    endif()
     message(STATUS "Building python wheel for ${PYTHON_PACKAGE_NAME}-${PYTHON_PACKAGE_VERSION}")
     string(REPLACE "-" "_" PYTHON_WHEEL_FILENAME ${PYTHON_PACKAGE_NAME})
     string(APPEND

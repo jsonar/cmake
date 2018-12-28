@@ -79,8 +79,8 @@ function(build_openssl)
   set_target_properties(openssl::crypto PROPERTIES
     IMPORTED_LOCATION ${openssl_install_dir}/lib/libcrypto.a)
   target_include_external_directory(openssl::crypto openssl install_dir include)
-  find_package(ZLIB)
-  find_package(Threads)
+  find_package(ZLIB REQUIRED)
+  find_package(Threads REQUIRED)
   set_property(TARGET openssl::crypto
     PROPERTY
       INTERFACE_LINK_LIBRARIES
@@ -203,7 +203,7 @@ function(build_mongoc)
       )
   endif()
   if (MONGOC_VERSION VERSION_GREATER_EQUAL 1.12.0)
-    find_package(ICU COMPONENTS data uc)
+    find_package(ICU REQUIRED COMPONENTS data uc)
     set_property(TARGET mongo::lib
       PROPERTY INTERFACE_LINK_LIBRARIES
         ICU::data
@@ -803,7 +803,7 @@ function(build_jemalloc)
   set_property(TARGET jemalloc::lib
     PROPERTY IMPORTED_LOCATION ${jemalloc_install_dir}/lib/libjemalloc.a)
   target_include_external_directory(jemalloc::lib jemalloc install_dir include)
-  find_package(Threads)
+  find_package(Threads REQUIRED)
   set_property(TARGET jemalloc::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
       Threads::Threads
@@ -1003,7 +1003,7 @@ function(build_xerces)
     set(patch_command patch -p1 < ${XERCES_PATCH_FILE})
   endif()
   message(STATUS "Building xerces-c-${XERCES_VERSION}")
-  find_package(ICU COMPONENTS uc)
+  find_package(ICU REQUIRED COMPONENTS uc)
   ExternalProject_Add(xerces
     URL https://www.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
     DOWNLOAD_NO_PROGRESS 1
