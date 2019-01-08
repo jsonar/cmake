@@ -20,6 +20,12 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Package install prefix" FORCE)
 endif()
 
+find_program(CCACHE ccache)
+if(CCACHE)
+  message(STATUS "Found ccache at ${CCACHE}")
+  set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+endif()
 
 include(GNUInstallDirs)
 include(SonarFunctions)
