@@ -1335,7 +1335,7 @@ function(build_boost)
       --prefix=<INSTALL_DIR>
       --with-libraries=${WITH_LIBRARIES}
     BUILD_IN_SOURCE YES
-    BUILD_COMMAND ./b2
+    BUILD_COMMAND ${CMAKE_COMMAND} -E env "CCACHE=${CMAKE_CXX_COMPILER_LAUNCHER}" ./b2
       -j${NPROC}
       variant=release
       link=static
@@ -1362,4 +1362,28 @@ function(build_boost)
       INTERFACE_LINK_LIBRARIES boost::system)
     target_include_external_directory(${lib} boost install_dir include)
   endforeach()
+endfunction()
+function(build_cppunit)
+  cmake_parse_arguments(CPPUNIT "" "VERSION;SHA256" "" ${ARGN})
+  if (NOT CPPUNIT_VERSION)
+    set(CPPUNIT_VERSION 1.14.0)
+    set(CPPUNIT_SHA256 3d569869d27b48860210c758c4f313082103a5e58219a7669b52bfd29d674780)
+  endif()
+  message(STATUS "Building cppunit-${CPPUNIT_VERSION}")
+  ExternalProject_Add(cppunit
+    URL http://dev-www.libreoffice.org/src/cppunit-1.14.0.tar.gz
+    URL_HASH SHA256=${CPPUNIT_SHA256}
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      --prefix <INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcppunit.a
+    )
+  add_library(cppunit::lib STATIC IMPORTED)
+  add_dependencies(cppunit::lib cppunit)
+  sonar_external_project_dirs(cppunit install_dir)
+  set_target_properties(cppunit::lib PROPERTIES
+    IMPORTED_LOCATION ${cppunit_install_dir}/lib/libcppunit.a
+    )
+  target_include_external_directory(cppunit::lib cppunit install_dir include)
 endfunction()
