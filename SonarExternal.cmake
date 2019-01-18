@@ -1306,12 +1306,9 @@ function(build_boost)
     # once within a project.
     message(FATAL_ERROR "Cannot call build_boost more than once. Sorry")
   endif()
-  cmake_parse_arguments(BOOST "" "VERSION;PREFIX" "COMPONENTS" ${ARGN})
+  cmake_parse_arguments(BOOST "" "VERSION" "COMPONENTS" ${ARGN})
   if (NOT BOOST_VERSION)
     set(BOOST_VERSION 1.68.0)
-  endif()
-  if (NOT BOOST_PREFIX)
-    set(BOOST_PREFIX $ENV{HOME}/.cache/sonar/build/boost/${BOOST_VERSION})
   endif()
   message(STATUS "Building boost-${BOOST_VERSION} [${BOOST_COMPONENTS}]")
   string(REPLACE ";" "," WITH_LIBRARIES "${BOOST_COMPONENTS}")
@@ -1328,7 +1325,6 @@ function(build_boost)
   include(ProcessorCount)
   ProcessorCount(NPROC)
   ExternalProject_Add(boost
-    PREFIX ${BOOST_PREFIX}
     URL ${URL}
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ./bootstrap.sh
