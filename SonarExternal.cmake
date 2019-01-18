@@ -1308,7 +1308,7 @@ function(build_boost)
   endif()
   cmake_parse_arguments(BOOST "" "VERSION" "COMPONENTS" ${ARGN})
   if (NOT BOOST_VERSION)
-    set(BOOST_VERSION 1.68.0)
+    set(BOOST_VERSION 1.69.0)
   endif()
   message(STATUS "Building boost-${BOOST_VERSION} [${BOOST_COMPONENTS}]")
   string(REPLACE ";" "," WITH_LIBRARIES "${BOOST_COMPONENTS}")
@@ -1324,15 +1324,31 @@ function(build_boost)
   endif()
   include(ProcessorCount)
   ProcessorCount(NPROC)
+  if(CCACHE)
+    if (${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
+      set(toolset clang)
+    else()
+      set(toolset gcc)
+    endif()
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam
+      "using ${toolset} : : ${CCACHE} ${CMAKE_CXX_COMPILER} ;")
+  else()
+    file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam)
+  endif()
   ExternalProject_Add(boost
     URL ${URL}
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ./bootstrap.sh
       --prefix=<INSTALL_DIR>
+      --with-toolset=${toolset}
       --with-libraries=${WITH_LIBRARIES}
     BUILD_IN_SOURCE YES
-    BUILD_COMMAND ${CMAKE_COMMAND} -E env "CCACHE=${CMAKE_CXX_COMPILER_LAUNCHER}" ./b2
+    PATCH_COMMAND
+      ${CMAKE_COMMAND} -E
+        copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam <SOURCE_DIR>/user-config.jam
+    BUILD_COMMAND ./b2
       -j${NPROC}
+      --user-config=user-config.jam
       variant=release
       link=static
       threading=multi
