@@ -1333,7 +1333,7 @@ function(build_boost)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam
       "using ${toolset} : : ${CCACHE} ${CMAKE_CXX_COMPILER} ;")
   else()
-    file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam "")
   endif()
   ExternalProject_Add(boost
     URL ${URL}
