@@ -141,7 +141,7 @@ endfunction()
 
 
 macro(add_python_target)
-  cmake_parse_arguments(PYTHON_PACKAGE "BUILD_WHEEL" "NAME" "" ${ARGN})
+  cmake_parse_arguments(PYTHON_PACKAGE "BUILD_WHEEL" "NAME;DESTINATION" "" ${ARGN})
   sonar_python_version(PYTHON_PACKAGE_VERSION)
   if(NOT PYTHON_EXECUTABLE)
     find_package(PythonInterp 3 REQUIRED)
@@ -178,12 +178,22 @@ macro(add_python_target)
     add_custom_target(${PYTHON_PACKAGE_NAME} ALL
       DEPENDS ${wheel}
       )
-    install(FILES ${wheel} DESTINATION lib/sonar/wheels)
+    if(NOT PYTHON_PACKAGE_DESTINATION)
+      set(PYTHON_PACKAGE_DESTINATION lib/sonar/wheels)
+    endif()
+    message(STATUS "Installing ${PYTHON_PACKAGE_NAME}-${PYTHON_PACKAGE_VERSION}.whl to ${PYTHON_PACKAGE_DESTINATION}")
+    install(FILES ${wheel} DESTINATION ${PYTHON_PACKAGE_DESTINATION})
+    get_filename_component(destination_parent ${PYTHON_PACKAGE_DESTINATION} DIRECTORY)
     set(filelist ${CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION})
-    list(APPEND filelist /usr/lib/sonar/wheels /usr/lib/sonar)
+    list(APPEND filelist
+      ${CMAKE_INSTALL_PREFIX}/${PYTHON_PACKAGE_DESTINATION}
+      ${CMAKE_INSTALL_PREFIX}/${destination_parent})
     set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION ${filelist} PARENT_SCOPE)
   else()
     # installing directly onto the system
+    if(PYTHON_PACKAGE_DESTINATION)
+      message(FATAL_ERROR "DESTINATION is ignored without BUILD_WHEEL")
+    endif()
     set(timestamp ${PYTHON_PACKAGE_NAME}-timestamp)
     add_custom_command(OUTPUT ${timestamp}
       COMMAND ${PYTHON_EXECUTABLE} setup.py ${cmd}
