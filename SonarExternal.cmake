@@ -810,6 +810,10 @@ function(build_bid)
 endfunction()
 
 function(build_jemalloc)
+  if(TARGET jemalloc)
+    sonar_external_project_dirs(jemalloc install_dir)
+    return()
+  endif()
   cmake_parse_arguments(JEMALLOC "" "VERSION" "" ${ARGN})
   message(STATUS "Building jemalloc-${JEMALLOC_VERSION}")
   ExternalProject_Add(jemalloc
