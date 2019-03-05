@@ -1344,11 +1344,11 @@ function(build_date)
   set_property(TARGET date::lib
     PROPERTY IMPORTED_LOCATION ${date_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libtz.a)
   target_include_external_directory(date::lib date install_dir include)
-  set_property(TAREGT date::lib
+  set_property(TARGET date::lib
     PROPERTY INTERFACE_COMPILE_DEFINITIONS
-      -DUSE_AUTOLOAD=0
-      -DHAS_REMOTE_API=0
-      -DUSE_OS_TZDB=1
+      USE_AUTOLOAD=0
+      HAS_REMOTE_API=0
+      USE_OS_TZDB=1
     )
 endfunction()
 
