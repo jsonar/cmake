@@ -1322,11 +1322,11 @@ endfunction()
 function(build_date)
   cmake_parse_arguments(DATE "" "VERSION" "" ${ARGN})
   if (NOT DATE_VERSION)
-    set(DATE_VERSION 2.4.1)
+    set(DATE_VERSION v2.4.1)
   endif()
   message(STATUS "Building date.h ${DATE_VERSION}")
   ExternalProject_Add(date
-    URL https://github.com/HowardHinnant/date/archive/v${DATE_VERSION}.tar.gz
+    URL https://github.com/HowardHinnant/date/archive/${DATE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=NO
