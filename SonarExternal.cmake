@@ -849,13 +849,13 @@ function(build_jemalloc)
       install_bin
       install_lib
       install_include
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libjemalloc.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libjemalloc_pic.a
     )
   add_library(jemalloc::lib STATIC IMPORTED GLOBAL)
   add_dependencies(jemalloc::lib jemalloc)
   sonar_external_project_dirs(jemalloc install_dir)
   set_property(TARGET jemalloc::lib
-    PROPERTY IMPORTED_LOCATION ${jemalloc_install_dir}/lib/libjemalloc.a)
+    PROPERTY IMPORTED_LOCATION ${jemalloc_install_dir}/lib/libjemalloc_pic.a)
   target_include_external_directory(jemalloc::lib jemalloc install_dir include)
   find_package(Threads REQUIRED)
   set_property(TARGET jemalloc::lib PROPERTY
