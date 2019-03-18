@@ -1376,6 +1376,23 @@ function(build_boost)
   else()
     set(URL https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2/download)
   endif()
+  if (BOOST_VERSION VERSION_EQUAL 1.69.0 AND filesystem IN_LIST BOOST_COMPONENTS)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/boost-filesystem-1.69.patch
+      "index 53dcdb7..0749f91 100644\n"
+      "--- a/libs/filesystem/src/operations.cpp\n"
+      "+++ b/libs/filesystem/src/operations.cpp\n"
+      "@@ -2144,6 +2144,9 @@ namespace\n"
+      "       return errno;\n"
+      "     std::strcpy(entry->d_name, p->d_name);\n"
+      "     *result = entry;\n"
+      "+#   ifdef BOOST_FILESYSTEM_STATUS_CACHE\n"
+      "+    entry->d_type = DT_UNKNOWN;\n"
+      "+#   endif\n"
+      "     return 0;\n"
+      "   }\n"
+      )
+    set(patch_command patch -p1 < ${CMAKE_CURRENT_BINARY_DIR}/boost-filesystem-1.69.patch)
+  endif()
   include(ProcessorCount)
   ProcessorCount(NPROC)
   if(CCACHE)
@@ -1400,6 +1417,7 @@ function(build_boost)
     PATCH_COMMAND
       ${CMAKE_COMMAND} -E
         copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam <SOURCE_DIR>/user-config.jam
+      COMMAND ${patch_command}
     BUILD_COMMAND ./b2
       -j${NPROC}
       --user-config=user-config.jam
