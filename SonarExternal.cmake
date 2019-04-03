@@ -343,10 +343,18 @@ function(build_aws)
   message(STATUS "Building aws-sdk-cpp-${AWS_VERSION} [${AWS_COMPONENTS}]")
   string(REPLACE ";" "$<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
   set(BUILD_BYPRODUCTS "<INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
+  if(AWS_VERSION VERSION_GREATER_EQUAL 1.7.0)
+    # https://github.com/aws/aws-sdk-cpp/issues/1020#issuecomment-441843581
+    # starting with 1.7.0, C++ SDK needs dependencies on aws-c-common, aws-checksums adn aws-c-event-stream
+    set(deps c-event-stream checksums c-common)
+  endif()
   foreach(component ${AWS_COMPONENTS})
-    list(APPEND
-      BUILD_BYPRODUCTS
-      "<INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a")
+    list(APPEND BUILD_BYPRODUCTS
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-${component}.a)
+  endforeach()
+  foreach(dep ${deps})
+    list(APPEND BUILD_BYPRODUCTS
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-${dep}.a)
   endforeach()
   build_openssl()
   build_curl()
@@ -388,6 +396,15 @@ function(build_aws)
       openssl::crypto
   )
   target_include_external_directory(aws::core aws install_dir include)
+
+  foreach(dep ${deps})
+    add_library(aws::${dep} STATIC IMPORTED)
+    add_dependencies(aws::${dep} aws)
+    set_target_properties(aws::${dep} PROPERTIES
+      IMPORTED_LOCATION ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libaws-${dep}.a)
+    set_property(TARGET aws::core APPEND PROPERTY
+      INTERFACE_LINK_LIBRARIES aws::${dep})
+  endforeach()
 
   foreach(component ${AWS_COMPONENTS})
     set(lib aws::${component})
