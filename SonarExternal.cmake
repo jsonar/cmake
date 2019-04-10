@@ -853,7 +853,10 @@ function(build_jemalloc)
     sonar_external_project_dirs(jemalloc install_dir)
     return()
   endif()
-  cmake_parse_arguments(JEMALLOC "" "VERSION" "" ${ARGN})
+  cmake_parse_arguments(JEMALLOC "" "VERSION;PATCH_FILE" "" ${ARGN})
+  if(JEMALLOC_PATCH_FILE)
+    set(patch_command patch -p1 < ${JEMALLOC_PATCH_FILE})
+  endif()
   message(STATUS "Building jemalloc-${JEMALLOC_VERSION}")
   ExternalProject_Add(jemalloc
     URL https://github.com/jemalloc/jemalloc/releases/download/${JEMALLOC_VERSION}/jemalloc-${JEMALLOC_VERSION}.tar.bz2
@@ -867,6 +870,7 @@ function(build_jemalloc)
       install_lib
       install_include
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libjemalloc_pic.a
+    PATCH_COMMAND ${patch_command}
     )
   add_library(jemalloc::lib STATIC IMPORTED GLOBAL)
   add_dependencies(jemalloc::lib jemalloc)
