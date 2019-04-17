@@ -121,6 +121,9 @@ function(sonar_deps _out deps)
   foreach(dep ${ARGN})
     list(APPEND deps ${dep})
   endforeach()
+  foreach(dep ${${_out}})
+    list(APPEND deps ${dep})
+  endforeach()
   string(REPLACE ";" ", " _deps "${deps}")
   set(${_out} ${_deps} PARENT_SCOPE)
 endfunction()
@@ -286,6 +289,18 @@ function(set_package_and_file_name_for_component)
   set(CPACK_${local_gen}_${PKG_COMPONENT}_PACKAGE_NAME ${PKG_COMPONENT} PARENT_SCOPE)
 endfunction()
 
+macro(add_java_dependency)
+  cmake_parse_arguments(JAVA "" "VERSION" "" ${ARGN})
+
+  if (NOT JAVA_VERSION)
+    set(JAVA_VERSION "1:1.8.0.201")
+  endif()
+
+  sonar_deps(CPACK_RPM_PACKAGE_REQUIRES
+    "java-1.8.0-openjdk >= ${JAVA_VERSION}"
+    )
+    
+endmacro()
 
 include(CheckCXXCompilerFlag)
 function(add_supported_compiler_options)
