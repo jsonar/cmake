@@ -293,7 +293,7 @@ macro(add_java_dependency)
   cmake_parse_arguments(JAVA "" "VERSION" "" ${ARGN})
 
   if (NOT JAVA_VERSION)
-    set(JAVA_VERSION "1:1.8.0.201")
+    set(JAVA_VERSION "1:1.8.0.212")
   endif()
 
   sonar_deps(CPACK_RPM_PACKAGE_REQUIRES
