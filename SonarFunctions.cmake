@@ -163,6 +163,15 @@ macro(add_python_target)
   else()
     set(working_directory ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/version.py.in)
+    message(FATAL_ERROR "add_python_target ignores version.py.in. Please remove your existing version")
+  endif()
+  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/version.py
+    "__version__ = '${PYTHON_PACKAGE_VERSION}'\n"
+    "__describe__ = '${GIT_DESCRIBE}'\n"
+    "__revision__ = '${GIT_HASH}'\n"
+    "__build_type__ = '${CMAKE_BUILD_TYPE}'\n"
+    )
   if(PYTHON_PACKAGE_BUILD_WHEEL)
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -m wheel version
       RESULT_VARIABLE NOT_HAS_WHEEL)
