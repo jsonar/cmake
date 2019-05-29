@@ -176,11 +176,7 @@ macro(add_python_target)
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -m wheel version
       RESULT_VARIABLE NOT_HAS_WHEEL)
     if(NOT_HAS_WHEEL)
-      execute_process(COMMAND ${PYTHON_EXECUTABLE} -m pip install wheel
-        RESULT_VARIABLE NOT_INSTALL_WHEEL)
-      if(NOT_INSTALL_WHEEL)
-        message(FATAL_ERROR "Cannot find nor install python wheel. Please install it manually. Try: ${PYTHON_EXECUTABLE} -m pip install wheel")
-      endif()
+      message(FATAL_ERROR "Cannot find python wheel. Please install it manually. Try: ${PYTHON_EXECUTABLE} -m pip install wheel")
     endif()
     message(STATUS "Building python wheel for ${PYTHON_PACKAGE_NAME}-${PYTHON_PACKAGE_VERSION}")
     string(REPLACE "-" "_" PYTHON_WHEEL_FILENAME ${PYTHON_PACKAGE_NAME})
@@ -302,7 +298,7 @@ macro(add_java_dependency)
   cmake_parse_arguments(JAVA "" "VERSION" "" ${ARGN})
 
   if (NOT JAVA_VERSION)
-    set(JAVA_VERSION "1:1.8.0.201")
+    set(JAVA_VERSION "1:1.8.0.212")
   endif()
 
   sonar_deps(CPACK_RPM_PACKAGE_REQUIRES
