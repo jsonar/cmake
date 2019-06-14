@@ -133,6 +133,7 @@ function(build_mongoc)
         -DENABLE_SASL=OFF
         -DENABLE_STATIC=ON
         -DENABLE_TESTS=OFF
+        -DENABLE_SHM_COUNTERS=OFF
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
                        <INSTALL_DIR>/${libbson}
       )
