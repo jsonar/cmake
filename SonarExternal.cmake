@@ -116,9 +116,7 @@ function(build_mongoc)
         $<$<CONFIG:Debug>:-DENABLE_TRACING=ON>
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_INSTALL_MESSAGE=LAZY
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -131,9 +129,11 @@ function(build_mongoc)
         -DENABLE_MAN_PAGES=OFF
         -DENABLE_MONGOC=ON
         -DENABLE_SASL=OFF
+        -DENABLE_SNAPPY=OFF
         -DENABLE_STATIC=ON
         -DENABLE_TESTS=OFF
         -DENABLE_SHM_COUNTERS=OFF
+        -DENABLE_ZLIB=OFF
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
                        <INSTALL_DIR>/${libbson}
       )
@@ -203,8 +203,6 @@ function(build_mongoc)
       PROPERTY
       INTERFACE_LINK_LIBRARIES
         resolv
-        z
-        snappy
       APPEND
       )
   endif()
