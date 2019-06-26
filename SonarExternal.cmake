@@ -30,6 +30,34 @@ function(target_include_external_directory target external property dir)
     PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${include_dir} APPEND)
 endfunction()
 
+function(build_zlib)
+  cmake_parse_arguments(ZLIB "" "VERSION" "" ${ARGN})
+  if(TARGET zlib)
+    sonar_external_project_dirs(zlib install_dir)
+    return()
+  endif()
+  if (NOT ZLIB_VERSION)
+    set(ZLIB_VERSION 1.2.11)
+  endif()
+  message(STATUS "Building zlib-${ZLIB_VERSION}")
+  ExternalProject_Add(zlib
+    URL https://www.zlib.net/zlib-${ZLIB_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CONFIGURE_COMMAND
+      CC=${CMAKE_C_COMPILER}
+      <SOURCE_DIR>/configure
+        --static
+        --prefix <INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libz.a
+    )
+  sonar_external_project_dirs(zlib install_dir)
+  add_library(zlib::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(zlib::lib zlib)
+  set_target_properties(zlib::lib PROPERTIES
+    IMPORTED_LOCATION ${zlib_install_dir}/lib/libz.a)
+  target_include_external_directory(zlib::lib zlib install_dir include)
+endfunction()
+
 function(build_openssl)
   cmake_parse_arguments(OPENSSL "" "VERSION" "" ${ARGN})
   if(TARGET openssl)
@@ -37,13 +65,14 @@ function(build_openssl)
     return()
   endif()
   if(NOT OPENSSL_VERSION)
-    set(OPENSSL_VERSION 1.0.2p)
+    set(OPENSSL_VERSION 1.0.2s)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
   if(CMAKE_BUILD_TYPE STREQUAL Debug)
     set(build_flags
       -d
       no-asm
+      no-comp
       -g3
       -O0
       -fno-omit-frame-pointer
@@ -79,23 +108,56 @@ function(build_openssl)
   set_target_properties(openssl::crypto PROPERTIES
     IMPORTED_LOCATION ${openssl_install_dir}/lib/libcrypto.a)
   target_include_external_directory(openssl::crypto openssl install_dir include)
-  find_package(ZLIB REQUIRED)
   find_package(Threads REQUIRED)
   set_property(TARGET openssl::crypto
     PROPERTY
       INTERFACE_LINK_LIBRARIES
         ${CMAKE_DL_LIBS}
         Threads::Threads
-        ZLIB::ZLIB
     )
 endfunction()
+
+function(build_icu)
+  cmake_parse_arguments(ICU "" "VERSION" "" ${ARGN})
+  if(TARGET icu)
+    sonar_external_project_dirs(icu install_dir)
+    return()
+  endif()
+  if (NOT ICU_VERSION)
+    set(ICU_VERSION 64.2)
+  endif()
+  message(STATUS "Building icu-${ICU_VERSION}")
+  string(REPLACE "." "_" ICU_VERSION_UNDERSCORE ${ICU_VERSION})
+  string(REPLACE "." "-" ICU_VERSION_DASH ${ICU_VERSION})
+  ExternalProject_Add(icu
+    URL https://github.com/unicode-org/icu/releases/download/release-${ICU_VERSION_DASH}/icu4c-${ICU_VERSION_UNDERSCORE}-src.tgz
+    DOWNLOAD_NO_PROGRESS 1
+    CONFIGURE_COMMAND <SOURCE_DIR>/source/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      --prefix <INSTALL_DIR>
+      --enable-static
+      --disable-shared
+      --with-data-packaging=static
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libicu.a
+    )
+  sonar_external_project_dirs(icu install_dir)
+  foreach(lib data i18n io test tu uc)
+    add_library(icu::${lib} STATIC IMPORTED GLOBAL)
+    add_dependencies(icu::${lib} icu)
+    set_target_properties(icu::${lib} PROPERTIES
+      IMPORTED_LOCATION ${icu_install_dir}/lib/libicu${lib}.a)
+    target_include_external_directory(icu::${lib} icu install_dir include)
+  endforeach()
+endfunction()
+
 
 function(build_mongoc)
   # builds mongoc as an external project. Provides
   # targets mongo::lib and bson::lib
   cmake_parse_arguments(MONGOC "" "VERSION" "" ${ARGN})
   if(NOT MONGOC_VERSION)
-    set(MONGOC_VERSION 1.10.3)
+    set(MONGOC_VERSION 1.14.0)
   endif()
   message(STATUS "Building mongo-c-driver-${MONGOC_VERSION}")
   build_openssl()
@@ -126,6 +188,7 @@ function(build_mongoc)
         -DENABLE_BSON=ON
         -DENABLE_EXAMPLES=OFF
         -DENABLE_HTML_DOCS=OFF
+        -DENABLE_ICU=OFF
         -DENABLE_MAN_PAGES=OFF
         -DENABLE_MONGOC=ON
         -DENABLE_SASL=OFF
@@ -206,15 +269,6 @@ function(build_mongoc)
       APPEND
       )
   endif()
-  if (MONGOC_VERSION VERSION_GREATER_EQUAL 1.12.0)
-    find_package(ICU REQUIRED COMPONENTS data uc)
-    set_property(TARGET mongo::lib
-      PROPERTY INTERFACE_LINK_LIBRARIES
-        ICU::data
-        ICU::uc
-      APPEND
-      )
-  endif()
   set_property(TARGET mongo::header-only
     PROPERTY INTERFACE_LINK_LIBRARIES
       bson::header-only
@@ -228,8 +282,9 @@ function(build_libssh2)
   endif()
   cmake_parse_arguments(LIBSSH2 "" "VERSION" "" ${ARGN})
   if(NOT LIBSSH2_VERSION)
-    set(LIBSSH2_VERSION 1.8.0)
+    set(LIBSSH2_VERSION 1.9.0)
   endif()
+  build_zlib()
   build_openssl()
   message(STATUS "Building libssh2-${LIBSSH2_VERSION}")
   ExternalProject_Add(libssh2
@@ -248,7 +303,7 @@ function(build_libssh2)
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}<SEMICOLON>${zlib_install_dir}
       -DCRYPTO_BACKEND=OpenSSL
       -DENABLE_ZLIB_COMPRESSION=ON
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libssh2.a
@@ -264,7 +319,7 @@ function(build_libssh2)
     INTERFACE_LINK_LIBRARIES
       openssl::ssl
       openssl::crypto
-      ZLIB::ZLIB
+      zlib::lib
     )
 endfunction()
 
@@ -273,12 +328,12 @@ function(build_curl)
     sonar_external_project_dirs(curl install_dir)
     return()
   endif()
-  find_package(ZLIB REQUIRED)
+  build_zlib()
   build_openssl()
   build_libssh2()
   cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
   if(NOT CURL_VERSION)
-    set(CURL_VERSION 7.60.0)
+    set(CURL_VERSION 7.65.1)
   endif()
   message(STATUS "Building curl-${CURL_VERSION}")
   ExternalProject_Add(curl
@@ -304,6 +359,7 @@ function(build_curl)
       --without-nghttp2
       --without-nss
       --with-ssl=${openssl_install_dir}
+      --with-zlib=${zlib_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcurl.a
     )
   add_library(curl::lib STATIC IMPORTED)
@@ -317,7 +373,7 @@ function(build_curl)
       libssh2::lib
       openssl::ssl
       openssl::crypto
-      ZLIB::ZLIB
+      zlib::lib
       )
 endfunction()
 
@@ -1095,7 +1151,7 @@ function(build_xerces)
     set(patch_command patch -p1 < ${XERCES_PATCH_FILE})
   endif()
   message(STATUS "Building xerces-c-${XERCES_VERSION}")
-  find_package(ICU REQUIRED COMPONENTS uc)
+  build_icu()
   ExternalProject_Add(xerces
     URL https://www.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
     DOWNLOAD_NO_PROGRESS 1
@@ -1110,6 +1166,7 @@ function(build_xerces)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -Dnetwork:BOOL=OFF
+      -DCMAKE_PREFIX_PATH=${icu_install_dir}
       -Dtranscoder=icu
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c-3.2.a
     )
@@ -1122,7 +1179,7 @@ function(build_xerces)
   target_include_external_directory(xerces::lib xerces install_dir include)
   set_property(TARGET xerces::lib APPEND PROPERTY
     INTERFACE_LINK_LIBRARIES
-      ICU::uc
+      icu::uc
     )
 endfunction()
 
@@ -1227,10 +1284,10 @@ endfunction()
 
 function(build_catch2)
   cmake_parse_arguments(CATCH2 "" VERSION "" ${ARGN})
-  message(STATUS "Using headers from catch2-${CATCH2_VERSION}")
   if(NOT CATCH2_VERSION)
     set(CATCH2_VERSION 2.4.2)
   endif()
+  message(STATUS "Using headers from catch2-${CATCH2_VERSION}")
   ExternalProject_Add(catch2
     URL https://github.com/catchorg/Catch2/archive/v${CATCH2_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
