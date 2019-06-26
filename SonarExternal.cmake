@@ -1276,10 +1276,10 @@ endfunction()
 
 function(build_catch2)
   cmake_parse_arguments(CATCH2 "" VERSION "" ${ARGN})
-  message(STATUS "Using headers from catch2-${CATCH2_VERSION}")
   if(NOT CATCH2_VERSION)
     set(CATCH2_VERSION 2.4.2)
   endif()
+  message(STATUS "Using headers from catch2-${CATCH2_VERSION}")
   ExternalProject_Add(catch2
     URL https://github.com/catchorg/Catch2/archive/v${CATCH2_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
