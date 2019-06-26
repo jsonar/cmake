@@ -125,6 +125,7 @@ function(build_icu)
   if (NOT ICU_VERSION)
     set(ICU_VERSION 64.2)
   endif()
+  message(STATUS "Building icu-${ICU_VERSION}")
   string(REPLACE "." "_" ICU_VERSION_UNDERSCORE ${ICU_VERSION})
   string(REPLACE "." "-" ICU_VERSION_DASH ${ICU_VERSION})
   ExternalProject_Add(icu
