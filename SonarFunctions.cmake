@@ -209,12 +209,16 @@ endmacro()
 
 function(_create_venv python_version)
   # Delete virtual environment if one exists and create new one.
-  set(PYTHON_VENV_COMMANDS  "if [ -e ${VENV} && ${DELETE_EXISTING_VENV}]; then\n\
-       rm -rf ${VENV}
-    fi\n\
-    python${python_version} -m venv ${VENV}\n\
-    ${VPIP} install ${PIP_FLAGS} --upgrade pip\n\
-    ${VPIP} install ${PIP_FLAGS} --upgrade ${VENDOR}${PROG}" PARENT_SCOPE)
+  set(DELETE_VENV_COMMAND "")
+  if(DELETE_EXISTING_VENV)
+    set(DELETE_VENV_COMMAND "if [ -e \${VENV} ]; then\n\
+       rm -rf \${VENV}\n\
+fi\n")
+  endif()
+  set(PYTHON_VENV_COMMANDS  "${DELETE_VENV_COMMAND}\n\
+python${python_version} -m venv \${VENV}\n\
+\${VPIP} install \${PIP_FLAGS} --upgrade pip\n\
+\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}" PARENT_SCOPE)
 endfunction()
 
 function(sonar_setup_venv target python_version)
