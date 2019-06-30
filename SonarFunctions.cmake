@@ -207,6 +207,36 @@ macro(add_python_target)
   endif()
 endmacro()
 
+function(_create_venv python_version)
+  # Delete virtual environment if one exists and create new one.
+  set(PYTHON_VENV_COMMANDS  "if [ -e ${VENV} && ${DELETE_EXISTING_VENV}]; then\n\
+       rm -rf ${VENV}
+    fi\n\
+    python${python_version} -m venv ${VENV}\n\
+    ${VPIP} install ${PIP_FLAGS} --upgrade pip\n\
+    ${VPIP} install ${PIP_FLAGS} --upgrade ${VENDOR}${PROG}" PARENT_SCOPE)
+endfunction()
+
+function(sonar_setup_venv target python_version)
+  message("running sonar_setup_venv on ${target} with python version ${python_version}")
+  if (EXISTS "${target}")
+    string(REGEX MATCH "\.in$" target_is_a_dotin ${target})
+    message("target is a dot ${target_is_a_dotin}")
+    if (target_is_a_dotin)
+      string(LENGTH ${target} target_length)
+      math(EXPR target_output_length "${target_length} - 3")
+      message("target length is ${target_output_length}")
+      string(SUBSTRING ${target} 0 ${target_output_length} target_output)
+    else()
+      set(target_output "${target}")
+    endif()
+    message("configuring ${target} to ${target_output}")
+    _create_venv(${python_version})
+    configure_file(${target} ${target_output} @ONLY)
+  endif()
+endfunction()
+
+
 function(sonar_vendor)
   cmake_parse_arguments(VENDOR "" "OUTPUT_VARIABLE" "" ${ARGN})
   set(${VENDOR_OUTPUT_VARIABLE} jsonar PARENT_SCOPE)
