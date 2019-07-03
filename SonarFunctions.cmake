@@ -227,6 +227,8 @@ function(configure_post_install target target_output python_version)
     message("configuring ${target} to ${target_output}")
     create_venv(${python_version})
     configure_file(${target} ${target_output} @ONLY)
+  else()
+    message(WARNING "configure_post_install could not find target file ${target}")
   endif()
 endfunction()
 
