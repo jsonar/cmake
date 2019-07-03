@@ -221,8 +221,8 @@ python${python_version} -m venv \${VENV}\n\
 \${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}" PARENT_SCOPE)
 endfunction()
 
-function(sonar_setup_venv target target_output python_version)
-  message("running sonar_setup_venv on ${target} with python version ${python_version}")
+function(configure_post_install target target_output python_version)
+  message("running configure_post_install on ${target} with python version ${python_version}")
   if (EXISTS "${target}")
     message("configuring ${target} to ${target_output}")
     create_venv(${python_version})
