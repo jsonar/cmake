@@ -215,6 +215,7 @@ function(create_venv python_version)
        rm -rf \${VENV}\n\
 fi\n")
   endif()
+  set(PIP_FLAGS "--no-index --find-links /usr/lib/sonar/wheels --quiet")
   set(PYTHON_VENV_COMMANDS  "${DELETE_VENV_COMMAND}\n\
 python${python_version} -m venv \${VENV}\n\
 \${VPIP} install \${PIP_FLAGS} --upgrade pip\n\
