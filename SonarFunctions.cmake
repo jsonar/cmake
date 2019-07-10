@@ -218,8 +218,8 @@ fi\n")
   set(PIP_FLAGS "--no-index --find-links /usr/lib/sonar/wheels --quiet")
   set(PYTHON_VENV_COMMANDS  "${DELETE_VENV_COMMAND}\n\
 python${python_version} -m venv \${VENV}\n\
-\${VPIP} install \${PIP_FLAGS} --upgrade pip\n\
-\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}" PARENT_SCOPE)
+\${VPIP} install ${PIP_FLAGS} --upgrade pip\n\
+\${VPIP} install ${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}" PARENT_SCOPE)
 endfunction()
 
 function(configure_post_install target target_output python_version)
