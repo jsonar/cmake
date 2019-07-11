@@ -207,30 +207,33 @@ macro(add_python_target)
   endif()
 endmacro()
 
-function(create_venv python_version)
+function(create_venv)
   # Delete virtual environment if one exists and create new one.
+  cmake_parse_arguments(CREATE_VENV "DELETE_EXISTING" "PYTHON_VERSION" "" ${ARGN})
+
   set(DELETE_VENV_COMMAND "")
-  if(DELETE_EXISTING_VENV)
+  if(CREATE_VENV_DELETE_EXISTING)
     set(DELETE_VENV_COMMAND "rm -rf \${VENV}\n")
   endif()
-  set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip\n\
-PIP_FLAGS=\"--no-index --find-links /usr/lib/sonar/wheels --quiet\"\n\
-")
-  set(PYTHON_VENV_COMMANDS  "${DELETE_VENV_COMMAND}\n\
-${POPULATE_PIP_COMMANDS}\n\
-python${python_version} -m venv \${VENV}\n\
-\${VPIP} install \${PIP_FLAGS} --upgrade pip\n\
-\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}" PARENT_SCOPE)
+  set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip\n"
+    "PIP_FLAGS=\"--no-index --find-links /usr/lib/sonar/wheels --quiet\"\n")
+  set(PYTHON_VENV_COMMANDS  "${DELETE_VENV_COMMAND}\n"
+    "${POPULATE_PIP_COMMANDS}\n"
+    "python${CREATE_VENV_PYTHON_VERSION} -m venv \${VENV}\n"
+    "\${VPIP} install \${PIP_FLAGS} --upgrade pip\n"
+    "\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}"
+    PARENT_SCOPE)
 endfunction()
 
-function(configure_post_install target target_output python_version)
-  message("running configure_post_install on ${target} with python version ${python_version}")
-  if (EXISTS "${target}")
-    message("configuring ${target} to ${target_output}")
-    create_venv(${python_version})
-    configure_file(${target} ${target_output} @ONLY)
+function(configure_post_install)
+  cmake_parse_arguments(POST "DELETE_EXISTING" "TARGET;TARGET_OUTPUT;PYTHON_VERSION" "" ${ARGN})
+  message("running configure_post_install on ${POST_TARGET} with python version ${POST_PYTHON_VERSION}")
+  if (EXISTS "${POST_TARGET}")
+    message("configuring ${POST_TARGET} to ${POST_TARGET_OUTPUT}")
+    create_venv(PYTHON_VERSION ${POST_PYTHON_VERSION} DELETE_EXISTING ${POST_DELETE_EXISTING})
+    configure_file(${POST_TARGET} ${POST_TARGET_OUTPUT} @ONLY)
   else()
-    message(WARNING "configure_post_install could not find target file ${target}")
+    message(WARNING "configure_post_install could not find POST_TARGET file ${POST_TARGET}")
   endif()
 endfunction()
 
