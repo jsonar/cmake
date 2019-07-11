@@ -211,9 +211,7 @@ function(create_venv python_version)
   # Delete virtual environment if one exists and create new one.
   set(DELETE_VENV_COMMAND "")
   if(DELETE_EXISTING_VENV)
-    set(DELETE_VENV_COMMAND "if [ -e \${VENV} ]; then\n\
-       rm -rf \${VENV}\n\
-fi\n")
+    set(DELETE_VENV_COMMAND "rm -rf \${VENV}\n")
   endif()
   set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip\n\
 PIP_FLAGS=\"--no-index --find-links /usr/lib/sonar/wheels --quiet\"\n\
