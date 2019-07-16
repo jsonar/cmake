@@ -236,18 +236,17 @@ endmacro()
 function(create_venv)
   # Delete virtual environment if one exists and create new one.
   cmake_parse_arguments(CREATE_VENV "DONT_DELETE_EXISTING" "PYTHON_VERSION" "" ${ARGN})
-
-  set(DELETE_VENV_COMMAND "rm -rf \${VENV}\n")
+  set(DELETE_VENV_COMMAND "rm -rf \${VENV}")
   if(CREATE_VENV_DONT_DELETE_EXISTING)
     set(DELETE_VENV_COMMAND "")
   endif()
-  set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip\n"
-    "PIP_FLAGS=\"--no-index --find-links /usr/lib/sonar/wheels --quiet\"\n")
-  set(PYTHON_VENV_COMMANDS  "${DELETE_VENV_COMMAND}\n"
-    "${POPULATE_PIP_COMMANDS}\n"
-    "python${CREATE_VENV_PYTHON_VERSION} -m venv \${VENV}\n"
-    "\${VPIP} install \${PIP_FLAGS} --upgrade pip\n"
-    "\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}"
+  set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip"
+    "\nPIP_FLAGS=\"--no-index --find-links /usr/lib/sonar/wheels --quiet\"")
+  set(PYTHON_VENV_COMMANDS
+    "${DELETE_VENV_COMMAND};\n${POPULATE_PIP_COMMANDS}"
+    "\npython${CREATE_VENV_PYTHON_VERSION} -m venv \${VENV}"
+    "\n\${VPIP} install \${PIP_FLAGS} --upgrade pip"
+    "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}"
     PARENT_SCOPE)
 endfunction()
 
