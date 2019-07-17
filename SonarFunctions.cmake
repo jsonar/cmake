@@ -246,7 +246,7 @@ function(create_venv)
     "${DELETE_VENV_COMMAND};\n${POPULATE_PIP_COMMANDS}"
     "\npython${CREATE_VENV_PYTHON_VERSION} -m venv \${VENV}"
     "\n\${VPIP} install \${PIP_FLAGS} --upgrade pip"
-    "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}"
+    "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${SONAR_PACKAGE_NAME}"
     PARENT_SCOPE)
 endfunction()
 
