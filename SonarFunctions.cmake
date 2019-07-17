@@ -241,7 +241,7 @@ function(create_venv)
     set(DELETE_VENV_COMMAND "")
   endif()
   set(INSTALL_COMMAND "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${SONAR_PACKAGE_NAME}")
-  if(CREATE_VENV_DONT_CREATE_PACKAGE)
+  if(${CREATE_VENV_DONT_CREATE_PACKAGE})
     set(INSTALL_COMMAND "\n\${VPIP} install \${PIP_FLAGS} -r\${REQUIREMENTS_PATH}")
   endif()
   set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip"
