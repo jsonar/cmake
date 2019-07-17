@@ -234,7 +234,7 @@ macro(add_python_target)
 endmacro()
 
 function(create_venv)
-  # Delete virtual environment if one exists and create new one.
+  # (optionally) delete virtual environment if one exists and create new one.
   cmake_parse_arguments(CREATE_VENV "DONT_DELETE_EXISTING" "PYTHON_VERSION" "" ${ARGN})
   set(DELETE_VENV_COMMAND "rm -rf \${VENV}")
   if(CREATE_VENV_DONT_DELETE_EXISTING)
