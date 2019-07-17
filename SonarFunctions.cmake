@@ -234,7 +234,7 @@ macro(add_python_target)
 endmacro()
 
 function(create_venv)
-  # Delete virtual environment if one exists and create new one.
+  # (optionally) delete virtual environment if one exists and create new one.
   cmake_parse_arguments(CREATE_VENV "DONT_DELETE_EXISTING" "PYTHON_VERSION;DONT_CREATE_PACKAGE" "" ${ARGN})
   set(DELETE_VENV_COMMAND "rm -rf \${VENV}")
   if(CREATE_VENV_DONT_DELETE_EXISTING)
@@ -246,7 +246,7 @@ function(create_venv)
     "${DELETE_VENV_COMMAND};\n${POPULATE_PIP_COMMANDS}"
     "\npython${CREATE_VENV_PYTHON_VERSION} -m venv \${VENV}"
     "\n\${VPIP} install \${PIP_FLAGS} --upgrade pip"
-    "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}"
+    "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${SONAR_PACKAGE_NAME}"
     PARENT_SCOPE)
 endfunction()
 
@@ -270,6 +270,15 @@ function(configure_post_install)
   endif()
 endfunction()
 
+function(configure_post_uninstall)
+  cmake_parse_arguments(POSTUN "" "TARGET;TARGET_OUTPUT" "" ${ARGN})
+  if(NOT ${POSTUN_TARGET_OUTPUT})
+    set(POSTUN_TARGET_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/postun)
+  endif()
+  set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE ${POSTUN_TARGET_OUTPUT} PARENT_SCOPE)
+  set(PYTHON_REMOVE_VENV_COMMAND "rm -r \${VENV}")
+  configure_file(${POSTUN_TARGET} ${POSTUN_TARGET_OUTPUT} @ONLY)
+endfunction()
 
 function(sonar_vendor)
   cmake_parse_arguments(VENDOR "" "OUTPUT_VARIABLE" "" ${ARGN})
