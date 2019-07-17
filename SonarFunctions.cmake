@@ -240,13 +240,16 @@ function(create_venv)
   if(CREATE_VENV_DONT_DELETE_EXISTING)
     set(DELETE_VENV_COMMAND "")
   endif()
+  set(INSTALL_COMMAND "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${SONAR_PACKAGE_NAME}")
+  if(CREATE_VENV_DONT_CREATE_PACKAGE)
+    set(INSTALL_COMMAND "\n\${VPIP} install \${PIP_FLAGS} -r\${REQUIREMENTS_PATH}")
+  endif()
   set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip"
     "\nPIP_FLAGS=\"--no-index --find-links /usr/lib/sonar/wheels --quiet\"")
   set(PYTHON_VENV_COMMANDS
     "${DELETE_VENV_COMMAND};\n${POPULATE_PIP_COMMANDS}"
     "\npython${CREATE_VENV_PYTHON_VERSION} -m venv \${VENV}"
-    "\n\${VPIP} install \${PIP_FLAGS} --upgrade pip"
-    "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${SONAR_PACKAGE_NAME}"
+    "\n\${VPIP} install \${PIP_FLAGS} --upgrade pip;${INSTALL_COMMAND}"
     PARENT_SCOPE)
 endfunction()
 
