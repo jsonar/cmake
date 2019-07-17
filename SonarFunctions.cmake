@@ -271,7 +271,7 @@ function(configure_post_install)
 endfunction()
 
 function(configure_post_uninstall)
-  cmake_parse_arguments(POSTUN "TARGET;TARGET_OUTPUT" "" ${ARGN})
+  cmake_parse_arguments(POSTUN "" "TARGET;TARGET_OUTPUT" "" ${ARGN})
   if(NOT ${POSTUN_TARGET_OUTPUT})
     set(POSTUN_TARGET_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/postun)
   endif()
