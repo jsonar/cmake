@@ -292,7 +292,7 @@ function(build_libssh2)
   ExternalProject_Add(libssh2
     URL https://www.libssh2.org/download/libssh2-${LIBSSH2_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS openssl
+    DEPENDS openssl zlib
     CMAKE_ARGS
       -DBUILD_EXAMPLES=OFF
       -DBUILD_SHARED_LIBS=OFF
@@ -305,7 +305,7 @@ function(build_libssh2)
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DCMAKE_PREFIX_PATH=${openssl_install_dir}<SEMICOLON>${zlib_install_dir}
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${zlib_install_dir}
       -DCRYPTO_BACKEND=OpenSSL
       -DENABLE_ZLIB_COMPRESSION=ON
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libssh2.a
