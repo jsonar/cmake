@@ -219,6 +219,8 @@ function(build_mongoc)
         --disable-man-pages
         --disable-tests
         --with-pic
+        --with-snappy=no
+        --with-zlib=bundled
         $<$<CONFIG:Debug>:--enable-debug>
         --prefix <INSTALL_DIR>
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
