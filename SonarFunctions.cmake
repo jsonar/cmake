@@ -234,39 +234,66 @@ macro(add_python_target)
 endmacro()
 
 function(create_venv)
-  # Delete virtual environment if one exists and create new one.
-  cmake_parse_arguments(CREATE_VENV "DELETE_EXISTING" "PYTHON_VERSION" "" ${ARGN})
-
-  set(DELETE_VENV_COMMAND "")
-  if(CREATE_VENV_DELETE_EXISTING)
-    set(DELETE_VENV_COMMAND "rm -rf \${VENV}\n")
+  # (optionally) delete virtual environment if one exists and create new one.
+  cmake_parse_arguments(VENV "KEEP_EXISTING_VENV;ONLY_USE_REQUIREMENTS" "PYTHON_VERSION" "" ${ARGN})
+  if(${VENV_ONLY_USE_REQUIREMENTS})
+    message("Not creating a package, using requirements file specified in \${REQUIREMENTS_PATH}")
   endif()
-  set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip\n"
-    "PIP_FLAGS=\"--no-index --find-links /usr/lib/sonar/wheels --quiet\"\n")
-  set(PYTHON_VENV_COMMANDS  "${DELETE_VENV_COMMAND}\n"
-    "${POPULATE_PIP_COMMANDS}\n"
-    "python${CREATE_VENV_PYTHON_VERSION} -m venv \${VENV}\n"
-    "\${VPIP} install \${PIP_FLAGS} --upgrade pip\n"
-    "\${VPIP} install \${PIP_FLAGS} --upgrade \${VENDOR}\${PROG}"
+  if(VENV_KEEP_EXISTING_VENV)
+    set(DELETE_VENV_COMMAND "")
+  else()
+    set(DELETE_VENV_COMMAND "rm -rf \${VENV};")
+  endif()
+  if(VENV_ONLY_USE_REQUIREMENTS)
+    set(INSTALL_COMMAND "\n\${VPIP} install \${PIP_FLAGS} -r\${REQUIREMENTS_PATH}")
+  else()
+    set(INSTALL_COMMAND "\n\${VPIP} install \${PIP_FLAGS} --upgrade \${SONAR_PACKAGE_NAME}")
+  endif()
+  set(POPULATE_PIP_COMMANDS "VPIP=\${VENV}/bin/pip"
+    "\nPIP_FLAGS=\"--no-index --find-links /usr/lib/sonar/wheels --quiet\"")
+  set(PYTHON_VENV_COMMANDS
+    "${DELETE_VENV_COMMAND}\n${POPULATE_PIP_COMMANDS}"
+    "\npython${VENV_PYTHON_VERSION} -m venv \${VENV}"
+    "\n\${VPIP} install \${PIP_FLAGS} --upgrade pip;${INSTALL_COMMAND}"
     PARENT_SCOPE)
 endfunction()
 
 function(configure_post_install)
-  cmake_parse_arguments(POST "DELETE_EXISTING" "TARGET;TARGET_OUTPUT;PYTHON_VERSION" "" ${ARGN})
-  if(NOT ${POST_TARGET_OUTPUT})
+  cmake_parse_arguments(POST "KEEP_EXISTING_VENV;ONLY_USE_REQUIREMENTS" "TARGET;TARGET_OUTPUT;PYTHON_VERSION;UNINSTALL_TARGET;UNINSTALL_TARGET_OUTPUT" "" ${ARGN})
+  if(NOT POST_TARGET_OUTPUT)
     set(POST_TARGET_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/post)
   endif()
-  set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${POST_TARGET_OUTPUT})
+  if(POST_UNINSTALL_TARGET)
+    configure_post_uninstall(TARGET ${POST_UNINSTALL_TARGET} TARGET_OUTPUT ${POST_UNINSTALL_TARGET_OUTPUT})
+    set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE ${CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE} PARENT_SCOPE)
+  endif()
+  set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${POST_TARGET_OUTPUT} PARENT_SCOPE)
   message("running configure_post_install on ${POST_TARGET} with python version ${POST_PYTHON_VERSION}")
   if (EXISTS "${POST_TARGET}")
     message("configuring ${POST_TARGET} to ${POST_TARGET_OUTPUT}")
-    create_venv(PYTHON_VERSION ${POST_PYTHON_VERSION} DELETE_EXISTING ${POST_DELETE_EXISTING})
+    if(POST_KEEP_EXISTING_VENV)
+      set(KEEP_EXISTING_VENV_VARIABLE "DONT_DELETE_EXISTING")
+    endif()
+    if(POST_ONLY_USE_REQUIREMENTS)
+      set(ONLY_USE_REQUIREMENTS_VARIABLE "ONLY_USE_REQUIREMENTS")
+    endif()
+    create_venv(PYTHON_VERSION ${POST_PYTHON_VERSION} ${ONLY_USE_REQUIREMENTS_VARIABLE} ${KEEP_EXISTING_VENV_VARIABLE})
     configure_file(${POST_TARGET} ${POST_TARGET_OUTPUT} @ONLY)
   else()
     message(WARNING "configure_post_install could not find POST_TARGET file ${POST_TARGET}")
   endif()
 endfunction()
 
+function(configure_post_uninstall)
+  cmake_parse_arguments(POSTUN "" "TARGET;TARGET_OUTPUT" "" ${ARGN})
+  message("running configure_post_uninstall on ${POSTUN_TARGET}")
+  if(NOT POSTUN_TARGET_OUTPUT)
+    set(POSTUN_TARGET_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/postun)
+  endif()
+  set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE ${POSTUN_TARGET_OUTPUT} PARENT_SCOPE)
+  set(PYTHON_REMOVE_VENV_COMMAND "rm -r \${VENV}")
+  configure_file(${POSTUN_TARGET} ${POSTUN_TARGET_OUTPUT} @ONLY)
+endfunction()
 
 function(sonar_vendor)
   cmake_parse_arguments(VENDOR "" "OUTPUT_VARIABLE" "" ${ARGN})
