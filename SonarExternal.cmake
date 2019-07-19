@@ -7,10 +7,10 @@ if(EXTERNAL_INSTALL_LIBDIR STREQUAL lib64)
   set(LIBSUFF 64)
 endif()
 
-macro(sonar_external_project_dirs project)
+macro(external_project_dirs project)
   # set variables project_<dir> for each of the requested properties
   # Usage:
-  #  sonar_external_project_dirs myproject install_dir source_dir...
+  #  external_project_dirs myproject install_dir source_dir...
   #
   #  will create variables myproject_install_dir, myproject_source_dir,...
   #
@@ -33,7 +33,7 @@ endfunction()
 function(build_zlib)
   cmake_parse_arguments(ZLIB "" "VERSION" "" ${ARGN})
   if(TARGET zlib)
-    sonar_external_project_dirs(zlib install_dir)
+    external_project_dirs(zlib install_dir)
     return()
   endif()
   if (NOT ZLIB_VERSION)
@@ -50,7 +50,7 @@ function(build_zlib)
         --prefix <INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libz.a
     )
-  sonar_external_project_dirs(zlib install_dir)
+  external_project_dirs(zlib install_dir)
   add_library(zlib::lib STATIC IMPORTED GLOBAL)
   add_dependencies(zlib::lib zlib)
   set_target_properties(zlib::lib PROPERTIES
@@ -61,11 +61,11 @@ endfunction()
 function(build_openssl)
   cmake_parse_arguments(OPENSSL "" "VERSION" "" ${ARGN})
   if(TARGET openssl)
-    sonar_external_project_dirs(openssl install_dir)
+    external_project_dirs(openssl install_dir)
     return()
   endif()
   if(NOT OPENSSL_VERSION)
-    set(OPENSSL_VERSION 1.0.2s)
+    set(OPENSSL_VERSION 1.1.1c)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
   if(CMAKE_BUILD_TYPE STREQUAL Debug)
@@ -96,7 +96,7 @@ function(build_openssl)
       <INSTALL_DIR>/lib/libssl.a
       <INSTALL_DIR>/lib/libcrypto.a
       )
-  sonar_external_project_dirs(openssl install_dir)
+  external_project_dirs(openssl install_dir)
   add_library(openssl::ssl STATIC IMPORTED GLOBAL)
   add_dependencies(openssl::ssl openssl)
   set_target_properties(openssl::ssl PROPERTIES
@@ -120,7 +120,7 @@ endfunction()
 function(build_icu)
   cmake_parse_arguments(ICU "" "VERSION" "" ${ARGN})
   if(TARGET icu)
-    sonar_external_project_dirs(icu install_dir)
+    external_project_dirs(icu install_dir)
     return()
   endif()
   if (NOT ICU_VERSION)
@@ -139,9 +139,15 @@ function(build_icu)
       --enable-static
       --disable-shared
       --with-data-packaging=static
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libicu.a
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/lib/libicudata.a
+      <INSTALL_DIR>/lib/libicui18n.a
+      <INSTALL_DIR>/lib/libicuio.a
+      <INSTALL_DIR>/lib/libicutest.a
+      <INSTALL_DIR>/lib/libicutu.a
+      <INSTALL_DIR>/lib/libicuuc.a
     )
-  sonar_external_project_dirs(icu install_dir)
+  external_project_dirs(icu install_dir)
   foreach(lib data i18n io test tu uc)
     add_library(icu::${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(icu::${lib} icu)
@@ -196,7 +202,7 @@ function(build_mongoc)
         -DENABLE_STATIC=ON
         -DENABLE_TESTS=OFF
         -DENABLE_SHM_COUNTERS=OFF
-        -DENABLE_ZLIB=OFF
+        -DENABLE_ZLIB=BUNDLED
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
                        <INSTALL_DIR>/${libbson}
       )
@@ -219,13 +225,15 @@ function(build_mongoc)
         --disable-man-pages
         --disable-tests
         --with-pic
+        --with-snappy=no
+        --with-zlib=bundled
         $<$<CONFIG:Debug>:--enable-debug>
         --prefix <INSTALL_DIR>
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
                        <INSTALL_DIR>/${libbson}
       )
   endif()
-  sonar_external_project_dirs(mongoc install_dir)
+  external_project_dirs(mongoc install_dir)
   foreach(driver mongo bson)
     set(lib ${driver}::lib)
     set(header ${driver}::header-only)
@@ -277,7 +285,7 @@ endfunction()
 
 function(build_libssh2)
   if(TARGET libssh2)
-    sonar_external_project_dirs(libssh2 install_dir)
+    external_project_dirs(libssh2 install_dir)
     return()
   endif()
   cmake_parse_arguments(LIBSSH2 "" "VERSION" "" ${ARGN})
@@ -290,27 +298,25 @@ function(build_libssh2)
   ExternalProject_Add(libssh2
     URL https://www.libssh2.org/download/libssh2-${LIBSSH2_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS openssl
+    DEPENDS openssl zlib
     CMAKE_ARGS
       -DBUILD_EXAMPLES=OFF
       -DBUILD_SHARED_LIBS=OFF
       -DBUILD_TESTING=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DCMAKE_PREFIX_PATH=${openssl_install_dir}<SEMICOLON>${zlib_install_dir}
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${zlib_install_dir}
       -DCRYPTO_BACKEND=OpenSSL
       -DENABLE_ZLIB_COMPRESSION=ON
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libssh2.a
     )
   add_library(libssh2::lib STATIC IMPORTED)
   add_dependencies(libssh2::lib libssh2)
-  sonar_external_project_dirs(libssh2 install_dir)
+  external_project_dirs(libssh2 install_dir)
   set_target_properties(libssh2::lib PROPERTIES
     IMPORTED_LOCATION ${libssh2_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libssh2.a
     )
@@ -325,7 +331,7 @@ endfunction()
 
 function(build_curl)
   if(TARGET curl)
-    sonar_external_project_dirs(curl install_dir)
+    external_project_dirs(curl install_dir)
     return()
   endif()
   build_zlib()
@@ -339,7 +345,7 @@ function(build_curl)
   ExternalProject_Add(curl
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS openssl libssh2
+    DEPENDS openssl libssh2 zlib
     CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       --disable-ldap
@@ -364,7 +370,7 @@ function(build_curl)
     )
   add_library(curl::lib STATIC IMPORTED)
   add_dependencies(curl::lib curl)
-  sonar_external_project_dirs(curl install_dir)
+  external_project_dirs(curl install_dir)
   set_target_properties(curl::lib PROPERTIES
     IMPORTED_LOCATION ${curl_install_dir}/lib/libcurl.a)
   target_include_external_directory(curl::lib curl install_dir include)
@@ -393,11 +399,17 @@ function(build_aws)
   After that you can use in your project:
   target_link_libraries(mytarget aws::logs aws::s3)
   #]====]
-
+  if (TARGET aws)
+    external_project_dirs(aws install_dir)
+    return()
+  endif()
   cmake_parse_arguments(AWS "" "VERSION;PATCH_FILE" "COMPONENTS" ${ARGN})
   message(STATUS "Building aws-sdk-cpp-${AWS_VERSION} [${AWS_COMPONENTS}]")
   string(REPLACE ";" "$<SEMICOLON>" AWS_BUILD_ONLY "${AWS_COMPONENTS}")
   set(BUILD_BYPRODUCTS "<INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-cpp-sdk-core.a")
+  if (NOT AWS_VERSION)
+    set(AWS_VERSION 1.7.144)
+  endif()
   if(AWS_VERSION VERSION_GREATER_EQUAL 1.7.0)
     # https://github.com/aws/aws-sdk-cpp/issues/1020#issuecomment-441843581
     # starting with 1.7.0, C++ SDK needs dependencies on aws-c-common, aws-checksums adn aws-c-event-stream
@@ -412,7 +424,11 @@ function(build_aws)
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-${dep}.a)
   endforeach()
   build_openssl()
-  build_curl()
+  if (AWS_CURL_VERSION)
+    build_curl(VERSION ${AWS_CURL_VERSION})
+  else()
+    build_curl()
+  endif()
   if (AWS_PATCH_FILE)
     set(patch_command patch -p1 < ${AWS_PATCH_FILE})
   endif()
@@ -437,7 +453,7 @@ function(build_aws)
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
   )
-  sonar_external_project_dirs(aws install_dir)
+  external_project_dirs(aws install_dir)
   add_library(aws::core STATIC IMPORTED)
   add_dependencies(aws::core aws)
   find_package(Threads REQUIRED)
@@ -479,7 +495,7 @@ function(build_jsoncpp)
   #
   # Generates jsoncpp::lib target to link with
   if(TARGET jsoncpp)
-    sonar_external_project_dirs(jsoncpp install_dir)
+    external_project_dirs(jsoncpp install_dir)
     return()
   endif()
   cmake_parse_arguments(JSONCPP "" "VERSION;PATCH_FILE" "" ${ARGN})
@@ -510,7 +526,7 @@ function(build_jsoncpp)
       <INSTALL_DIR>/${jsoncpp_lib}
   )
   ExternalProject_Add_StepTargets(jsoncpp update)
-  sonar_external_project_dirs(jsoncpp install_dir)
+  external_project_dirs(jsoncpp install_dir)
   add_library(jsoncpp::lib STATIC IMPORTED)
   add_dependencies(jsoncpp::lib jsoncpp)
   set_target_properties(jsoncpp::lib PROPERTIES
@@ -550,7 +566,7 @@ function(build_sqlite3)
     INSTALL_COMMAND DESTDIR=<INSTALL_DIR> ${CMAKE_MAKE_PROGRAM} install
     BUILD_BYPRODUCTS <INSTALL_DIR>/usr/local/lib/libsqlite3.a
     )
-  sonar_external_project_dirs(sqlite3 install_dir)
+  external_project_dirs(sqlite3 install_dir)
   add_library(sqlite3::lib STATIC IMPORTED)
   add_dependencies(sqlite3::lib sqlite3)
   set_target_properties(sqlite3::lib PROPERTIES
@@ -601,7 +617,7 @@ function(build_mongocxx)
     PATCH_COMMAND ${patch_command}
   )
   ExternalProject_Add_StepTargets(mongocxx update)
-  sonar_external_project_dirs(mongocxx install_dir)
+  external_project_dirs(mongocxx install_dir)
 
   # generate mongocxx::lib and bsoncxx::lib targets
   foreach(driver mongo bson)
@@ -647,7 +663,7 @@ function(build_easylogging)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       )
-  sonar_external_project_dirs(easylogging install_dir)
+  external_project_dirs(easylogging install_dir)
   set(easyloggingcc ${easylogging_install_dir}/include/easylogging++.cc)
   set(CMAKE_POSITION_INDEPENDENT_CODE 1)
   add_library(easylogging-lib STATIC ${easyloggingcc})
@@ -680,7 +696,7 @@ function(build_pcre)
       --prefix <INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libpcre.a
     )
-  sonar_external_project_dirs(pcre install_dir)
+  external_project_dirs(pcre install_dir)
   add_library(pcre::lib STATIC IMPORTED)
   add_dependencies(pcre::lib pcre)
   set_property(TARGET pcre::lib
@@ -712,7 +728,7 @@ endfunction()
 
 function(build_glog)
   if(TARGET glog)
-    sonar_external_project_dirs(glog install_dir)
+    external_project_dirs(glog install_dir)
     return()
   endif()
   cmake_parse_arguments(GLOG "" "VERSION" "" ${ARGN})
@@ -734,7 +750,7 @@ function(build_glog)
       -DBUILD_SHARED_LIBS=OFF
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libglog.a
     )
-  sonar_external_project_dirs(glog install_dir)
+  external_project_dirs(glog install_dir)
   add_library(glog::lib STATIC IMPORTED)
   add_dependencies(glog::lib glog)
   set_target_properties(glog::lib PROPERTIES
@@ -744,7 +760,7 @@ endfunction()
 
 function(build_gflags)
   if(TARGET gflags)
-    sonar_external_project_dirs(gflags install_dir)
+    external_project_dirs(gflags install_dir)
     return()
   endif()
   cmake_parse_arguments(GFLAGS "" "VERSION" "" ${ARGN})
@@ -766,7 +782,7 @@ function(build_gflags)
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libgflags.a
       )
-  sonar_external_project_dirs(gflags install_dir)
+  external_project_dirs(gflags install_dir)
   add_library(gflags::lib STATIC IMPORTED GLOBAL)
   add_dependencies(gflags::lib gflags)
   set_target_properties(gflags::lib PROPERTIES
@@ -806,7 +822,7 @@ function(build_google_api)
       -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}$<SEMICOLON>${openssl_install_dir}$<SEMICOLON>${libssh2_install_dir}
     BUILD_BYPRODUCTS ${byproducts}
     )
-  sonar_external_project_dirs(google_api binary_dir source_dir)
+  external_project_dirs(google_api binary_dir source_dir)
   # google-api-core is the core target that depends on all the core libs
   add_library(google-api-core INTERFACE)
   add_dependencies(google-api-core google_api)
@@ -861,7 +877,7 @@ function(build_s2)
     PATCH_COMMAND ${patch_command}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libs2.a
     )
-  sonar_external_project_dirs(s2 install_dir)
+  external_project_dirs(s2 install_dir)
   add_library(s2::lib STATIC IMPORTED)
   add_dependencies(s2::lib s2)
   set_property(TARGET s2::lib
@@ -897,7 +913,7 @@ function(build_bid)
     )
   add_library(bid::lib STATIC IMPORTED GLOBAL)
   add_dependencies(bid::lib bid)
-  sonar_external_project_dirs(bid source_dir)
+  external_project_dirs(bid source_dir)
   set_property(TARGET bid::lib
     PROPERTY IMPORTED_LOCATION ${bid_source_dir}/LIBRARY/libbid.a)
   target_include_external_directory(bid::lib bid source_dir LIBRARY/src)
@@ -905,7 +921,7 @@ endfunction()
 
 function(build_jemalloc)
   if(TARGET jemalloc)
-    sonar_external_project_dirs(jemalloc install_dir)
+    external_project_dirs(jemalloc install_dir)
     return()
   endif()
   cmake_parse_arguments(JEMALLOC "" "VERSION;PATCH_FILE" "" ${ARGN})
@@ -929,7 +945,7 @@ function(build_jemalloc)
     )
   add_library(jemalloc::lib STATIC IMPORTED GLOBAL)
   add_dependencies(jemalloc::lib jemalloc)
-  sonar_external_project_dirs(jemalloc install_dir)
+  external_project_dirs(jemalloc install_dir)
   set_property(TARGET jemalloc::lib
     PROPERTY IMPORTED_LOCATION ${jemalloc_install_dir}/lib/libjemalloc_pic.a)
   target_include_external_directory(jemalloc::lib jemalloc install_dir include)
@@ -961,7 +977,7 @@ function(build_stxxl)
     )
   add_library(stxxl::lib STATIC IMPORTED)
   add_dependencies(stxxl::lib stxxl)
-  sonar_external_project_dirs(stxxl install_dir)
+  external_project_dirs(stxxl install_dir)
   set_property(TARGET stxxl::lib
     PROPERTY IMPORTED_LOCATION ${stxxl_install_dir}/lib/libstxxl.a)
   target_include_external_directory(stxxl::lib stxxl install_dir include)
@@ -991,7 +1007,7 @@ function(build_sparsehash)
     )
   add_library(sparsehash::header-only INTERFACE IMPORTED)
   add_dependencies(sparsehash::header-only sparsehash)
-  sonar_external_project_dirs(sparsehash install_dir)
+  external_project_dirs(sparsehash install_dir)
   target_include_external_directory(sparsehash::header-only sparsehash install_dir include)
 endfunction()
 
@@ -1019,7 +1035,7 @@ function(build_hdfs3)
     )
   add_library(hdfs3::lib STATIC IMPORTED)
   add_dependencies(hdfs3::lib hdfs3)
-  sonar_external_project_dirs(hdfs3 install_dir)
+  external_project_dirs(hdfs3 install_dir)
   set_property(TARGET hdfs3::lib
     PROPERTY IMPORTED_LOCATION ${hdfs3_install_dir}/lib/libhdfs3.a)
   target_include_external_directory(hdfs3::lib hdfs3 install_dir include)
@@ -1054,7 +1070,7 @@ function(build_rdkafka)
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/librdkafka.a
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/librdkafka++.a
       )
-  sonar_external_project_dirs(rdkafka install_dir)
+  external_project_dirs(rdkafka install_dir)
   add_library(rdkafka::c STATIC IMPORTED)
   add_dependencies(rdkafka::c rdkafka)
   set_property(TARGET rdkafka::c
@@ -1101,7 +1117,7 @@ function(build_geos)
       BUILD_BYPRODUCTS <INSTALL_DIR>/libgeos.a
       )
   endif()
-  sonar_external_project_dirs(geos install_dir)
+  external_project_dirs(geos install_dir)
 endfunction()
 
 function(build_spatialite)
@@ -1110,7 +1126,7 @@ function(build_spatialite)
   endif()
   # Do not build geos from source. See error message in build_geos()
   # build_geos(VERSION 3.6.2)
-  sonar_external_project_dirs(sqlite3 install_dir)
+  external_project_dirs(sqlite3 install_dir)
   cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
   if(NOT SPATIALITE_VERSION)
     set(SPATIALITE_VERSION 4.3.0a)
@@ -1138,7 +1154,7 @@ function(build_spatialite)
     )
   add_custom_target(mod-spatialite ALL)
   add_dependencies(mod-spatialite spatialite)
-  sonar_external_project_dirs(spatialite install_dir)
+  external_project_dirs(spatialite install_dir)
 endfunction()
 
 
@@ -1170,7 +1186,7 @@ function(build_xerces)
       -Dtranscoder=icu
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c-3.2.a
     )
-  sonar_external_project_dirs(xerces install_dir)
+  external_project_dirs(xerces install_dir)
   add_library(xerces::lib STATIC IMPORTED)
   add_dependencies(xerces::lib xerces)
   set_property(TARGET xerces::lib
@@ -1213,7 +1229,7 @@ function(build_jwt_cpp)
       -DENABLE_DOC=OFF
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/lib${libname}.a
     )
-  sonar_external_project_dirs(jwt_cpp install_dir)
+  external_project_dirs(jwt_cpp install_dir)
   add_library(jwt-cpp::lib STATIC IMPORTED)
   add_dependencies(jwt-cpp::lib jwt_cpp)
   set_target_properties(jwt-cpp::lib PROPERTIES
@@ -1244,7 +1260,7 @@ function(build_tbb)
     BUILD_BYPRODUCTS
       <SOURCE_DIR>/build/out_release/libtbb.a
     )
-  sonar_external_project_dirs(tbb source_dir)
+  external_project_dirs(tbb source_dir)
   add_library(tbb::lib STATIC IMPORTED)
   add_dependencies(tbb::lib tbb)
   set_target_properties(tbb::lib PROPERTIES
@@ -1276,7 +1292,7 @@ function(build_yaml)
   )
   add_library(yaml::lib STATIC IMPORTED)
   add_dependencies(yaml::lib yaml)
-  sonar_external_project_dirs(yaml binary_dir source_dir)
+  external_project_dirs(yaml binary_dir source_dir)
   set_property(TARGET yaml::lib
     PROPERTY IMPORTED_LOCATION ${yaml_binary_dir}/libyaml.a)
   target_include_external_directory(yaml::lib yaml source_dir include)
@@ -1297,7 +1313,7 @@ function(build_catch2)
     )
   add_library(catch2::header-only INTERFACE IMPORTED)
   add_dependencies(catch2::header-only catch2)
-  sonar_external_project_dirs(catch2 source_dir)
+  external_project_dirs(catch2 source_dir)
   target_include_external_directory(catch2::header-only catch2 source_dir single_include/catch2)
 endfunction()
 
@@ -1327,7 +1343,7 @@ function(build_cpp_redis)
   add_library(cpp_redis::lib STATIC IMPORTED)
   add_library(tacopie::lib STATIC IMPORTED)
   add_dependencies(cpp_redis::lib cpp_redis)
-  sonar_external_project_dirs(cpp_redis binary_dir source_dir)
+  external_project_dirs(cpp_redis binary_dir source_dir)
   set_property(TARGET cpp_redis::lib
     PROPERTY IMPORTED_LOCATION ${cpp_redis_binary_dir}/lib/libcpp_redis.a)
   set_property(TARGET tacopie::lib
@@ -1361,7 +1377,7 @@ function(build_uri)
     )
   add_library(uri::lib STATIC IMPORTED)
   add_dependencies(uri::lib uri)
-  sonar_external_project_dirs(uri install_dir)
+  external_project_dirs(uri install_dir)
   set_property(TARGET uri::lib PROPERTY
     IMPORTED_LOCATION ${uri_install_dir}/lib/libnetwork-uri.a)
   target_include_external_directory(uri::lib uri install_dir include)
@@ -1392,7 +1408,7 @@ function(build_rapidjson)
     )
   add_library(rapidjson::header-only INTERFACE IMPORTED)
   add_dependencies(rapidjson::header-only rapidjson)
-  sonar_external_project_dirs(rapidjson install_dir)
+  external_project_dirs(rapidjson install_dir)
   target_include_external_directory(rapidjson::header-only rapidjson install_dir include)
 endfunction()
 
@@ -1417,7 +1433,7 @@ function(build_date)
     )
   add_library(date::lib STATIC IMPORTED GLOBAL)
   add_dependencies(date::lib date)
-  sonar_external_project_dirs(date install_dir)
+  external_project_dirs(date install_dir)
   set_property(TARGET date::lib
     PROPERTY IMPORTED_LOCATION ${date_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libtz.a)
   target_include_external_directory(date::lib date install_dir include)
@@ -1509,7 +1525,7 @@ function(build_boost)
     INSTALL_COMMAND ./b2 install
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
     )
-  sonar_external_project_dirs(boost install_dir)
+  external_project_dirs(boost install_dir)
   # header only library
   add_library(boost::boost INTERFACE IMPORTED GLOBAL)
   add_dependencies(boost::boost boost)
@@ -1524,6 +1540,7 @@ function(build_boost)
     target_include_external_directory(${lib} boost install_dir include)
   endforeach()
 endfunction()
+
 function(build_cppunit)
   cmake_parse_arguments(CPPUNIT "" "VERSION;SHA256" "" ${ARGN})
   if (NOT CPPUNIT_VERSION)
@@ -1542,9 +1559,184 @@ function(build_cppunit)
     )
   add_library(cppunit::lib STATIC IMPORTED)
   add_dependencies(cppunit::lib cppunit)
-  sonar_external_project_dirs(cppunit install_dir)
+  external_project_dirs(cppunit install_dir)
   set_target_properties(cppunit::lib PROPERTIES
     IMPORTED_LOCATION ${cppunit_install_dir}/lib/libcppunit.a
     )
   target_include_external_directory(cppunit::lib cppunit install_dir include)
 endfunction()
+
+function(build_libxml2)
+  cmake_parse_arguments(LIBXML2 "" "VERSION;SHA1" "" ${ARGN})
+  if (NOT LIBXML2_VERSION)
+    set(LIBXML2_VERSION 2.9.9)
+  endif()
+  if (NOT LIBXML2_SHA1)
+    set(LIBXML2_SHA1 96686d1dd9fddf3b35a28b1e2e4bbacac889add3)
+  endif()
+  message(STATUS "Building libxml2-${LIBXML2_VERSION}")
+  ExternalProject_Add(libxml2
+    URL ftp://xmlsoft.org/libxml2/libxml2-${LIBXML2_VERSION}.tar.gz
+    URL_HASH SHA1=${LIBXML2_SHA1}
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      --prefix <INSTALL_DIR>
+      --disable-shared
+      --enable-static
+      --without-python
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libxml2.a
+    )
+  add_library(libxml2::lib STATIC IMPORTED)
+  add_dependencies(libxml2::lib libxml2)
+  external_project_dirs(libxml2 install_dir)
+  set_target_properties(libxml2::lib PROPERTIES
+    IMPORTED_LOCATION ${libxml2_install_dir}/lib/libxml2.a
+    )
+  target_include_external_directory(libxml2::lib libxml2 install_dir include/libxml2)
+endfunction()
+
+function(build_bzip2)
+  if(TARGET bzip2)
+    external_project_dirs(bzip2 install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(BZIP2 "" "VERSION" "" ${ARGN})
+  if (NOT BZIP2_VERSION)
+    set(BZIP2_VERSION 1.0.7)
+  endif()
+  message(STATUS "Building bzip2-${BZIP2_VERSION}")
+  ExternalProject_Add(bzip2
+    URL https://sourceware.org/pub/bzip2/bzip2-${BZIP2_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE ON
+    BUILD_COMMAND ""
+    INSTALL_COMMAND make install PREFIX=<INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libbz2.a
+    )
+  add_library(bzip2::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(bzip2::lib bzip2)
+  external_project_dirs(bzip2 install_dir)
+  set_target_properties(bzip2::lib PROPERTIES
+    IMPORTED_LOCATION ${bzip2_install_dir}/lib/libbz2.a)
+  target_include_external_directory(bzip2::lib bzip2 install_dir include)
+endfunction()
+
+function(build_snappy)
+  cmake_parse_arguments(SNAPPY "" "VERSION" "" ${ARGN})
+  if (NOT SNAPPY_VERSION)
+    set(SNAPPY_VERSION 1.1.7)
+  endif()
+  message(STATUS "Building snappy-${SNAPPY_VERSION}")
+  ExternalProject_Add(snappy
+    URL https://github.com/google/snappy/archive/${SNAPPY_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libsnappy.a
+    )
+  add_library(snappy::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(snappy::lib snappy)
+  external_project_dirs(snappy install_dir)
+  set_property(TARGET snappy::lib PROPERTY
+    IMPORTED_LOCATION ${snappy_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libsnappy.a)
+  target_include_external_directory(snappy::lib snappy install_dir include)
+endfunction()
+
+function(build_archive)
+  cmake_parse_arguments(ARCHIVE "" "VERSION" "" ${ARGN})
+  if (NOT ARCHIVE_VERSION)
+    set(ARCHIVE_VERSION 3.3.3)
+  endif()
+  message(STATUS "Building archive-${ARCHIVE_VERSION}")
+  ExternalProject_Add(archive
+    URL https://libarchive.org/downloads/libarchive-${ARCHIVE_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      --prefix <INSTALL_DIR>
+      --disable-shared
+      --enable-static
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libarchive.a
+    )
+  add_library(archive::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(archive::lib archive)
+  external_project_dirs(archive install_dir)
+  set_target_properties(archive::lib PROPERTIES
+    IMPORTED_LOCATION ${archive_install_dir}/lib/libarchive.a)
+  target_include_external_directory(archive::lib archive install_dir include)
+endfunction()
+
+function(build_libzip)
+  if(TARGET libzip)
+    external_project_dirs(libzip install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(LIBZIP "" "VERSION" "" ${ARGN})
+  if (NOT LIBZIP_VERSION)
+    set(LIBZIP_VERSION 1.5.2)
+  endif()
+  message(STATUS "Building libzip-${LIBZIP_VERSION}")
+  build_openssl()
+  build_bzip2()
+  ExternalProject_Add(libzip
+    URL https://libzip.org/download/libzip-${LIBZIP_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    DEPENDS openssl bzip2
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${bzip2_install_dir}
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libzip.a
+    )
+  add_library(libzip::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(libzip::lib libzip)
+  external_project_dirs(libzip install_dir)
+  set_target_properties(libzip::lib PROPERTIES
+    IMPORTED_LOCATION ${libzip_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libzip.a)
+  target_include_external_directory(libzip::lib libzip install_dir include)
+endfunction()
+
+function(build_aws_encryption)
+  if(TARGET aws-encryption)
+    external_project_dirs(aws-encryption install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(AWS_ENCRYPTION "" "VERSION" "" ${ARGN})
+  if (NOT AWS_ENCRYPTION_VERSION)
+    set(AWS_ENCRYPTION_VERSION 1.0.0)
+  endif()
+  message(STATUS "Building aws-encryption-${AWS_ENCRYPTION_VERSION}")
+  build_aws(COMPONENTS KMS)
+  ExternalProject_Add(aws-encryption
+    URL https://github.com/aws/aws-encryption-sdk-c/archive/v${AWS_ENCRYPTION_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    DEPENDS aws
+    CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DBUILD_SHARED_LIBS=NO
+    -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    -DCMAKE_PREFIX_PATH=${aws_install_dir}
+    -DAWS_ENC_SDK_END_TO_END_TESTS=NO
+    -DBUILD_AWS_ENC_SDK_CPP=NO
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libaws-encryption-sdk.a
+    )
+  add_library(aws-encryption::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(aws-encryption::lib aws-encryption)
+  external_project_dirs(aws-encryption install_dir)
+  set_target_properties(aws-encryption::lib PROPERTIES
+    IMPORTED_LOCATION ${aws_encryption_install_dir}/lib/lib/libaws-encryption-sdk.a)
+  target_include_external_directory(aws-encryption::lib aws-encryption install_dir include)
+endfunction(build_aws_encryption)
