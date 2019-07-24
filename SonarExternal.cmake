@@ -68,11 +68,16 @@ function(build_openssl)
     set(OPENSSL_VERSION 1.1.1c)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
+  if (OPENSSL_VERSION VERSION_LESS 1.1)
+    set(no_comp no-zlib)
+  else()
+    set(no_comp no-comp)
+  endif()
   if(CMAKE_BUILD_TYPE STREQUAL Debug)
     set(build_flags
       -d
       no-asm
-      no-comp
+      ${no_comp}
       -g3
       -O0
       -fno-omit-frame-pointer
