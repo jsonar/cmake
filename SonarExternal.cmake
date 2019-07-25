@@ -68,11 +68,16 @@ function(build_openssl)
     set(OPENSSL_VERSION 1.1.1c)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
+  if(OPENSSL_VERSION VERSION_LESS 1.1)
+    set(no_zlib no-zlib)
+  else()
+    set(no_zlib no-comp)
+  endif()
   if(CMAKE_BUILD_TYPE STREQUAL Debug)
     set(build_flags
       -d
       no-asm
-      no-comp
+      ${no_zlib}
       -g3
       -O0
       -fno-omit-frame-pointer
@@ -118,7 +123,7 @@ function(build_openssl)
 endfunction()
 
 function(build_icu)
-  cmake_parse_arguments(ICU "" "VERSION" "" ${ARGN})
+  cmake_parse_arguments(ICU "" "VERSION" "COMPONENTS" ${ARGN})
   if(TARGET icu)
     external_project_dirs(icu install_dir)
     return()
@@ -126,6 +131,12 @@ function(build_icu)
   if (NOT ICU_VERSION)
     set(ICU_VERSION 64.2)
   endif()
+  if (NOT ICU_COMPONENTS)
+    set(ICU_COMPONENTS data i18n io test tu uc)
+  endif()
+  foreach(component ${ICU_COMPONENTS})
+    list(APPEND build_byproducts <INSTALL_DIR>/lib/libicu${component}.a)
+  endforeach()
   message(STATUS "Building icu-${ICU_VERSION}")
   string(REPLACE "." "_" ICU_VERSION_UNDERSCORE ${ICU_VERSION})
   string(REPLACE "." "-" ICU_VERSION_DASH ${ICU_VERSION})
@@ -139,21 +150,15 @@ function(build_icu)
       --enable-static
       --disable-shared
       --with-data-packaging=static
-    BUILD_BYPRODUCTS
-      <INSTALL_DIR>/lib/libicudata.a
-      <INSTALL_DIR>/lib/libicui18n.a
-      <INSTALL_DIR>/lib/libicuio.a
-      <INSTALL_DIR>/lib/libicutest.a
-      <INSTALL_DIR>/lib/libicutu.a
-      <INSTALL_DIR>/lib/libicuuc.a
+    BUILD_BYPRODUCTS ${build_byproducts}
     )
   external_project_dirs(icu install_dir)
-  foreach(lib data i18n io test tu uc)
-    add_library(icu::${lib} STATIC IMPORTED GLOBAL)
-    add_dependencies(icu::${lib} icu)
-    set_target_properties(icu::${lib} PROPERTIES
-      IMPORTED_LOCATION ${icu_install_dir}/lib/libicu${lib}.a)
-    target_include_external_directory(icu::${lib} icu install_dir include)
+  foreach(component ${ICU_COMPONENTS})
+    add_library(icu::${component} STATIC IMPORTED GLOBAL)
+    add_dependencies(icu::${component} icu)
+    set_target_properties(icu::${component} PROPERTIES
+      IMPORTED_LOCATION ${icu_install_dir}/lib/libicu${component}.a)
+    target_include_external_directory(icu::${component} icu install_dir include)
   endforeach()
 endfunction()
 
@@ -874,6 +879,8 @@ function(build_s2)
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DBUILD_EXAMPLES=OFF
     PATCH_COMMAND ${patch_command}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libs2.a
     )
@@ -973,6 +980,7 @@ function(build_stxxl)
       -DSTXXL_VERBOSE_LEVEL=-10
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DUSE_GNU_PARALLEL=OFF
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libstxxl.a
     )
   add_library(stxxl::lib STATIC IMPORTED)
@@ -1017,10 +1025,14 @@ function(build_hdfs3)
   if(HDFS3_PATCH_FILE)
     set(patch_command patch -p1 < ${HDFS3_PATCH_FILE})
   endif()
+  build_krb5()
+  build_protobuf()
+  build_libxml2()
   ExternalProject_Add(hdfs3
     URL https://github.com/jsonar/pivotalrd-libhdfs3/archive/${HDFS3_VERSION}.zip
     DOWNLOAD_NO_PROGRESS 1
     PATCH_COMMAND ${patch_command}
+    DEPENDS krb5 protobuf libxml2
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
@@ -1029,8 +1041,8 @@ function(build_hdfs3)
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DBUILD_SHARED_LIBS=0
-      -DBUILD_STATIC_LIBS=1
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_PREFIX_PATH=${krb5_install_dir}$<SEMICOLON>${protobuf_install_dir}$<SEMICOLON>${libxml2_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libhdfs3.a
     )
   add_library(hdfs3::lib STATIC IMPORTED)
@@ -1041,9 +1053,11 @@ function(build_hdfs3)
   target_include_external_directory(hdfs3::lib hdfs3 install_dir include)
   set_property(TARGET hdfs3::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
-      krb5
-      protobuf
+      krb5::lib
+      protobuf::lib
+      libxml2::lib
       uuid
+      keyutils
     )
 endfunction()
 
@@ -1051,10 +1065,11 @@ function(build_rdkafka)
   cmake_parse_arguments(RDKAFKA "" "VERSION" "" ${ARGN})
   message(STATUS "Building rdkafka-${RDKAFKA_VERSION}")
   build_openssl()
+  build_sasl()
   ExternalProject_Add(rdkafka
     URL https://github.com/edenhill/librdkafka/archive/v${RDKAFKA_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS openssl
+    DEPENDS openssl sasl
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
@@ -1062,7 +1077,7 @@ function(build_rdkafka)
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${sasl_install_dir}
       -DRDKAFKA_BUILD_EXAMPLES=OFF
       -DRDKAFKA_BUILD_TESTS=OFF
       -DRDKAFKA_BUILD_STATIC=ON
@@ -1086,15 +1101,8 @@ function(build_rdkafka)
   set_property(TARGET rdkafka::cpp PROPERTY
     INTERFACE_LINK_LIBRARIES
       rdkafka::c
+      sasl::lib
     )
-  # kafka requires sasl2 if it is found in the system
-  find_library(sasl2 sasl2)
-  if (sasl2)
-    set_property(TARGET rdkafka::cpp APPEND PROPERTY
-      INTERFACE_LINK_LIBRARIES
-      sasl2
-      )
-  endif()
 endfunction()
 
 function(build_geos)
@@ -1453,9 +1461,9 @@ function(build_boost)
     # once within a project.
     message(FATAL_ERROR "Cannot call build_boost more than once. Sorry")
   endif()
-  cmake_parse_arguments(BOOST "" "VERSION" "COMPONENTS" ${ARGN})
+  cmake_parse_arguments(BOOST "" "VERSION;PREFIX" "COMPONENTS" ${ARGN})
   if (NOT BOOST_VERSION)
-    set(BOOST_VERSION 1.69.0)
+    set(BOOST_VERSION 1.70.0)
   endif()
   message(STATUS "Building boost-${BOOST_VERSION} [${BOOST_COMPONENTS}]")
   # add/move system component to the beginning
@@ -1568,23 +1576,29 @@ endfunction()
 
 function(build_libxml2)
   cmake_parse_arguments(LIBXML2 "" "VERSION;SHA1" "" ${ARGN})
+  if (TARGET libxml2)
+    external_project_dirs(libxml2 install_dir)
+    return()
+  endif()
   if (NOT LIBXML2_VERSION)
     set(LIBXML2_VERSION 2.9.9)
-  endif()
-  if (NOT LIBXML2_SHA1)
     set(LIBXML2_SHA1 96686d1dd9fddf3b35a28b1e2e4bbacac889add3)
   endif()
+  build_xz()
   message(STATUS "Building libxml2-${LIBXML2_VERSION}")
   ExternalProject_Add(libxml2
     URL ftp://xmlsoft.org/libxml2/libxml2-${LIBXML2_VERSION}.tar.gz
     URL_HASH SHA1=${LIBXML2_SHA1}
     DOWNLOAD_NO_PROGRESS ON
+    DEPENDS xz
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       --prefix <INSTALL_DIR>
       --disable-shared
       --enable-static
       --without-python
+      --with-pic
+      --with-lzma=${xz_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libxml2.a
     )
   add_library(libxml2::lib STATIC IMPORTED)
@@ -1592,6 +1606,7 @@ function(build_libxml2)
   external_project_dirs(libxml2 install_dir)
   set_target_properties(libxml2::lib PROPERTIES
     IMPORTED_LOCATION ${libxml2_install_dir}/lib/libxml2.a
+    INTERFACE_LINK_LIBRARIES xz::lib
     )
   target_include_external_directory(libxml2::lib libxml2 install_dir include/libxml2)
 endfunction()
@@ -1682,19 +1697,21 @@ function(build_libzip)
     set(LIBZIP_VERSION 1.5.2)
   endif()
   message(STATUS "Building libzip-${LIBZIP_VERSION}")
-  build_openssl()
   build_bzip2()
   ExternalProject_Add(libzip
     URL https://libzip.org/download/libzip-${LIBZIP_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
-    DEPENDS openssl bzip2
+    DEPENDS bzip2
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DBUILD_SHARED_LIBS=NO
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${bzip2_install_dir}
+      -DCMAKE_PREFIX_PATH=${bzip2_install_dir}
+      -DENABLE_GNUTLS=OFF
+      -DENABLE_OPENSSL=OFF
+      -DENABLE_MBEDTLS=OFF
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libzip.a
     )
   add_library(libzip::lib STATIC IMPORTED GLOBAL)
@@ -1721,16 +1738,17 @@ function(build_aws_encryption)
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS aws
     CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DBUILD_SHARED_LIBS=NO
-    -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    -DCMAKE_PREFIX_PATH=${aws_install_dir}
-    -DAWS_ENC_SDK_END_TO_END_TESTS=NO
-    -DBUILD_AWS_ENC_SDK_CPP=NO
+      -DAWS_ENC_SDK_END_TO_END_TESTS=NO
+      -DBUILD_AWS_ENC_SDK_CPP=NO
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${aws_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libaws-encryption-sdk.a
     )
   add_library(aws-encryption::lib STATIC IMPORTED GLOBAL)
@@ -1740,3 +1758,207 @@ function(build_aws_encryption)
     IMPORTED_LOCATION ${aws_encryption_install_dir}/lib/lib/libaws-encryption-sdk.a)
   target_include_external_directory(aws-encryption::lib aws-encryption install_dir include)
 endfunction(build_aws_encryption)
+
+function(build_xz)
+  if(TARGET xz)
+    external_project_dirs(xz install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(XZ "" "VERSION" "" ${ARGN})
+  if (NOT XZ_VERSION)
+    set(XZ_VERSION 5.2.4)
+  endif()
+  message(STATUS "Building xz-${XZ_VERSION}")
+  ExternalProject_Add(xz
+    URL https://tukaani.org/xz/xz-${XZ_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      --disable-shared
+      --prefix <INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/liblzma.a
+    )
+  add_library(xz::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(xz::lib xz)
+  external_project_dirs(xz install_dir)
+  set_target_properties(xz::lib PROPERTIES
+    IMPORTED_LOCATION ${xz_install_dir}/lib/liblzma.a)
+  target_include_external_directory(xz::lib xz install_dir include)
+endfunction(build_xz)
+
+function(build_proj)
+  if(TARGET proj)
+    external_project_dirs(proj install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(PROJ "" "VERSION" "" ${ARGN})
+  if (NOT PROJ_VERSION)
+    set(PROJ_VERSION 6.1.1)
+  endif()
+  build_sqlite3()
+  message(STATUS "Building proj-${PROJ_VERSION}")
+  ExternalProject_Add(proj
+    URL https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    DEPENDS sqlite3
+    CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DBUILD_SHARED_LIBS=NO
+    -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    -DCMAKE_PREFIX_PATH=${sqlite3_install_dir}
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libproj.a
+    )
+  add_library(proj::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(proj::lib proj)
+  external_project_dirs(proj install_dir)
+  set_target_properties(proj::lib PROPERTIES
+    IMPORTED_LOCATION ${proj_install_dir}/lib/lib/libproj.a)
+  target_include_external_directory(proj::lib proj install_dir include)
+endfunction(build_proj)
+
+function(build_gsasl)
+  if(TARGET gsasl)
+    external_project_dirs(gsasl install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(GSASL "" "VERSION;SHA1" "" ${ARGN})
+  if (NOT GSASL_VERSION)
+    set(GSASL_VERSION 1.8.0)
+    set(GSASL_SHA1 08fd5dfdd3d88154cf06cb0759a732790c47b4f7)
+  endif()
+  message(STATUS "Building gsasl-${GSASL_VERSION}")
+  ExternalProject_Add(gsasl
+    URL ftp://ftp.gnu.org/gnu/gsasl/libgsasl-${GSASL_VERSION}.tar.gz
+    URL_HASH SHA1=${GSASL_SHA1}
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      --prefix <INSTALL_DIR>
+      --disable-shared
+      --enable-static
+      --without-stringprep
+      --disable-kerberos_v5
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libgsasl.a
+    )
+  add_library(gsasl::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(gsasl::lib gsasl)
+  external_project_dirs(gsasl install_dir)
+  set_target_properties(gsasl::lib PROPERTIES
+    IMPORTED_LOCATION ${gsasl_install_dir}/lib/libgsasl.a)
+  target_include_external_directory(gsasl::lib gsasl install_dir include)
+endfunction(build_gsasl)
+
+function(build_krb5)
+  if(TARGET krb5)
+    external_project_dirs(krb5 install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(KRB5 "" "VERSION" "COMPONENTS" ${ARGN})
+  if (NOT KRB5_VERSION)
+    set(KRB5_VERSION 1.17)
+  endif()
+  if (NOT KRB5_COMPONENTS)
+    # note: order implies link order, so it is important
+    set(KRB5_COMPONENTS krb5 k5crypto krb5support com_err)
+  endif()
+  foreach(component ${KRB5_COMPONENTS})
+    list(APPEND BUILD_BYPRODUCTS <INSTALL_DIR>/lib/lib${component}.a)
+  endforeach()
+  message(STATUS "Building krb5-${KRB5_VERSION}")
+  ExternalProject_Add(krb5
+    URL https://web.mit.edu/kerberos/dist/krb5/${KRB5_VERSION}/krb5-${KRB5_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND <SOURCE_DIR>/src/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      CFLAGS=-fPIC
+      CXXFLAGS=-fPIC
+      --prefix <INSTALL_DIR>
+      --disable-shared
+      --enable-static
+    BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
+    )
+  external_project_dirs(krb5 install_dir)
+  foreach(component ${KRB5_COMPONENTS})
+    add_library(krb5::${component} STATIC IMPORTED GLOBAL)
+    add_dependencies(krb5::${component} krb5)
+    set_target_properties(krb5::${component} PROPERTIES
+      IMPORTED_LOCATION ${krb5_install_dir}/lib/lib${component}.a)
+    target_include_external_directory(krb5::${component} krb5 install_dir include)
+  endforeach()
+  # one can link with krb5::lib to get all of the above in the right order
+  add_library(krb5::lib INTERFACE IMPORTED)
+  add_dependencies(krb5::lib krb5)
+  foreach(component ${KRB5_COMPONENTS})
+    set_property(TARGET krb5::lib APPEND PROPERTY
+      INTERFACE_LINK_LIBRARIES krb5::${component})
+  endforeach()
+endfunction(build_krb5)
+
+function(build_protobuf)
+  if(TARGET protobuf)
+    external_project_dirs(protobuf install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(PROTOBUF "" "VERSION" "" ${ARGN})
+  if (NOT PROTOBUF_VERSION)
+    set(PROTOBUF_VERSION 3.9.0)
+  endif()
+  build_zlib()
+  message(STATUS "Building protobuf-${PROTOBUF_VERSION}")
+  ExternalProject_Add(protobuf
+    URL https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-cpp-${PROTOBUF_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    DEPENDS zlib
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      --prefix <INSTALL_DIR>
+      --disable-shared
+      --enable-static
+      --with-pic
+      --with-zlib
+      --with-zlib-include=${zlib_install_dir}/include
+      --with-zlib-lib=${zlib_install_dir}/lib/libz.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libprotobuf.a
+    )
+  add_library(protobuf::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(protobuf::lib protobuf)
+  external_project_dirs(protobuf install_dir)
+  set_target_properties(protobuf::lib PROPERTIES
+    IMPORTED_LOCATION ${protobuf_install_dir}/lib/libprotobuf.a)
+  target_include_external_directory(protobuf::lib protobuf install_dir include)
+endfunction(build_protobuf)
+
+function(build_sasl)
+  if(TARGET sasl)
+    external_project_dirs(sasl install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(SASL "" "VERSION" "" ${ARGN})
+  if (NOT SASL_VERSION)
+    set(SASL_VERSION 2.1.27)
+  endif()
+  message(STATUS "Building sasl-${SASL_VERSION}")
+  ExternalProject_Add(sasl
+    URL https://github.com/cyrusimap/cyrus-sasl/releases/download/cyrus-sasl-${SASL_VERSION}/cyrus-sasl-${SASL_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+    CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+    --prefix <INSTALL_DIR>
+    --disable-shared
+    --enable-static
+    --with-pic
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libsasl2.a
+    )
+  add_library(sasl::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(sasl::lib sasl)
+  external_project_dirs(sasl install_dir)
+  set_target_properties(sasl::lib PROPERTIES
+    IMPORTED_LOCATION ${sasl_install_dir}/lib/libsasl2.a)
+  target_include_external_directory(sasl::lib sasl install_dir include)
+endfunction(build_sasl)
