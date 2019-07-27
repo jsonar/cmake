@@ -540,6 +540,10 @@ function(build_jsoncpp)
 endfunction()
 
 function(build_sqlite3)
+  if(TARGET sqlite3)
+    external_project_dirs(sqlite3 install_dir)
+    return()
+  endif()
   cmake_parse_arguments(SQLITE3 "" "URL;SHA1" "" ${ARGN})
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.cmake
     "cmake_minimum_required(VERSION 3.8)\n"
@@ -1107,54 +1111,64 @@ endfunction()
 
 function(build_geos)
   cmake_parse_arguments(GEOS "" "VERSION" "" ${ARGN})
-  if (NOT TARGET geos)
-    message(STATUS "Building geos-${GEOS_VERSION}")
-    message(FATAL_ERROR "geos builds geos_c.so if with GEOS_BUILD_STATIC=1. We can't use it unless we also install it with the project. Make sure you know what you're doing before removing this error.")
-    ExternalProject_Add(geos
-      URL https://github.com/OSGeo/geos/archive/${GEOS_VERSION}.tar.gz
-      DOWNLOAD_NO_PROGRESS 1
-      CMAKE_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DGEOS_BUILD_STATIC=1
-      BUILD_BYPRODUCTS <INSTALL_DIR>/libgeos.a
-      )
+  if(NOT GEOS_VERSION)
+    set(GEOS_VERSION bd4e378a)
   endif()
+  message(STATUS "Building geos-${GEOS_VERSION}")
+  ExternalProject_Add(geos
+    URL https://github.com/OSGeo/geos/archive/${GEOS_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DBUILD_SHARED_LIBS=OFF
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/libgeos.a
+      <INSTALL_DIR>/libgeos_c.a
+    )
   external_project_dirs(geos install_dir)
+  add_library(geos::lib STATIC IMPORTED)
+  add_dependencies(geos::lib geos)
+  set_property(TARGET geos::lib PROPERTY
+    IMPORTED_LOCATION ${geos_install_dir}/lib/libgeos.a)
+  target_include_external_directory(geos::lib geos install_dir include)
 endfunction()
 
 function(build_spatialite)
-  if(NOT TARGET sqlite3)
-    message(FATAL_ERROR "Cannot build spatialite without building sqlite3 first")
-  endif()
   # Do not build geos from source. See error message in build_geos()
-  # build_geos(VERSION 3.6.2)
+  build_geos()
+  build_sqlite3()
+  build_proj()
   external_project_dirs(sqlite3 install_dir)
   cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
   if(NOT SPATIALITE_VERSION)
-    set(SPATIALITE_VERSION 4.3.0a)
+    set(SPATIALITE_VERSION 5.0.0-beta0)
   endif()
   message(STATUS "Building spatialite-${SPATIALITE_VERSION}")
   ExternalProject_Add(spatialite
-    URL https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
+    URL
+      https://www.gaia-gis.it/gaia-sins/libspatialite-sources/libspatialite-${SPATIALITE_VERSION}.tar.gz
+      https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS sqlite3 #geos
+    DEPENDS sqlite3 proj geos
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>
-      LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>
+      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:proj::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H\ -I$<TARGET_PROPERTY:geos::lib,INTERFACE_INCLUDE_DIRECTORIES>
+      LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>\ -L$<TARGET_LINKER_FILE_DIR:proj::lib>\ -L$<TARGET_LINKER_FILE_DIR:geos::lib>
       LIBS=-ldl\ -lpthread
       --prefix <INSTALL_DIR>
       --disable-freexl
       --disable-libxml2
       --disable-lwgeom
       --disable-gcp
-      #--with-geosconfig=${geos_install_dir}/bin/geos-config
+      --disable-iconv
+      --with-geosconfig=${geos_install_dir}/bin/geos-config
       BUILD_BYPRODUCTS
         <INSTALL_DIR>/lib/mod_spatialite.so.7.1.0
         <INSTALL_DIR>/lib/mod_spatialite.so.7
@@ -1461,9 +1475,12 @@ function(build_boost)
     # once within a project.
     message(FATAL_ERROR "Cannot call build_boost more than once. Sorry")
   endif()
-  cmake_parse_arguments(BOOST "" "VERSION;PREFIX" "COMPONENTS" ${ARGN})
+  cmake_parse_arguments(BOOST "" "VERSION;SOURCE_DIR;NAMESPACE" "COMPONENTS" ${ARGN})
   if (NOT BOOST_VERSION)
     set(BOOST_VERSION 1.70.0)
+  endif()
+  if (NOT BOOST_NAMESPACE)
+    set(BOOST_NAMESPACE boost)
   endif()
   message(STATUS "Building boost-${BOOST_VERSION} [${BOOST_COMPONENTS}]")
   # add/move system component to the beginning
@@ -1473,14 +1490,17 @@ function(build_boost)
 
   string(REPLACE ";" "," WITH_LIBRARIES "${BOOST_COMPONENTS}")
   string(REPLACE "." "_" BOOST_VERSION_UNDERSCORES ${BOOST_VERSION})
-  foreach(component ${BOOST_COMPONENTS})
-    list(APPEND BUILD_BYPRODUCTS "<INSTALL_DIR>/lib/libboost_${component}.a")
-  endforeach()
-  if (BOOST_VERSION VERSION_GREATER 1.63.0)
-    set(URL https://dl.bintray.com/boostorg/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2)
+  if (BOOST_SOURCE_DIR)
+    message(STATUS "  using boost-${BOOST_VERSION} sources in ${BOOST_SOURCE_DIR}")
+    set(download_step SOURCE_DIR ${BOOST_SOURCE_DIR})
   else()
-    set(URL https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2/download)
+    set(download_step URL
+      https://dl.bintray.com/boostorg/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2
+      https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2/download)
   endif()
+  foreach(component ${BOOST_COMPONENTS})
+    list(APPEND BUILD_BYPRODUCTS "<INSTALL_DIR>/lib/lib${BOOST_NAMESPACE}_${component}.a")
+  endforeach()
   if (BOOST_VERSION VERSION_EQUAL 1.69.0 AND filesystem IN_LIST BOOST_COMPONENTS)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/boost-filesystem-1.69.patch
       "index 53dcdb7..0749f91 100644\n"
@@ -1512,7 +1532,7 @@ function(build_boost)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam "")
   endif()
   ExternalProject_Add(boost
-    URL ${URL}
+    ${download_step}
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ./bootstrap.sh
       --prefix=<INSTALL_DIR>
@@ -1543,7 +1563,7 @@ function(build_boost)
     add_library(${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(${lib} boost)
     set_target_properties(${lib} PROPERTIES
-      IMPORTED_LOCATION ${boost_install_dir}/lib/libboost_${component}.a
+      IMPORTED_LOCATION ${boost_install_dir}/lib/lib${BOOST_NAMESPACE}_${component}.a
       INTERFACE_LINK_LIBRARIES boost::system)
     target_include_external_directory(${lib} boost install_dir include)
   endforeach()
@@ -1733,11 +1753,10 @@ function(build_aws_encryption)
   endif()
   message(STATUS "Building aws-encryption-${AWS_ENCRYPTION_VERSION}")
   build_aws(COMPONENTS KMS)
-  build_openssl()
   ExternalProject_Add(aws-encryption
     URL https://github.com/aws/aws-encryption-sdk-c/archive/v${AWS_ENCRYPTION_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
-    DEPENDS aws openssl
+    DEPENDS aws
     CMAKE_ARGS
       -DAWS_ENC_SDK_END_TO_END_TESTS=NO
       -DBUILD_AWS_ENC_SDK_CPP=NO
@@ -1749,14 +1768,14 @@ function(build_aws_encryption)
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${aws_install_dir}$<SEMICOLON>${openssl_install_dir}
+      -DCMAKE_PREFIX_PATH=${aws_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libaws-encryption-sdk.a
     )
   add_library(aws-encryption::lib STATIC IMPORTED GLOBAL)
   add_dependencies(aws-encryption::lib aws-encryption)
   external_project_dirs(aws-encryption install_dir)
   set_target_properties(aws-encryption::lib PROPERTIES
-    IMPORTED_LOCATION ${aws_encryption_install_dir}/lib/lib/libaws-encryption-sdk.a)
+    IMPORTED_LOCATION ${aws_encryption_install_dir}/lib/libaws-encryption-sdk.a)
   target_include_external_directory(aws-encryption::lib aws-encryption install_dir include)
 endfunction(build_aws_encryption)
 
@@ -1803,21 +1822,21 @@ function(build_proj)
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS sqlite3
     CMAKE_ARGS
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DBUILD_SHARED_LIBS=NO
-    -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    -DCMAKE_PREFIX_PATH=${sqlite3_install_dir}
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libproj.a
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${sqlite3_install_dir}
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libproj.a
     )
   add_library(proj::lib STATIC IMPORTED GLOBAL)
   add_dependencies(proj::lib proj)
   external_project_dirs(proj install_dir)
   set_target_properties(proj::lib PROPERTIES
-    IMPORTED_LOCATION ${proj_install_dir}/lib/lib/libproj.a)
+    IMPORTED_LOCATION ${proj_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libproj.a)
   target_include_external_directory(proj::lib proj install_dir include)
 endfunction(build_proj)
 
