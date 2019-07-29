@@ -1112,7 +1112,7 @@ endfunction()
 function(build_geos)
   cmake_parse_arguments(GEOS "" "VERSION" "" ${ARGN})
   if(NOT GEOS_VERSION)
-    set(GEOS_VERSION bd4e378a)
+    set(GEOS_VERSION 3.7.2)
   endif()
   message(STATUS "Building geos-${GEOS_VERSION}")
   ExternalProject_Add(geos
@@ -1128,9 +1128,11 @@ function(build_geos)
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       -DBUILD_SHARED_LIBS=OFF
+      -DGEOS_BUILD_STATIC=ON
+      -DGEOS_BUILD_SHARED=OFF
+      -DGEOS_ENABLE_TESTS=OFF
     BUILD_BYPRODUCTS
-      <INSTALL_DIR>/libgeos.a
-      <INSTALL_DIR>/libgeos_c.a
+      <INSTALL_DIR>/lib/libgeos.a
     )
   external_project_dirs(geos install_dir)
   add_library(geos::lib STATIC IMPORTED)
@@ -1141,14 +1143,12 @@ function(build_geos)
 endfunction()
 
 function(build_spatialite)
-  # Do not build geos from source. See error message in build_geos()
   build_geos()
   build_sqlite3()
   build_proj()
-  external_project_dirs(sqlite3 install_dir)
   cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
   if(NOT SPATIALITE_VERSION)
-    set(SPATIALITE_VERSION 5.0.0-beta0)
+    set(SPATIALITE_VERSION 4.3.0a)
   endif()
   message(STATUS "Building spatialite-${SPATIALITE_VERSION}")
   ExternalProject_Add(spatialite
@@ -1159,7 +1159,7 @@ function(build_spatialite)
     DEPENDS sqlite3 proj geos
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:proj::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H\ -I$<TARGET_PROPERTY:geos::lib,INTERFACE_INCLUDE_DIRECTORIES>
+      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:proj::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:geos::lib,INTERFACE_INCLUDE_DIRECTORIES>
       LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>\ -L$<TARGET_LINKER_FILE_DIR:proj::lib>\ -L$<TARGET_LINKER_FILE_DIR:geos::lib>
       LIBS=-ldl\ -lpthread
       --prefix <INSTALL_DIR>
@@ -1168,6 +1168,7 @@ function(build_spatialite)
       --disable-lwgeom
       --disable-gcp
       --disable-iconv
+      --disable-examples
       --with-geosconfig=${geos_install_dir}/bin/geos-config
       BUILD_BYPRODUCTS
         <INSTALL_DIR>/lib/mod_spatialite.so.7.1.0
@@ -1777,7 +1778,7 @@ function(build_aws_encryption)
   set_target_properties(aws-encryption::lib PROPERTIES
     IMPORTED_LOCATION ${aws_encryption_install_dir}/lib/libaws-encryption-sdk.a)
   target_include_external_directory(aws-encryption::lib aws-encryption install_dir include)
-endfunction(build_aws_encryption)
+endfunction()
 
 function(build_xz)
   if(TARGET xz)
@@ -1804,7 +1805,7 @@ function(build_xz)
   set_target_properties(xz::lib PROPERTIES
     IMPORTED_LOCATION ${xz_install_dir}/lib/liblzma.a)
   target_include_external_directory(xz::lib xz install_dir include)
-endfunction(build_xz)
+endfunction()
 
 function(build_proj)
   if(TARGET proj)
@@ -1813,7 +1814,7 @@ function(build_proj)
   endif()
   cmake_parse_arguments(PROJ "" "VERSION" "" ${ARGN})
   if (NOT PROJ_VERSION)
-    set(PROJ_VERSION 6.1.1)
+    set(PROJ_VERSION 5.2.0)
   endif()
   build_sqlite3()
   message(STATUS "Building proj-${PROJ_VERSION}")
@@ -1824,11 +1825,13 @@ function(build_proj)
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DBUILD_SHARED_LIBS=NO
+      -DBUILD_LIBPROJ_SHARED=NO
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_PREFIX_PATH=${sqlite3_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libproj.a
     )
@@ -1838,7 +1841,7 @@ function(build_proj)
   set_target_properties(proj::lib PROPERTIES
     IMPORTED_LOCATION ${proj_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libproj.a)
   target_include_external_directory(proj::lib proj install_dir include)
-endfunction(build_proj)
+endfunction()
 
 function(build_gsasl)
   if(TARGET gsasl)
@@ -1870,7 +1873,7 @@ function(build_gsasl)
   set_target_properties(gsasl::lib PROPERTIES
     IMPORTED_LOCATION ${gsasl_install_dir}/lib/libgsasl.a)
   target_include_external_directory(gsasl::lib gsasl install_dir include)
-endfunction(build_gsasl)
+endfunction()
 
 function(build_krb5)
   if(TARGET krb5)
@@ -1917,7 +1920,7 @@ function(build_krb5)
     set_property(TARGET krb5::lib APPEND PROPERTY
       INTERFACE_LINK_LIBRARIES krb5::${component})
   endforeach()
-endfunction(build_krb5)
+endfunction()
 
 function(build_protobuf)
   if(TARGET protobuf)
@@ -1952,7 +1955,7 @@ function(build_protobuf)
   set_target_properties(protobuf::lib PROPERTIES
     IMPORTED_LOCATION ${protobuf_install_dir}/lib/libprotobuf.a)
   target_include_external_directory(protobuf::lib protobuf install_dir include)
-endfunction(build_protobuf)
+endfunction()
 
 function(build_sasl)
   if(TARGET sasl)
@@ -1981,4 +1984,4 @@ function(build_sasl)
   set_target_properties(sasl::lib PROPERTIES
     IMPORTED_LOCATION ${sasl_install_dir}/lib/libsasl2.a)
   target_include_external_directory(sasl::lib sasl install_dir include)
-endfunction(build_sasl)
+endfunction()
