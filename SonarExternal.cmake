@@ -1769,10 +1769,11 @@ function(build_aws_encryption)
   endif()
   message(STATUS "Building aws-encryption-${AWS_ENCRYPTION_VERSION}")
   build_aws(COMPONENTS KMS)
+  build_openssl()
   ExternalProject_Add(aws-encryption
     URL https://github.com/aws/aws-encryption-sdk-c/archive/v${AWS_ENCRYPTION_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
-    DEPENDS aws
+    DEPENDS aws openssl
     CMAKE_ARGS
       -DAWS_ENC_SDK_END_TO_END_TESTS=NO
       -DBUILD_AWS_ENC_SDK_CPP=NO
@@ -1784,7 +1785,7 @@ function(build_aws_encryption)
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${aws_install_dir}
+      -DCMAKE_PREFIX_PATH=${aws_install_dir}$<SEMICOLON>${openssl_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-encryption-sdk.a
     )
   add_library(aws-encryption::lib STATIC IMPORTED GLOBAL)
@@ -1792,7 +1793,17 @@ function(build_aws_encryption)
   external_project_dirs(aws-encryption install_dir)
   set_target_properties(aws-encryption::lib PROPERTIES
     IMPORTED_LOCATION ${aws_encryption_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libaws-encryption-sdk.a)
-  target_include_external_directory(aws-encryption::lib aws-encryption install_dir include)
+  include_external_directories(TARGET aws-encryption::lib
+    DIRECTORIES ${aws_encryption_install_dir}/include)
+  find_package(Threads REQUIRED)
+  find_library(rt rt)
+  set_property(TARGET aws-encryption::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      ${rt}
+      Threads::Threads
+      openssl::crypto
+      aws::c-common
+    )
 endfunction()
 
 function(build_xz)
