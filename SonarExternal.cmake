@@ -218,7 +218,7 @@ function(build_mongoc)
         -DENABLE_TESTS=OFF
         -DENABLE_SHM_COUNTERS=OFF
         -DENABLE_ZLIB=BUNDLED
-        -DCMAKE_EXE_LINKER_FLAGS_DEBUG=-ldl
+        -DCMAKE_EXE_LINKER_FLAGS=-ldl
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
                        <INSTALL_DIR>/${libbson}
       )
@@ -631,7 +631,7 @@ function(build_mongocxx)
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_PREFIX_PATH=${mongoc_install_dir}$<SEMICOLON>${openssl_install_dir}
-      -DCMAKE_EXE_LINKER_FLAGS_DEBUG=-ldl
+      -DCMAKE_EXE_LINKER_FLAGS=-ldl
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libmongocxx-static.a
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libbsoncxx-static.a
