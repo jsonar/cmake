@@ -22,12 +22,22 @@ macro(external_project_dirs project)
   endforeach()
 endmacro()
 
+function(include_external_directories)
+  cmake_parse_arguments(INCLUDE "" "TARGET" "DIRECTORIES" ${ARGN})
+  foreach(directory ${INCLUDE_DIRECTORIES})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${directory})
+  endforeach()
+  set_property(TARGET ${INCLUDE_TARGET}
+    PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} APPEND)
+endfunction()
+
 function(target_include_external_directory target external property dir)
+  # DEPRECATED: use include_external_directories() instead
   ExternalProject_Get_Property(${external} ${property})
-  set(include_dir ${${property}}/${dir})
-  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${include_dir})
-  set_property(TARGET ${target}
-    PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${include_dir} APPEND)
+  include_external_directories(
+    TARGET ${target}
+    DIRECTORIES ${${property}}/${dir}
+    )
 endfunction()
 
 function(build_zlib)
@@ -186,7 +196,7 @@ function(build_mongoc)
       DOWNLOAD_NO_PROGRESS 1
       DEPENDS openssl
       CMAKE_ARGS
-        $<$<CONFIG:Debug>:-DENABLE_TRACING=ON>
+        -DENABLE_TRACING=$<IF:$<CONFIG:Debug>,ON,OFF>
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
@@ -208,6 +218,7 @@ function(build_mongoc)
         -DENABLE_TESTS=OFF
         -DENABLE_SHM_COUNTERS=OFF
         -DENABLE_ZLIB=BUNDLED
+        -DCMAKE_EXE_LINKER_FLAGS_DEBUG=-ldl
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
                        <INSTALL_DIR>/${libbson}
       )
@@ -620,6 +631,7 @@ function(build_mongocxx)
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_PREFIX_PATH=${mongoc_install_dir}$<SEMICOLON>${openssl_install_dir}
+      -DCMAKE_EXE_LINKER_FLAGS_DEBUG=-ldl
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libmongocxx-static.a
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libbsoncxx-static.a
@@ -1371,8 +1383,11 @@ function(build_cpp_redis)
     PROPERTY IMPORTED_LOCATION ${cpp_redis_binary_dir}/lib/libcpp_redis.a)
   set_property(TARGET tacopie::lib
     PROPERTY IMPORTED_LOCATION ${cpp_redis_binary_dir}/lib/libtacopie.a)
-  target_include_external_directory(cpp_redis::lib cpp_redis source_dir includes)
-  target_include_external_directory(cpp_redis::lib cpp_redis source_dir tacopie/includes)
+  include_external_directories(TARGET cpp_redis::lib
+    DIRECTORIES
+      ${cpp_redis_source_dir}/includes
+      ${cpp_redis_source_dir}/tacopie/includes
+   )
 endfunction()
 
 function(build_uri)
@@ -1770,13 +1785,13 @@ function(build_aws_encryption)
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_PREFIX_PATH=${aws_install_dir}
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libaws-encryption-sdk.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-encryption-sdk.a
     )
   add_library(aws-encryption::lib STATIC IMPORTED GLOBAL)
   add_dependencies(aws-encryption::lib aws-encryption)
   external_project_dirs(aws-encryption install_dir)
   set_target_properties(aws-encryption::lib PROPERTIES
-    IMPORTED_LOCATION ${aws_encryption_install_dir}/lib/libaws-encryption-sdk.a)
+    IMPORTED_LOCATION ${aws_encryption_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libaws-encryption-sdk.a)
   target_include_external_directory(aws-encryption::lib aws-encryption install_dir include)
 endfunction()
 
@@ -1955,7 +1970,7 @@ function(build_protobuf)
   external_project_dirs(protobuf install_dir)
   set_target_properties(protobuf::lib PROPERTIES
     IMPORTED_LOCATION ${protobuf_install_dir}/lib/libprotobuf.a)
-  target_include_external_directory(protobuf::lib protobuf install_dir include)
+  include_external_directories(TARGET protobuf::lib DIRECTORIES ${protobuf_install_dir}/include)
 endfunction()
 
 function(build_sasl)
@@ -1984,5 +1999,5 @@ function(build_sasl)
   external_project_dirs(sasl install_dir)
   set_target_properties(sasl::lib PROPERTIES
     IMPORTED_LOCATION ${sasl_install_dir}/lib/libsasl2.a)
-  target_include_external_directory(sasl::lib sasl install_dir include)
+  include_external_directories(TARGET sasl::lib DIRECTORIES ${sasl_install_dir}/include)
 endfunction()
