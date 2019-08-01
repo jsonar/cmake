@@ -101,6 +101,8 @@ function(build_openssl)
     DOWNLOAD_NO_PROGRESS 1
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND ./config
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
       ${build_flags}
       --openssldir=<INSTALL_DIR>
       --prefix=<INSTALL_DIR>
