@@ -1893,6 +1893,7 @@ function(build_gsasl)
       --disable-shared
       --enable-static
       --without-stringprep
+      --without-libgcrypt
       --disable-kerberos_v5
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libgsasl.a
     )
