@@ -1080,13 +1080,20 @@ function(build_hdfs3)
 endfunction()
 
 function(build_rdkafka)
-  cmake_parse_arguments(RDKAFKA "" "VERSION" "" ${ARGN})
+  cmake_parse_arguments(RDKAFKA "" "VERSION;PATCH_FILE" "" ${ARGN})
+  if(NOT RDKAFKA_VERSION)
+    set(RDKAFKA_VERSION 1.1.0)
+  endif()
   message(STATUS "Building rdkafka-${RDKAFKA_VERSION}")
+  if(RDKAFKA_PATCH_FILE)
+    set(patch_command patch -p1 < ${RDKAFKA_PATCH_FILE})
+  endif()
   build_openssl()
   build_sasl()
   ExternalProject_Add(rdkafka
     URL https://github.com/edenhill/librdkafka/archive/v${RDKAFKA_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
+    PATCH_COMMAND ${patch_command}
     DEPENDS openssl sasl
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
