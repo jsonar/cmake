@@ -1737,16 +1737,20 @@ function(build_aws_encryption)
     external_project_dirs(aws-encryption install_dir)
     return()
   endif()
-  cmake_parse_arguments(AWS_ENCRYPTION "" "VERSION" "" ${ARGN})
+  cmake_parse_arguments(AWS_ENCRYPTION "" "VERSION;PATCH_FILE" "" ${ARGN})
   if (NOT AWS_ENCRYPTION_VERSION)
     set(AWS_ENCRYPTION_VERSION 1.0.0)
   endif()
   message(STATUS "Building aws-encryption-${AWS_ENCRYPTION_VERSION}")
   build_aws(COMPONENTS KMS)
   build_openssl()
+  if(AWS_ENCRYPTION_PATCH_FILE)
+    set(patch_command patch -p1 < ${AWS_ENCRYPTION_PATCH_FILE})
+  endif()
   ExternalProject_Add(aws-encryption
     URL https://github.com/aws/aws-encryption-sdk-c/archive/v${AWS_ENCRYPTION_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
+    PATCH_COMMAND ${patch_command}
     DEPENDS aws openssl
     CMAKE_ARGS
       -DAWS_ENC_SDK_END_TO_END_TESTS=NO
