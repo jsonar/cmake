@@ -1139,23 +1139,17 @@ function(build_geos)
   endif()
   message(STATUS "Building geos-${GEOS_VERSION}")
   ExternalProject_Add(geos
-    URL https://github.com/OSGeo/geos/archive/${GEOS_VERSION}.tar.gz
+    URL https://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2
     DOWNLOAD_NO_PROGRESS 1
-    CMAKE_ARGS
-      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_INSTALL_MESSAGE=LAZY
-      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DBUILD_SHARED_LIBS=OFF
-      -DGEOS_BUILD_STATIC=ON
-      -DGEOS_BUILD_SHARED=OFF
-      -DGEOS_ENABLE_TESTS=OFF
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      --prefix <INSTALL_DIR>
+      --with-pic
+      --enable-static
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libgeos.a
+      <INSTALL_DIR>/lib/libgeos_c.a
     )
   external_project_dirs(geos install_dir)
   add_library(geos::lib STATIC IMPORTED)
@@ -1163,6 +1157,15 @@ function(build_geos)
   set_property(TARGET geos::lib PROPERTY
     IMPORTED_LOCATION ${geos_install_dir}/lib/libgeos.a)
   target_include_external_directory(geos::lib geos install_dir include)
+  add_library(geos::c STATIC IMPORTED)
+  add_dependencies(geos::c geos)
+  set_property(TARGET geos::c PROPERTY
+    IMPORTED_LOCATION ${geos_install_dir}/lib/libgeos_c.a)
+  target_include_external_directory(geos::c geos install_dir include)
+  set_property(TARGET geos::c APPEND PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      geos::lib
+    )
 endfunction()
 
 function(build_spatialite)
@@ -1171,7 +1174,7 @@ function(build_spatialite)
   build_proj()
   cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
   if(NOT SPATIALITE_VERSION)
-    set(SPATIALITE_VERSION 4.3.0a)
+    set(SPATIALITE_VERSION 5.0.0-beta0)
   endif()
   message(STATUS "Building spatialite-${SPATIALITE_VERSION}")
   ExternalProject_Add(spatialite
@@ -1182,7 +1185,8 @@ function(build_spatialite)
     DEPENDS sqlite3 proj geos
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:proj::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:geos::lib,INTERFACE_INCLUDE_DIRECTORIES>
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -DSQLITE_CORE\ -I$<TARGET_PROPERTY:proj::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:geos::lib,INTERFACE_INCLUDE_DIRECTORIES>
       LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>\ -L$<TARGET_LINKER_FILE_DIR:proj::lib>\ -L$<TARGET_LINKER_FILE_DIR:geos::lib>
       LIBS=-ldl\ -lpthread
       --prefix <INSTALL_DIR>
@@ -1192,15 +1196,24 @@ function(build_spatialite)
       --disable-gcp
       --disable-iconv
       --disable-examples
+      --enable-static
+      --disable-shared
       --with-geosconfig=${geos_install_dir}/bin/geos-config
-      BUILD_BYPRODUCTS
-        <INSTALL_DIR>/lib/mod_spatialite.so.7.1.0
-        <INSTALL_DIR>/lib/mod_spatialite.so.7
-        <INSTALL_DIR>/lib/mod_spatialite.so
+      BUILD_BYPRODUCTS <INSTALL_DIR>/lib/mod_spatialite.a
     )
-  add_custom_target(mod-spatialite ALL)
-  add_dependencies(mod-spatialite spatialite)
   external_project_dirs(spatialite install_dir)
+  add_library(spatialite::mod STATIC IMPORTED)
+  add_dependencies(spatialite::mod spatialite)
+  set_property(TARGET spatialite::mod
+    PROPERTY IMPORTED_LOCATION ${spatialite_install_dir}/lib/mod_spatialite.a)
+  include_external_directories(TARGET spatialite::mod
+    DIRECTORIES ${spatialite_install_dir}/include)
+  set_property(TARGET spatialite::mod APPEND PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      geos::c
+      geos::lib
+      proj::lib
+    )
 endfunction()
 
 
