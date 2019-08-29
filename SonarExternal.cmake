@@ -1431,7 +1431,7 @@ function(build_rapidjson)
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     )
-  add_library(rapidjson::header-only INTERFACE IMPORTED)
+  add_library(rapidjson::header-only INTERFACE IMPORTED GLOBAL)
   add_dependencies(rapidjson::header-only rapidjson)
   external_project_dirs(rapidjson install_dir)
   target_include_external_directory(rapidjson::header-only rapidjson install_dir include)
