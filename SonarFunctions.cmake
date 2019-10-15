@@ -152,7 +152,11 @@ endfunction()
 
 
 macro(add_python_target)
-  cmake_parse_arguments(PYTHON_PACKAGE "BUILD_WHEEL;BUILD_IN_SOURCE" "NAME;DESTINATION" "" ${ARGN})
+  cmake_parse_arguments(PYTHON_PACKAGE
+    "BUILD_WHEEL;BUILD_IN_SOURCE;NO_PARENT_SCOPE"
+    "NAME;DESTINATION"
+    ""
+    ${ARGN})
   sonar_python_version(PYTHON_PACKAGE_VERSION)
   if(NOT PYTHON_EXECUTABLE)
     find_package(PythonInterp 3 REQUIRED)
@@ -210,7 +214,11 @@ macro(add_python_target)
     list(APPEND filelist
       ${CMAKE_INSTALL_PREFIX}/${PYTHON_PACKAGE_DESTINATION}
       ${CMAKE_INSTALL_PREFIX}/${destination_parent})
-    set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION ${filelist} PARENT_SCOPE)
+    if (PYTHON_PACKAGE_NO_PARENT_SCOPE)
+      set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION ${filelist})
+    else()
+      set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION ${filelist} PARENT_SCOPE)
+    endif()
   else()
     # installing directly onto the system
     if(PYTHON_PACKAGE_DESTINATION)
@@ -367,7 +375,7 @@ macro(add_java_dependency)
   sonar_deps(CPACK_RPM_PACKAGE_REQUIRES
     "java-1.8.0-openjdk >= ${JAVA_VERSION}"
     )
-    
+
 endmacro()
 
 include(CheckCXXCompilerFlag)
