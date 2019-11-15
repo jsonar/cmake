@@ -1923,6 +1923,7 @@ function(build_krb5)
       --prefix <INSTALL_DIR>
       --disable-shared
       --enable-static
+      --disable-aesni
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
     )
   external_project_dirs(krb5 install_dir)
