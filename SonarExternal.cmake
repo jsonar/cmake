@@ -366,6 +366,7 @@ function(build_curl)
     DEPENDS openssl libssh2 zlib
     CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CPPFLAGS=-DOPENSSL_NO_SSL3_METHOD
       --disable-ldap
       --disable-ldaps
       --disable-manual
