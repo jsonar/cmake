@@ -1310,8 +1310,8 @@ function(build_tbb)
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
     BUILD_COMMAND make
-      CC=gcc
-      CXX=g++
+      CC=${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER}
       extra_inc=big_iron.inc
       tbb_build_prefix=out
       tbb
