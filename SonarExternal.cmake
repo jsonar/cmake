@@ -2006,3 +2006,28 @@ function(build_sasl)
     IMPORTED_LOCATION ${sasl_install_dir}/lib/libsasl2.a)
   include_external_directories(TARGET sasl::lib DIRECTORIES ${sasl_install_dir}/include)
 endfunction()
+
+function(build_simdjson)
+  cmake_parse_arguments(SIMDJSON "" "VERSION" "" ${ARGN})
+  if (NOT SIMDJSON_VERSION)
+    set(SIMDJSON_VERSION 0.2.1)
+  endif()
+  message(STATUS "Building simdJSON ${SIMDJSON_VERSION}")
+  ExternalProject_Add(simdjson
+    URL https://github.com/lemire/simdjson/archive/v${SIMDJSON_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    )
+  external_project_dirs(simdjson install_dir)
+  add_library(simdjson::lib INTERFACE IMPORTED)
+  target_include_external_directory(simdjson::lib simdjson install_dir include)
+  set_property(TARGET simdjson::lib
+    PROPERTY INTERFACE_COMPILE_DEFINITIONS
+    )
+endfunction()
