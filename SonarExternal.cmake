@@ -2026,8 +2026,5 @@ function(build_simdjson)
     )
   external_project_dirs(simdjson install_dir)
   add_library(simdjson::lib INTERFACE IMPORTED)
-  target_include_external_directory(simdjson::lib simdjson install_dir include)
-  set_property(TARGET simdjson::lib
-    PROPERTY INTERFACE_COMPILE_DEFINITIONS
-    )
+  include_external_directories(TARGET simdjson::lib DIRECTORIES ${simdjson_install_dir}/include) 
 endfunction()
