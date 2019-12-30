@@ -2025,6 +2025,6 @@ function(build_simdjson)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     )
   external_project_dirs(simdjson install_dir)
-  add_library(simdjson::lib INTERFACE IMPORTED)
-  include_external_directories(TARGET simdjson::lib DIRECTORIES ${simdjson_install_dir}/include) 
+  add_library(simdjson::header-only INTERFACE IMPORTED)
+  include_external_directories(TARGET simdjson::header-only DIRECTORIES ${simdjson_install_dir}/include) 
 endfunction()
