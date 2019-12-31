@@ -2016,7 +2016,7 @@ function(build_simdjson)
   ExternalProject_Add(simdjson
     URL https://github.com/lemire/simdjson/archive/v${SIMDJSON_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
-    BUILD_BYPRODUCTS <INSTALL_DIR>/src/libsimdjson.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libsimdjson.a
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=NO
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
