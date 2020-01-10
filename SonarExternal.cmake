@@ -2026,6 +2026,35 @@ function(build_simdjson)
     )
   external_project_dirs(simdjson install_dir)
   add_library(simdjson::header-only INTERFACE IMPORTED)
-  include_external_directories(TARGET simdjson::header-only DIRECTORIES ${simdjson_install_dir}/include) 
-  add_dependencies(simdjson::header-only simdjson)  
+  include_external_directories(TARGET simdjson::header-only DIRECTORIES ${simdjson_install_dir}/include)
+  add_dependencies(simdjson::header-only simdjson)
+endfunction()
+
+function(build_nanodbc)
+  cmake_parse_arguments(NANODBC "" "VERSION" "" ${ARGN})
+  if (NOT NANODBC_VERSION)
+    set(NANODBC_VERSION 2.12.4)
+  endif()
+  message(STATUS "Building nanodbc ${NANODBC_VERSION}")
+  ExternalProject_Add(nanodbc
+          URL https://github.com/nanodbc/nanodbc/archive/v${NANODBC_VERSION}.tar.gz
+          DOWNLOAD_NO_PROGRESS ON
+          CMAKE_ARGS
+          -DBUILD_SHARED_LIBS=NO
+          -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+          -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+          -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+          -DNANODBC_TEST=OFF
+          -DNANODBC_USE_UNICODE=ON
+          -DNANODBC_EXAMPLES=OFF
+          -DNANODBC_STATIC=ON
+          )
+  add_library(nanodbc::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(nanodbc::lib nanodbc)
+  external_project_dirs(nanodbc install_dir)
+  set_target_properties(nanodbc::lib PROPERTIES
+          IMPORTED_LOCATION ${nanodbc_install_dir}/lib/libnanodbc.a)
+  include_external_directories(TARGET nanodbc::lib DIRECTORIES ${nanodbc_install_dir}/include)
 endfunction()
