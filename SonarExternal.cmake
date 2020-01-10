@@ -2058,3 +2058,25 @@ function(build_nanodbc)
           IMPORTED_LOCATION ${nanodbc_install_dir}/lib/libnanodbc.a)
   include_external_directories(TARGET nanodbc::lib DIRECTORIES ${nanodbc_install_dir}/include)
 endfunction()
+
+function(build_unixodbc)
+  cmake_parse_arguments(unixodbc "" "VERSION" "" ${ARGN})
+  if (NOT UNIXODBC_VERSION)
+    set(UNIXODBC_VERSION 2.3.7)
+  endif()
+  message(STATUS "Building unixodbc ${UNIXODBC_VERSION}")
+  ExternalProject_Add(unixodbc
+          URL http://www.unixodbc.org/unixODBC-${UNIXODBC_VERSION}.tar.gz
+          URL_MD5 274a711b0c77394e052db6493840c6f9
+          BUILD_IN_SOURCE 1
+          CONFIGURE_COMMAND <SOURCE_DIR>/configure
+          --prefix <INSTALL_DIR>
+          BUILD_BYPRODUCTS <INSTALL_DIR>/lib/*.so
+          )
+  add_library(unixodbc::lib SHARED IMPORTED GLOBAL)
+  add_dependencies(unixodbc::lib unixodbc)
+  external_project_dirs(unixodbc source_dir)
+  set_target_properties(unixodbc::lib PROPERTIES
+          IMPORTED_LOCATION ${unixodbc_install_dir}/lib/libunixodbc.so)
+  include_external_directories(TARGET unixodbc::lib DIRECTORIES ${unixodbc_install_dir}/include)
+endfunction()
