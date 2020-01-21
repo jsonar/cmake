@@ -2079,6 +2079,7 @@ function(build_nanodbc)
           DOWNLOAD_NO_PROGRESS ON
           DEPENDS unixodbc
           CMAKE_ARGS
+          -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
           -DBUILD_SHARED_LIBS=NO
           -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
           -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
@@ -2086,10 +2087,10 @@ function(build_nanodbc)
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
           -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
           -DCMAKE_PREFIX_PATH=${unixodbc_install_dir}
-          -DNANODBC_TEST=OFF
-          -DNANODBC_USE_UNICODE=ON
-          -DNANODBC_EXAMPLES=OFF
           -DNANODBC_STATIC=ON
+          -DNANODBC_TEST=OFF
+          -DNANODBC_DISABLE_TESTS=ON
+          BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libnanodbc.a
           )
   add_library(nanodbc::lib STATIC IMPORTED GLOBAL)
   add_dependencies(nanodbc::lib nanodbc unixodbc)
@@ -2097,5 +2098,5 @@ function(build_nanodbc)
   set_target_properties(nanodbc::lib PROPERTIES
           IMPORTED_LOCATION ${nanodbc_install_dir}/lib/libnanodbc.a
           INTERFACE_LINK_LIBRARIES "unixodbc::odbcinst;unixodbc::odbc;unixodbc::odbccr")
-  include_external_directories(TARGET nanodbc::lib DIRECTORIES ${nanodbc_install_dir}/src/nanodbc/src)
+  include_external_directories(TARGET nanodbc::lib DIRECTORIES ${nanodbc_install_dir}/include)
 endfunction()
