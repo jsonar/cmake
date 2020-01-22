@@ -2046,9 +2046,9 @@ function(build_unixodbc)
           URL_MD5 274a711b0c77394e052db6493840c6f9
           DOWNLOAD_NO_PROGRESS 1
           BUILD_IN_SOURCE 1
-          CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-          CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
           CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix <INSTALL_DIR>
+            CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+            CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
           BUILD_BYPRODUCTS
              <INSTALL_DIR>/lib/libodbcinst.so
              <INSTALL_DIR>/lib/libodbc.so
