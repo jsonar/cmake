@@ -2089,6 +2089,7 @@ function(build_nanodbc)
           -DCMAKE_PREFIX_PATH=${unixodbc_install_dir}
           -DNANODBC_STATIC=ON
           -DNANODBC_TEST=OFF
+          -DNANODBC_EXAMPLES=OFF
           -DNANODBC_DISABLE_TESTS=ON
           BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libnanodbc.a
           )
