@@ -21,6 +21,8 @@ endif()
 # DESTDIR=<INSTALL_PREFIX> install` when installing an external project.
 set(CPACK_SET_DESTDIR ON)
 
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY NO)
+
 sonar_vendor(OUTPUT_VARIABLE CPACK_PACKAGE_VENDOR)
 string(TIMESTAMP this_year "%Y")
 set(CPACK_PACKAGE_LICENSE "${this_year} jSonar Inc") 

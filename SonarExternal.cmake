@@ -562,7 +562,7 @@ function(build_sqlite3)
     "cmake_minimum_required(VERSION 3.8)\n"
     "project(sqlite LANGUAGES C)\n"
     "add_library(sqlite3 sqlite3.c)\n"
-    "target_compile_definitions(sqlite3 PRIVATE SQLITE_ENABLE_FTS5 SQLITE_ENABLE_RTREE)\n"
+    "target_compile_definitions(sqlite3 PRIVATE SQLITE_ENABLE_FTS5 SQLITE_ENABLE_RTREE SQLITE_OMIT_LOAD_EXTENSION)\n"
     "install(TARGETS sqlite3 DESTINATION lib)\n"
     "install(FILES sqlite3.h sqlite3ext.h DESTINATION include)\n")
   message(STATUS "Building sqlite3 from ${SQLITE3_URL}")
@@ -578,9 +578,7 @@ function(build_sqlite3)
         copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.cmake <SOURCE_DIR>/CMakeLists.txt
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
