@@ -2016,7 +2016,7 @@ function(build_simdjson)
   ExternalProject_Add(simdjson
     URL https://github.com/lemire/simdjson/archive/v${SIMDJSON_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libsimdjson.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libsimdjson.a
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=NO
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
@@ -2030,6 +2030,6 @@ function(build_simdjson)
   add_library(simdjson::lib STATIC IMPORTED GLOBAL)
   include_external_directories(TARGET simdjson::lib DIRECTORIES ${simdjson_install_dir}/include) 
   set_target_properties(simdjson::lib PROPERTIES
-    IMPORTED_LOCATION ${simdjson_install_dir}/lib64/libsimdjson.a)
+    IMPORTED_LOCATION ${simdjson_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libsimdjson.a)
   add_dependencies(simdjson::lib simdjson)  
 endfunction()
