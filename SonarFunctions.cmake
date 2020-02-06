@@ -27,8 +27,7 @@ function(sonar_install_prefix install_prefix_var)
   string(REGEX REPLACE "${regex}" "\\1" major "${version}")
   string(REGEX REPLACE "${regex}" "\\2" minor "${version}")
   string(REGEX REPLACE "${regex}" "\\3" patch "${version}")
-  set(${install_prefix_var} /jsonar/${major}.${minor}.${patch}/apps/${CMAKE_PROJECT_NAME}
-    PARENT_SCOPE)
+  set(${install_prefix_var} /jsonar/apps/${major}.${minor}.${patch} PARENT_SCOPE)
 endfunction()
 
 function(sonar_git_info describe_var hash_var)
