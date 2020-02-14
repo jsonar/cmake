@@ -109,6 +109,7 @@ function(build_openssl)
       -fPIC
       no-shared
       no-dso
+    INSTALL_COMMAND make install_sw
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libssl.a
       <INSTALL_DIR>/lib/libcrypto.a
