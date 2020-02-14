@@ -431,7 +431,15 @@ function(sonar_install)
       install(CODE "
         file(GET_RUNTIME_DEPENDENCIES
           RESOLVED_DEPENDENCIES_VAR deps
-          ${executables} ${libraries})
+          ${executables} ${libraries}
+          PRE_EXCLUDE_REGEXES
+            \"^librt\.so\"
+            \"^libdl\.so\"
+            \"^libpthread\.so\"
+            \"^libresolv\.so\"
+            \"^libm\.so\"
+            \"^libc\.so\"
+        )
         file(INSTALL
           FILES \${deps}
           DESTINATION \${CMAKE_INSTALL_PREFIX}/lib
