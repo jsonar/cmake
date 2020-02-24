@@ -18,9 +18,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(SonarFunctions)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  sonar_install_prefix(install_prefix)
-  message(STATUS "Setting install prefix to ${install_prefix}")
-  set(CMAKE_INSTALL_PREFIX ${install_prefix} CACHE PATH "Package install prefix" FORCE)
+  set(CMAKE_INSTALL_PREFIX "" CACHE PATH "Package install prefix" FORCE)
 endif()
 
 find_program(CCACHE ccache)
