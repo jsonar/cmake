@@ -365,7 +365,8 @@ function(build_curl)
     DOWNLOAD_NO_PROGRESS 1
     DEPENDS openssl libssh2 zlib
     CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
-      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -I${openssl_install_dir}/include
+      LDFLAGS=-L${openssl_install_dir}/lib
       --disable-ldap
       --disable-ldaps
       --disable-manual
@@ -1672,6 +1673,7 @@ function(build_snappy)
     DOWNLOAD_NO_PROGRESS ON
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=NO
+      -DSNAPPY_BUILD_TESTS=NO
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
@@ -1696,7 +1698,8 @@ function(build_archive)
     URL https://libarchive.org/downloads/libarchive-${ARCHIVE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
-      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -I${openssl_install_dir}/include
+      LDFLAGS=-L${openssl_install_dir}/lib
       --prefix <INSTALL_DIR>
       --disable-shared
       --enable-static
