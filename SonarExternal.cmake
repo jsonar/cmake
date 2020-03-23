@@ -367,6 +367,7 @@ function(build_curl)
     CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -I${openssl_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
+      CPPFLAGS=-DOPENSSL_NO_SSL3_METHOD
       --disable-ldap
       --disable-ldaps
       --disable-manual
@@ -996,7 +997,7 @@ function(build_stxxl)
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-      -DSTXXL_VERBOSE_LEVEL=-10
+      -DSTXXL_VERBOSE_LEVEL=-100
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DUSE_GNU_PARALLEL=OFF
@@ -1755,7 +1756,7 @@ function(build_aws_encryption)
   endif()
   cmake_parse_arguments(AWS_ENCRYPTION "" "VERSION;PATCH_FILE" "" ${ARGN})
   if (NOT AWS_ENCRYPTION_VERSION)
-    set(AWS_ENCRYPTION_VERSION 1.0.0)
+    set(AWS_ENCRYPTION_VERSION 1.0.1)
   endif()
   message(STATUS "Building aws-encryption-${AWS_ENCRYPTION_VERSION}")
   build_aws(COMPONENTS KMS)
@@ -1925,6 +1926,7 @@ function(build_krb5)
       --prefix <INSTALL_DIR>
       --disable-shared
       --enable-static
+      --disable-aesni
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
     )
   external_project_dirs(krb5 install_dir)
@@ -2006,4 +2008,103 @@ function(build_sasl)
   set_target_properties(sasl::lib PROPERTIES
     IMPORTED_LOCATION ${sasl_install_dir}/lib/libsasl2.a)
   include_external_directories(TARGET sasl::lib DIRECTORIES ${sasl_install_dir}/include)
+endfunction()
+
+function(build_simdjson)
+  cmake_parse_arguments(SIMDJSON "" "VERSION" "" ${ARGN})
+  if (NOT SIMDJSON_VERSION)
+    set(SIMDJSON_VERSION 0.2.1)
+  endif()
+  message(STATUS "Building simdJSON ${SIMDJSON_VERSION}")
+  ExternalProject_Add(simdjson
+    URL https://github.com/lemire/simdjson/archive/v${SIMDJSON_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libsimdjson.a
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DSIMDJSON_BUILD_STATIC=ON
+    )
+  external_project_dirs(simdjson install_dir)
+  add_library(simdjson::lib STATIC IMPORTED GLOBAL)
+  include_external_directories(TARGET simdjson::lib DIRECTORIES ${simdjson_install_dir}/include) 
+  set_target_properties(simdjson::lib PROPERTIES
+    IMPORTED_LOCATION ${simdjson_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libsimdjson.a)
+  add_dependencies(simdjson::lib simdjson)  
+endfunction()
+
+
+function(build_unixodbc)
+  if(TARGET unixodbc)
+    external_project_dirs(unixodbc install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(unixodbc "" "VERSION" "" ${ARGN})
+  if (NOT UNIXODBC_VERSION)
+    set(UNIXODBC_VERSION 2.3.7)
+  endif()
+  message(STATUS "Building unixodbc ${UNIXODBC_VERSION}")
+  ExternalProject_Add(unixodbc
+          URL http://www.unixodbc.org/unixODBC-${UNIXODBC_VERSION}.tar.gz
+          URL_MD5 274a711b0c77394e052db6493840c6f9
+          DOWNLOAD_NO_PROGRESS 1
+          BUILD_IN_SOURCE 1
+          CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix <INSTALL_DIR>
+            CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+            CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+          BUILD_BYPRODUCTS
+             <INSTALL_DIR>/lib/libodbcinst.so
+             <INSTALL_DIR>/lib/libodbc.so
+             <INSTALL_DIR>/lib/libodbccr.so
+          )
+  external_project_dirs(unixodbc install_dir)
+  foreach(obj odbcinst odbc odbccr)
+    add_library(unixodbc::${obj} SHARED IMPORTED GLOBAL)
+    add_dependencies(unixodbc::${obj} unixodbc)
+    set_target_properties(unixodbc::${obj} PROPERTIES IMPORTED_LOCATION ${unixodbc_install_dir}/lib/lib${obj}.so)
+    include_external_directories(TARGET unixodbc::${obj} DIRECTORIES ${unixodbc_install_dir}/include)
+  endforeach()
+endfunction()
+
+function(build_nanodbc)
+  if(TARGET nanodbc)
+    external_project_dirs(nanodbc install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(NANODBC "" "VERSION" "" ${ARGN})
+  if (NOT NANODBC_VERSION)
+    set(NANODBC_VERSION 2.12.4)
+  endif()
+  message(STATUS "Building nanodbc ${NANODBC_VERSION}")
+  build_unixodbc()
+  ExternalProject_Add(nanodbc
+          URL https://github.com/nanodbc/nanodbc/archive/v${NANODBC_VERSION}.tar.gz
+          DOWNLOAD_NO_PROGRESS ON
+          DEPENDS unixodbc
+          CMAKE_ARGS
+          -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+          -DBUILD_SHARED_LIBS=NO
+          -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+          -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+          -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+          -DCMAKE_PREFIX_PATH=${unixodbc_install_dir}
+          -DNANODBC_STATIC=ON
+          -DNANODBC_TEST=OFF
+          -DNANODBC_EXAMPLES=OFF
+          -DNANODBC_DISABLE_TESTS=ON
+          BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libnanodbc.a
+          )
+  add_library(nanodbc::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(nanodbc::lib nanodbc unixodbc)
+  external_project_dirs(nanodbc install_dir)
+  set_target_properties(nanodbc::lib PROPERTIES
+          IMPORTED_LOCATION ${nanodbc_install_dir}/lib/libnanodbc.a
+          INTERFACE_LINK_LIBRARIES "unixodbc::odbcinst;unixodbc::odbc;unixodbc::odbccr")
+  include_external_directories(TARGET nanodbc::lib DIRECTORIES ${nanodbc_install_dir}/include)
 endfunction()
