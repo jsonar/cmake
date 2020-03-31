@@ -367,7 +367,9 @@ function(build_curl)
     CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -I${openssl_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
-      CPPFLAGS=-DOPENSSL_NO_SSL3_METHOD
+      CFLAGS=-DOPENSSL_NO_SSL3_METHOD\ -I${openssl_install_dir}/include
+      CPPFLAGS=-DOPENSSL_NO_SSL3_METHOD\ -I${openssl_install_dir}/include
+      LIBS=-ldl\ -lpthread
       --disable-ldap
       --disable-ldaps
       --disable-manual
