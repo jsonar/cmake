@@ -563,7 +563,7 @@ function(build_sqlite3)
     "cmake_minimum_required(VERSION 3.8)\n"
     "project(sqlite LANGUAGES C)\n"
     "add_library(sqlite3 sqlite3.c)\n"
-    "target_compile_definitions(sqlite3 PRIVATE SQLITE_ENABLE_FTS5 SQLITE_ENABLE_RTREE)\n"
+    "target_compile_definitions(sqlite3 PRIVATE SQLITE_ENABLE_RTREE)\n"
     "install(TARGETS sqlite3 DESTINATION lib)\n"
     "install(FILES sqlite3.h sqlite3ext.h DESTINATION include)\n")
   message(STATUS "Building sqlite3 from ${SQLITE3_URL}")
@@ -996,7 +996,7 @@ function(build_stxxl)
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-      -DSTXXL_VERBOSE_LEVEL=-10
+      -DSTXXL_VERBOSE_LEVEL=-100
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DUSE_GNU_PARALLEL=OFF
@@ -2017,6 +2017,7 @@ function(build_simdjson)
   ExternalProject_Add(simdjson
     URL https://github.com/lemire/simdjson/archive/v${SIMDJSON_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libsimdjson.a
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=NO
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
@@ -2024,11 +2025,14 @@ function(build_simdjson)
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DSIMDJSON_BUILD_STATIC=ON
     )
   external_project_dirs(simdjson install_dir)
-  add_library(simdjson::header-only INTERFACE IMPORTED)
-  include_external_directories(TARGET simdjson::header-only DIRECTORIES ${simdjson_install_dir}/include)
-  add_dependencies(simdjson::header-only simdjson)
+  add_library(simdjson::lib STATIC IMPORTED GLOBAL)
+  include_external_directories(TARGET simdjson::lib DIRECTORIES ${simdjson_install_dir}/include) 
+  set_target_properties(simdjson::lib PROPERTIES
+    IMPORTED_LOCATION ${simdjson_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libsimdjson.a)
+  add_dependencies(simdjson::lib simdjson)  
 endfunction()
 
 
