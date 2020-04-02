@@ -75,7 +75,7 @@ function(build_openssl)
     return()
   endif()
   if(NOT OPENSSL_VERSION)
-    set(OPENSSL_VERSION 1.1.1d)
+    set(OPENSSL_VERSION 1.1.1f)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
   if (OPENSSL_VERSION VERSION_LESS 1.1)
@@ -98,6 +98,7 @@ function(build_openssl)
   endif()
   ExternalProject_Add(openssl
     URL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+      https://www.openssl.org/source/old/openssl-${OPENSSL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND ./config
