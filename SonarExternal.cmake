@@ -78,6 +78,7 @@ function(build_openssl)
     set(OPENSSL_VERSION 1.1.1f)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
+  string(REGEX MATCH "^[0-9]\.[0-9]\.[0-9]" OPENSSL_BRANCH ${OPENSSL_VERSION})
   if (OPENSSL_VERSION VERSION_LESS 1.1)
     set(no_comp no-zlib)
   else()
@@ -98,7 +99,7 @@ function(build_openssl)
   endif()
   ExternalProject_Add(openssl
     URL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
-      https://www.openssl.org/source/old/openssl-${OPENSSL_VERSION}.tar.gz
+      https://www.openssl.org/source/old/${OPENSSL_BRANCH}/openssl-${OPENSSL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND ./config
