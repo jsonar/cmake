@@ -366,10 +366,10 @@ function(build_curl)
     DOWNLOAD_NO_PROGRESS 1
     DEPENDS openssl libssh2 zlib
     CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
-      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -I${openssl_install_dir}/include
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
-      CFLAGS=-DOPENSSL_NO_SSL3_METHOD\ -I${openssl_install_dir}/include
-      CPPFLAGS=-DOPENSSL_NO_SSL3_METHOD\ -I${openssl_install_dir}/include
+      CFLAGS=-DOPENSSL_NO_SSL3_METHOD\ -isystem${openssl_install_dir}/include
+      CPPFLAGS=-DOPENSSL_NO_SSL3_METHOD\ -isystem${openssl_install_dir}/include
       LIBS=-ldl\ -lpthread
       --disable-ldap
       --disable-ldaps
