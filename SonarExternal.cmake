@@ -222,6 +222,7 @@ function(build_mongoc)
         -DENABLE_TESTS=OFF
         -DENABLE_SHM_COUNTERS=OFF
         -DENABLE_ZLIB=BUNDLED
+        -DENABLE_ZSTD=OFF
         -DCMAKE_EXE_LINKER_FLAGS=-ldl
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
                        <INSTALL_DIR>/${libbson}
