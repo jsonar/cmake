@@ -1703,7 +1703,7 @@ function(build_archive)
     URL https://libarchive.org/downloads/libarchive-${ARCHIVE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
-      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -I${openssl_install_dir}/include
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
       --prefix <INSTALL_DIR>
       --disable-shared
