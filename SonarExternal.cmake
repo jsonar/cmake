@@ -1223,12 +1223,19 @@ endfunction()
 function(build_xerces)
   cmake_parse_arguments(XERCES "" "VERSION;PATCH_FILE" "" ${ARGN})
   if(NOT XERCES_VERSION)
-    set(XERCES_VERSION 3.2.1)
+    set(XERCES_VERSION 3.2.3)
   endif()
   if(XERCES_PATCH_FILE)
     set(patch_command patch -p1 < ${XERCES_PATCH_FILE})
   endif()
   message(STATUS "Building xerces-c-${XERCES_VERSION}")
+  if (${XERCES_VERSION} STREQUAL 3.2.1)
+    set(XERCES_LIB_EXT -3.1)
+  elseif (${XERCES_VERSION} STREQUAL 3.2.2)
+    set(XERCES_LIB_EXT -3.2)
+  else()
+    set(XERCES_LIB_EXT )
+  endif()
   build_icu()
   ExternalProject_Add(xerces
     URL https://www.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
@@ -1246,13 +1253,13 @@ function(build_xerces)
       -Dnetwork:BOOL=OFF
       -DCMAKE_PREFIX_PATH=${icu_install_dir}
       -Dtranscoder=icu
-    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c-3.2.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c${XERCES_LIB_EXT}.a
     )
   external_project_dirs(xerces install_dir)
   add_library(xerces::lib STATIC IMPORTED)
   add_dependencies(xerces::lib xerces)
   set_property(TARGET xerces::lib
-    PROPERTY IMPORTED_LOCATION ${xerces_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c-3.2.a
+    PROPERTY IMPORTED_LOCATION ${xerces_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c${XERCES_LIB_EXT}.a
     )
   target_include_external_directory(xerces::lib xerces install_dir include)
   set_property(TARGET xerces::lib APPEND PROPERTY
