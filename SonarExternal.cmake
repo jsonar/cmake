@@ -1251,7 +1251,7 @@ function(build_xerces)
       -Dnetwork:BOOL=OFF
       -DCMAKE_PREFIX_PATH=${icu_install_dir}
       -Dtranscoder=icu
-    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c${XEDRCES_LIB_EXT}.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c${XERCES_LIB_EXT}.a
     )
   external_project_dirs(xerces install_dir)
   add_library(xerces::lib STATIC IMPORTED)
