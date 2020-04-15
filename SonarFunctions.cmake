@@ -456,3 +456,45 @@ function(build_docs product)
   endforeach()
 endfunction()
 
+function(sonar_install)
+  set(targets ${ARGV})
+  set_property(TARGET ${targets}
+    PROPERTY INSTALL_RPATH \$ORIGIN/../lib)
+  install(TARGETS ${targets}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    )
+  foreach(target ${targets})
+    get_target_property(type ${target} TYPE)
+    if (type STREQUAL "EXECUTABLE")
+      list(APPEND exes $<TARGET_FILE:${target}>)
+    elseif(type STREQUAL "SHARED_LIBRARY")
+      list(APPEND libs $<TARGET_FILE:${target}>)
+    endif()
+    if(exes)
+      set(executables "EXECUTABLES ${exes}")
+    endif()
+    if(libs)
+      set(libraries "LIBRARIES ${libs}")
+    endif()
+    if(exes OR libs)
+      install(CODE "
+        file(GET_RUNTIME_DEPENDENCIES
+          RESOLVED_DEPENDENCIES_VAR deps
+          ${executables} ${libraries}
+          PRE_EXCLUDE_REGEXES
+            \"^librt\.so\"
+            \"^libdl\.so\"
+            \"^libpthread\.so\"
+            \"^libresolv\.so\"
+            \"^libm\.so\"
+            \"^libc\.so\"
+        )
+        file(INSTALL
+          FILES \${deps}
+          DESTINATION \${CMAKE_INSTALL_PREFIX}/lib
+          FOLLOW_SYMLINK_CHAIN)
+      ")
+    endif()
+  endforeach()
+endfunction()
