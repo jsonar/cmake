@@ -1,5 +1,6 @@
 include(GetGitRevisionDescription)
-function(sonar_cpack_version _major _minor _patch)
+
+function(sonar_cpack_version major_var minor_var patch_var)
   git_describe(version --match "v*")
   set(regex "v([0-9]+)\.([0-9]+)\.([0-9]+)(.*)")
   if (NOT ${version} MATCHES ${regex})
@@ -15,88 +16,28 @@ function(sonar_cpack_version _major _minor _patch)
     string(REGEX REPLACE "${regex}" "\\4" extra "${version}")
   endif()
   message(STATUS "Detected ${PROJECT_NAME} version: ${major}.${minor}.${patch}${extra}")
-  set(${_major} "${major}" PARENT_SCOPE)
-  set(${_minor} "${minor}" PARENT_SCOPE)
-  set(${_patch} "${patch}${extra}" PARENT_SCOPE)
+  set(${major_var} "${major}" PARENT_SCOPE)
+  set(${minor_var} "${minor}" PARENT_SCOPE)
+  set(${patch_var} "${patch}${extra}" PARENT_SCOPE)
 endfunction()
 
-function(sonar_git_info _describe _hash)
+function(sonar_git_info describe_var hash_var)
   get_git_head_revision(refspec hash)
-  set(${_hash} ${hash} PARENT_SCOPE)
+  set(${hash_var} ${hash} PARENT_SCOPE)
   git_describe(version --match "v*")
-  set(${_describe} ${version} PARENT_SCOPE)
+  set(${describe_var} ${version} PARENT_SCOPE)
 endfunction()
 
-function(sonar_set_version version)
+function(sonar_set_version version_var)
   sonar_cpack_version(major minor patch)
-  set(${version} "${major}.${minor}.${patch}" PARENT_SCOPE)
+  set(${version_var} "${major}.${minor}.${patch}" PARENT_SCOPE)
 endfunction()
 
-function(sonar_detect_distribution _os)
-  if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    if (EXISTS "/etc/os-release")
-      file(STRINGS "/etc/os-release" os_release)
-      foreach(kv ${os_release})
-        if (kv MATCHES "^ID=\"?([^\"]+)\"?$")
-          set(os_id ${CMAKE_MATCH_1})
-        endif()
-        if (kv MATCHES "^ID_LIKE=\"?([^\"]+)\"?$")
-          set(os_id_like ${CMAKE_MATCH_1})
-        endif()
-      endforeach()
-    elseif(EXISTS "/etc/redhat-release")
-      set(os_id "rhel")
-    endif()
-    if (os_id)
-      set(os "${os_id}")
-    elseif(os_id_like)
-      set(os "${os_id_like}")
-    endif()
-  else()
-    set(os ${CMAKE_SYSTEM_NAME})
-  endif()
-  message(STATUS "Detected distribution: ${os}")
-  set(${_os} "${os}" PARENT_SCOPE)
-endfunction()
-
-function(sonar_cpack_generator _cpack)
+function(sonar_cpack_generator cpack_generator_var)
   if(NOT SONAR_CPACK_GENERATOR)
-    sonar_detect_distribution(os)
-    if (os MATCHES "rhel" OR os MATCHES "centos")
-      set(cpack_generator "RPM")
-    elseif (os MATCHES "debian" OR os MATCHES "ubuntu")
-      set(cpack_generator "DEB")
-    elseif (os MATCHES "arch")
-      set(cpack_generator "TGZ")
-    else()
-      message(STATUS "Unknown distribution ${os} - will create a tarball")
-      set(cpack_generator "TGZ")
-    endif()
-    set(SONAR_CPACK_GENERATOR ${cpack_generator}
-      CACHE STRING "sonar cpack generator")
+    set(SONAR_CPACK_GENERATOR TGZ CACHE STRING "sonar cpack generator")
   endif()
-  set(${_cpack} "${SONAR_CPACK_GENERATOR}" PARENT_SCOPE)
-endfunction()
-
-function(sonar_cpack_filename _filename)
-  if (NOT DEFINED CPACK_GENERATOR)
-    sonar_cpack_generator(CPACK_GENERATOR)
-  endif()
-  if (${CPACK_GENERATOR} STREQUALS "RPM")
-    execute_process(COMMAND uname "-m"
-      OUTPUT_VARIABLE CPACK_RPM_PACKAGE_ARCHITECTURE
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process(
-      COMMAND rpm "-q" "--queryformat" "%{RELEASE}" rpm
-      COMMAND rev
-      COMMAND cut "-d." "-f1"
-      COMMAND rev
-      OUTPUT_VARIABLE RHEL
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set (CPACK_PACKAGE_FILE_NAME
-      "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}.${RHEL}.${CPACK_PACKAGE_VENDOR}.${CPACK_RPM_PACKAGE_ARCHITECTURE}" PARENT_SCOPE)
-    set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "${CPACK_PACKAGING_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkgconfig" PARENT_SCOPE)
-  endif()
+  set(${cpack_generator_var} "${SONAR_CPACK_GENERATOR}" PARENT_SCOPE)
 endfunction()
 
 function(sonar_find_libraries)
@@ -117,7 +58,7 @@ function(sonar_find_libraries)
   endif()
 endfunction()
 
-function(sonar_deps _out deps)
+function(sonar_deps deps_var deps)
   foreach(dep ${ARGN})
     list(APPEND deps ${dep})
   endforeach()
@@ -125,10 +66,10 @@ function(sonar_deps _out deps)
     list(APPEND deps ${dep})
   endforeach()
   string(REPLACE ";" ", " _deps "${deps}")
-  set(${_out} ${_deps} PARENT_SCOPE)
+  set(${deps_var} ${_deps} PARENT_SCOPE)
 endfunction()
 
-function(sonar_python_version output)
+function(sonar_python_version python_version_var)
   cmake_parse_arguments(PARSE_ARGV 1 PYTHON "" "SETUPTOOLS_VERSION" "")
   if(NOT PYTHON_SETUPTOOLS_VERSION)
     set(PYTHON_SETUPTOOLS_VERSION "0.9.8")
@@ -147,7 +88,7 @@ function(sonar_python_version output)
   else()
     set(python_version ${version})
   endif()
-  set(${output} ${python_version} PARENT_SCOPE)
+  set(${python_version_var} ${python_version} PARENT_SCOPE)
 endfunction()
 
 
@@ -354,7 +295,7 @@ function(set_package_and_file_name_for_component)
       "${PKG_FILE_NAME}_${DEBIAN_VERSION_NUMBER}-${DEBIAN_REVISION_NUMBER}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
   elseif(generator STREQUAL "TGZ")
     set (package_file_name
-      "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}-Linux")
+      "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}")
   endif()
 
   if(NOT DEFINED CPACK_PACKAGE_FILE_NAME)
@@ -456,3 +397,45 @@ function(build_docs product)
   endforeach()
 endfunction()
 
+function(sonar_install)
+  set(targets ${ARGV})
+  set_property(TARGET ${targets}
+    PROPERTY INSTALL_RPATH \$ORIGIN/../lib)
+  install(TARGETS ${targets}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    )
+  foreach(target ${targets})
+    get_target_property(type ${target} TYPE)
+    if (type STREQUAL "EXECUTABLE")
+      list(APPEND exes $<TARGET_FILE:${target}>)
+    elseif(type STREQUAL "SHARED_LIBRARY")
+      list(APPEND libs $<TARGET_FILE:${target}>)
+    endif()
+    if(exes)
+      set(executables "EXECUTABLES ${exes}")
+    endif()
+    if(libs)
+      set(libraries "LIBRARIES ${libs}")
+    endif()
+    if(exes OR libs)
+      install(CODE "
+        file(GET_RUNTIME_DEPENDENCIES
+          RESOLVED_DEPENDENCIES_VAR deps
+          ${executables} ${libraries}
+          PRE_EXCLUDE_REGEXES
+            \"^librt\.so\"
+            \"^libdl\.so\"
+            \"^libpthread\.so\"
+            \"^libresolv\.so\"
+            \"^libm\.so\"
+            \"^libc\.so\"
+        )
+        file(INSTALL
+          FILES \${deps}
+          DESTINATION \${CMAKE_INSTALL_PREFIX}/lib
+          FOLLOW_SYMLINK_CHAIN)
+      ")
+    endif()
+  endforeach()
+endfunction()

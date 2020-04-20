@@ -21,6 +21,8 @@ endif()
 # DESTDIR=<INSTALL_PREFIX> install` when installing an external project.
 set(CPACK_SET_DESTDIR ON)
 
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY NO)
+
 sonar_vendor(OUTPUT_VARIABLE CPACK_PACKAGE_VENDOR)
 string(TIMESTAMP this_year "%Y")
 set(CPACK_PACKAGE_LICENSE "${this_year} jSonar Inc") 
@@ -43,7 +45,11 @@ elseif(CPACK_GENERATOR STREQUAL "DEB")
   set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)  # @todo: probably default
 endif()
 set_property (GLOBAL PROPERTY TARGET_MESSAGES OFF)
-string(TOLOWER ${CPACK_GENERATOR} CPACK_PACKAGE_EXT)
+if (CPACK_GENERATOR STREQUAL "TGZ")
+  set(CPACK_PACKAGE_EXT tar.gz)
+else()
+  string(TOLOWER ${CPACK_GENERATOR} CPACK_PACKAGE_EXT)
+endif()
 if(NOT SONAR_COMPONENTS)
   add_custom_target(package_file_name
     COMMAND echo ${CPACK_PACKAGE_FILE_NAME}.${CPACK_PACKAGE_EXT})

@@ -15,9 +15,10 @@ endif()
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+include(SonarFunctions)
+
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  message(STATUS "No install prefix defined, default is /usr")
-  set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Package install prefix" FORCE)
+  set(CMAKE_INSTALL_PREFIX "" CACHE PATH "Package install prefix" FORCE)
 endif()
 
 find_program(CCACHE ccache)
@@ -28,7 +29,6 @@ if(CCACHE)
 endif()
 
 include(GNUInstallDirs)
-include(SonarFunctions)
 include(SonarExternal)
 
 string(TOLOWER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_LOWER)
