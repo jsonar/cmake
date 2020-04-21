@@ -111,6 +111,7 @@ function(build_openssl)
       -fPIC
       no-shared
       no-dso
+    INSTALL_COMMAND make install_sw
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libssl.a
       <INSTALL_DIR>/lib/libcrypto.a
@@ -420,7 +421,6 @@ function(build_aws)
   For example, to build logs and s3:
 
   build_aws(VERSION 1.3.4 COMPONENTS logs s3)
-
   After that you can use in your project:
   target_link_libraries(mytarget aws::logs aws::s3)
   #]====]
@@ -585,9 +585,7 @@ function(build_sqlite3)
         copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.cmake <SOURCE_DIR>/CMakeLists.txt
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -1263,7 +1261,8 @@ function(build_xerces)
   add_library(xerces::lib STATIC IMPORTED)
   add_dependencies(xerces::lib xerces)
   set_property(TARGET xerces::lib
-    PROPERTY IMPORTED_LOCATION ${xerces_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c${XERCES_LIB_EXT}.a
+    PROPERTY IMPORTED_LOCATION
+      ${xerces_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libxerces-c${XERCES_LIB_EXT}.a
     )
   target_include_external_directory(xerces::lib xerces install_dir include)
   set_property(TARGET xerces::lib APPEND PROPERTY
@@ -2098,25 +2097,31 @@ function(build_nanodbc)
           DOWNLOAD_NO_PROGRESS ON
           DEPENDS unixodbc
           CMAKE_ARGS
-          -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-          -DBUILD_SHARED_LIBS=NO
-          -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-          -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-          -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-          -DCMAKE_PREFIX_PATH=${unixodbc_install_dir}
-          -DNANODBC_STATIC=ON
-          -DNANODBC_TEST=OFF
-          -DNANODBC_EXAMPLES=OFF
-          -DNANODBC_DISABLE_TESTS=ON
+            -DBUILD_SHARED_LIBS=NO
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+            -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+            -DCMAKE_PREFIX_PATH=${unixodbc_install_dir}
+            -DNANODBC_ENABLE_LIBCXX=OFF
+            -DNANODBC_EXAMPLES=OFF
+            -DNANODBC_STATIC=ON
+            -DNANODBC_TEST=OFF
           BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libnanodbc.a
           )
   add_library(nanodbc::lib STATIC IMPORTED GLOBAL)
-  add_dependencies(nanodbc::lib nanodbc unixodbc)
+  add_dependencies(nanodbc::lib nanodbc)
   external_project_dirs(nanodbc install_dir)
   set_target_properties(nanodbc::lib PROPERTIES
-          IMPORTED_LOCATION ${nanodbc_install_dir}/lib/libnanodbc.a
-          INTERFACE_LINK_LIBRARIES "unixodbc::odbcinst;unixodbc::odbc;unixodbc::odbccr")
-  include_external_directories(TARGET nanodbc::lib DIRECTORIES ${nanodbc_install_dir}/include)
+    IMPORTED_LOCATION ${nanodbc_install_dir}/lib/libnanodbc.a)
+  set_property(TARGET nanodbc::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      unixodbc::odbcinst
+      unixodbc::odbc
+      unixodbc::odbccr
+    )
+  include_external_directories(TARGET nanodbc::lib
+    DIRECTORIES ${nanodbc_install_dir}/include)
 endfunction()
