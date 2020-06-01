@@ -715,6 +715,7 @@ function(build_pcre)
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       --enable-jit
+      --enable-valgrind
       --enable-unicode-properties
       --enable-utf
       --prefix <INSTALL_DIR>
