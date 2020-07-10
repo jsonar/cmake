@@ -710,7 +710,7 @@ endfunction()
 function(build_pcre)
   cmake_parse_arguments(PCRE "" "VERSION" "" ${ARGN})
   if (NOT PCRE_VERSION)
-    set(PCRE_VERSION 8.42)
+    set(PCRE_VERSION 8.44)
   endif()
   message(STATUS "Building pcre-${PCRE_VERSION}")
   ExternalProject_Add(pcre
