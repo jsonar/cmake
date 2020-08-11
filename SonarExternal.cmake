@@ -449,6 +449,7 @@ function(build_aws)
     list(APPEND BUILD_BYPRODUCTS
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-${dep}.a)
   endforeach()
+  build_zlib()
   build_openssl()
   if (AWS_CURL_VERSION)
     build_curl(VERSION ${AWS_CURL_VERSION})
@@ -475,7 +476,7 @@ function(build_aws)
       -DBUILD_SHARED_LIBS=OFF
       -DENABLE_TESTING=OFF
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}$<SEMICOLON>${zlib_install_dir}
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
   )
