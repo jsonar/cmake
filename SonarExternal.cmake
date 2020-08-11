@@ -58,13 +58,14 @@ function(build_zlib)
       <SOURCE_DIR>/configure
         --static
         --prefix <INSTALL_DIR>
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libz.a
+        --libdir <INSTALL_DIR>/lib64
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libz.a
     )
   external_project_dirs(zlib install_dir)
   add_library(zlib::lib STATIC IMPORTED GLOBAL)
   add_dependencies(zlib::lib zlib)
   set_target_properties(zlib::lib PROPERTIES
-    IMPORTED_LOCATION ${zlib_install_dir}/lib/libz.a)
+    IMPORTED_LOCATION ${zlib_install_dir}/lib64/libz.a)
   target_include_external_directory(zlib::lib zlib install_dir include)
 endfunction()
 
