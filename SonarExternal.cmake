@@ -1736,6 +1736,7 @@ function(build_libzip)
   endif()
   message(STATUS "Building libzip-${LIBZIP_VERSION}")
   build_bzip2()
+  build_zlib()
   ExternalProject_Add(libzip
     URL https://libzip.org/download/libzip-${LIBZIP_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
@@ -1746,7 +1747,7 @@ function(build_libzip)
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${bzip2_install_dir}
+      -DCMAKE_PREFIX_PATH=${bzip2_install_dir}<SEMICOLON>${zlib_install_dir}
       -DENABLE_GNUTLS=OFF
       -DENABLE_OPENSSL=OFF
       -DENABLE_MBEDTLS=OFF
