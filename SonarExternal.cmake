@@ -830,6 +830,7 @@ function(build_google_api)
   build_jsoncpp()
   build_glog()
   build_gflags()
+  build_zlib()
   set(google_libs curl_http oauth2 openssl_codec jsoncpp json http utils internal)
   foreach(lib ${google_libs})
     list(APPEND byproducts "<BINARY_DIR>/lib/libgoogleapis_${lib}.a")
@@ -849,7 +850,7 @@ function(build_google_api)
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}$<SEMICOLON>${openssl_install_dir}$<SEMICOLON>${libssh2_install_dir}
+      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}$<SEMICOLON>${openssl_install_dir}$<SEMICOLON>${libssh2_install_dir}$<SEMICOLON>${zlib_install_dir}
     BUILD_BYPRODUCTS ${byproducts}
     )
   external_project_dirs(google_api binary_dir source_dir)
