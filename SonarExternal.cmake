@@ -1550,6 +1550,7 @@ function(build_boost)
   else()
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/user-config.jam "")
   endif()
+  build_zlib()
   ExternalProject_Add(boost
     ${download_step}
     DOWNLOAD_NO_PROGRESS ON
@@ -1569,6 +1570,8 @@ function(build_boost)
       link=static
       threading=multi
       cxxflags=-fPIC
+      -sZLIB_INCLUDE=${zlib_install_dir}/include
+      -sZLIB_LIBPATH=${zlib_install_dir}/lib64
     INSTALL_COMMAND ./b2 install
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
     )
