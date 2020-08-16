@@ -1471,13 +1471,13 @@ function(build_date)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DUSE_SYSTEM_TZ_DB=ON
       -DBUILD_TZ_LIB=ON
-    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libtz.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libdate-tz.a
     )
   add_library(date::lib STATIC IMPORTED GLOBAL)
   add_dependencies(date::lib date)
   external_project_dirs(date install_dir source_dir)
   set_property(TARGET date::lib
-    PROPERTY IMPORTED_LOCATION ${date_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libtz.a)
+    PROPERTY IMPORTED_LOCATION ${date_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libdate-tz.a)
   include_external_directories(TARGET date::lib
     DIRECTORIES
       ${date_install_dir}/include
