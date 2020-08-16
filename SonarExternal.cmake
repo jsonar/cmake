@@ -1470,14 +1470,20 @@ function(build_date)
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DUSE_SYSTEM_TZ_DB=ON
+      -DBUILD_TZ_LIB=ON
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libtz.a
     )
   add_library(date::lib STATIC IMPORTED GLOBAL)
   add_dependencies(date::lib date)
-  external_project_dirs(date install_dir)
+  external_project_dirs(date install_dir source_dir)
   set_property(TARGET date::lib
     PROPERTY IMPORTED_LOCATION ${date_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libtz.a)
-  target_include_external_directory(date::lib date install_dir include)
+  include_external_directories(TARGET date::lib
+    DIRECTORIES
+      ${date_install_dir}/include
+      # iso_week.h is not being installed, so we need to look in the source dir
+      ${date_source_dir}/include
+    )
   set_property(TARGET date::lib
     PROPERTY INTERFACE_COMPILE_DEFINITIONS
       USE_AUTOLOAD=0
