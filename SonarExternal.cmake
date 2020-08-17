@@ -53,13 +53,15 @@ function(build_zlib)
   ExternalProject_Add(zlib
     URL https://www.zlib.net/zlib-${ZLIB_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    CONFIGURE_COMMAND
-      CC=${CMAKE_C_COMPILER}
-      CFLAGS=-fPIC
-      <SOURCE_DIR>/configure
-        --static
-        --prefix <INSTALL_DIR>
-        --libdir <INSTALL_DIR>/lib64
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DINSTALL_LIB_DIR=<INSTALL_DIR>/lib64
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libz.a
     )
   external_project_dirs(zlib install_dir)
