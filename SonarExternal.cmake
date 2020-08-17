@@ -1996,7 +1996,7 @@ function(build_protobuf)
       --with-pic
       --with-zlib
       --with-zlib-include=${zlib_install_dir}/include
-      --with-zlib-lib=${zlib_install_dir}/lib/libz.a
+      --with-zlib-lib=${zlib_install_dir}/lib64/libz.a
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libprotobuf.a
     )
   add_library(protobuf::lib STATIC IMPORTED GLOBAL)
