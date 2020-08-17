@@ -1744,13 +1744,15 @@ function(build_libzip)
   endif()
   cmake_parse_arguments(LIBZIP "" "VERSION" "" ${ARGN})
   if (NOT LIBZIP_VERSION)
-    set(LIBZIP_VERSION 1.5.2)
+    set(LIBZIP_VERSION 1.7.3)
   endif()
   message(STATUS "Building libzip-${LIBZIP_VERSION}")
   build_bzip2()
   build_zlib()
   ExternalProject_Add(libzip
     URL https://libzip.org/download/libzip-${LIBZIP_VERSION}.tar.gz
+        https://github.com/nih-at/libzip/releases/download/v${LIBZIP_VERSION}/libzip-${LIBZIP_VERSION}.tar.gz
+        https://web.archive.org/web/20200609054331/https://libzip.org/download/libzip-${LIBZIP_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS bzip2
     CMAKE_ARGS
