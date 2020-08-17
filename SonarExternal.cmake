@@ -55,6 +55,7 @@ function(build_zlib)
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND
       CC=${CMAKE_C_COMPILER}
+      CFLAGS=-fPIC
       <SOURCE_DIR>/configure
         --static
         --prefix <INSTALL_DIR>
