@@ -1180,6 +1180,7 @@ function(build_spatialite)
   build_geos()
   build_sqlite3()
   build_proj()
+  build_zlib()
   cmake_parse_arguments(SPATIALITE "" "VERSION" "" ${ARGN})
   if(NOT SPATIALITE_VERSION)
     set(SPATIALITE_VERSION 5.0.0-beta0)
@@ -1190,12 +1191,12 @@ function(build_spatialite)
       https://www.gaia-gis.it/gaia-sins/libspatialite-sources/libspatialite-${SPATIALITE_VERSION}.tar.gz
       https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS sqlite3 proj geos
+    DEPENDS sqlite3 proj geos zlib
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
-      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -DSQLITE_CORE\ -I$<TARGET_PROPERTY:proj::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:geos::lib,INTERFACE_INCLUDE_DIRECTORIES>
-      LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>\ -L$<TARGET_LINKER_FILE_DIR:proj::lib>\ -L$<TARGET_LINKER_FILE_DIR:geos::lib>
+      CFLAGS=-I$<TARGET_PROPERTY:sqlite3::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -DSQLITE_CORE\ -I$<TARGET_PROPERTY:proj::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I$<TARGET_PROPERTY:geos::lib,INTERFACE_INCLUDE_DIRECTORIES>\ -I${TARGET_PROPERTY:zlib::lib,INTERFACE_INCLUDE_DIRECTORIES>
+      LDFLAGS=-L$<TARGET_LINKER_FILE_DIR:sqlite3::lib>\ -L$<TARGET_LINKER_FILE_DIR:proj::lib>\ -L$<TARGET_LINKER_FILE_DIR:geos::lib>\ -L$<TARGET_LINKER_FILE_DIR:zlib::lib>
       LIBS=-ldl\ -lpthread
       --prefix <INSTALL_DIR>
       --disable-freexl
