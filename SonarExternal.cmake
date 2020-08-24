@@ -1460,7 +1460,7 @@ endfunction()
 function(build_date)
   cmake_parse_arguments(DATE "" "VERSION" "" ${ARGN})
   if (NOT DATE_VERSION)
-    set(DATE_VERSION v2.4.1)
+    set(DATE_VERSION v3.0.0)
   endif()
   message(STATUS "Building date.h ${DATE_VERSION}")
   ExternalProject_Add(date
