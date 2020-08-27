@@ -2241,8 +2241,7 @@ function(build_url)
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${tl_expected_install_dir}$<SEMICOLON>\ 
-        ${nlohmann_json_install_dir}$<SEMICOLON>${range_v3_install_dir}
+      -DCMAKE_PREFIX_PATH=${tl_expected_install_dir}$<SEMICOLON>${nlohmann_json_install_dir}$<SEMICOLON>${range_v3_install_dir}
       -Dskyr_BUILD_TESTS=0
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libskyr-url.a
     )
