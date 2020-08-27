@@ -2146,55 +2146,64 @@ function(build_nanodbc)
 endfunction()
 
 function(build_tl_expected)
+  cmake_parse_arguments(TL_EXPECTED "" "VERSION" "" ${ARGN})
+  if(NOT TL_EXPECTED_VERSION)
+    set(TL_EXPECTED_VERSION v1.0.0)
+  endif()
+  message(STATUS "Building header-only tl-expected-${TL_EXPECTED_VERSION}")
   ExternalProject_Add(tl-expected
-    URL https://github.com/TartanLlama/expected/archive/v1.0.0.tar.gz
+    URL https://github.com/TartanLlama/expected/archive/${TL_EXPECTED_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CMAKE_ARGS
       -DEXPECTED_ENABLE_TESTS=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
   )
-  add_library(tl_expected::lib INTERFACE IMPORTED)
-  add_dependencies(tl_expected::lib tl-expected)
+  add_library(tl_expected::header-only INTERFACE IMPORTED)
+  add_dependencies(tl_expected::header-only tl-expected)
   external_project_dirs(tl-expected install_dir)
-  include_external_directories(TARGET tl_expected::lib DIRECTORIES ${tl_expected_install_dir}/include)
+  include_external_directories(TARGET tl_expected::header-only 
+    DIRECTORIES ${tl_expected_install_dir}/include)
 endfunction()
 
 function(build_nlohmann_json)
-  ExternalProject_add(nlohmann_json
-    URL https://github.com/nlohmann/json/archive/v3.9.1.tar.gz
+  cmake_parse_arguments(NLOHMANN_JSON "" "VERSION" "" ${ARGN})
+  if(NOT NLOHMANN_JSON_VERSION)
+    set(NLOHMANN_JSON_VERSION v3.9.1)
+  endif()
+  message(STATUS "Building header-only nlohmann-json-${NLOHMANN_JSON_VERSION}")
+  ExternalProject_add(nlohmann-json
+    URL https://github.com/nlohmann/json/archive/${NLOHMANN_JSON_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CMAKE_ARGS
       -DJSON_BuildTests=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     )
-  add_library(nlohmann_json::lib INTERFACE IMPORTED)
-  add_dependencies(nlohmann_json::lib nlohmann_json)
-  external_project_dirs(nlohmann_json install_dir)
-  include_external_directories(TARGET nlohmann_json::lib DIRECTORIES ${nlohmann_json_install_dir}/include)
+  add_library(nlohmann_json::header-only INTERFACE IMPORTED)
+  add_dependencies(nlohmann_json::header-only nlohmann-json)
+  external_project_dirs(nlohmann-json install_dir)
+  include_external_directories(TARGET nlohmann_json::header-only 
+    DIRECTORIES ${nlohmann_json_install_dir}/include)
 endfunction()
 
 function(build_range_v3)
+  cmake_parse_arguments(RANGE_V3 "" "VERSION" "" ${ARGN})
+  if(NOT RANGE_v3_VERSION)
+    set(RANGE_V3_VERSION 0.11.0)
+  endif()
+  message(STATUS "Building range-v3-${RANGE_V3_VERSION}")
   ExternalProject_add(range-v3
-    URL https://github.com/ericniebler/range-v3/archive/0.11.0.tar.gz
+    URL https://github.com/ericniebler/range-v3/archive/${RANGE_V3_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    CMAKE_ARGS
-      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    )
-  add_library(range_v3::lib INTERFACE IMPORTED)
-  add_dependencies(range_v3::lib range-v3)
-  external_project_dirs(range-v3 install_dir)
-  include_external_directories(TARGET range_v3::lib DIRECTORIES ${range_v3_install_dir}/include)
-endfunction()
-
-function(build_skyr_url)
-  build_tl_expected()
-  build_nlohmann_json()
-  build_range_v3()
-
-  ExternalProject_Add(skyr_url
-    URL https://github.com/cpp-netlib/url/archive/v1.12.0.tar.gz
-    DOWNLOAD_NO_PROGRESS 1
-    DEPENDS tl-expected nlohmann_json range-v3
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
@@ -2202,14 +2211,48 @@ function(build_skyr_url)
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${tl_expected_install_dir}$<SEMICOLON>${nlohmann_json_install_dir}$<SEMICOLON>${range_v3_install_dir}
+    )
+  add_library(range_v3::lib INTERFACE IMPORTED)
+  add_dependencies(range_v3::lib range-v3)
+  external_project_dirs(range-v3 install_dir)
+  include_external_directories(TARGET range_v3::lib 
+    DIRECTORIES ${range_v3_install_dir}/include)
+endfunction()
+
+function(build_url)
+  cmake_parse_arguments(SKYR_URL "" "VERSION" "" ${ARGN})
+  if(NOT SKYR_URL_VERSION)
+    set(SKYR_URL_VERSION v1.12.0)
+  endif()
+  message(STATUS "Building skyr-url-${SKYR_URL_VERSION}")
+  build_tl_expected()
+  build_nlohmann_json()
+  build_range_v3()
+  message("1: ${range_v3_install_dir}")
+  ExternalProject_Add(skyr_url
+    URL https://github.com/cpp-netlib/url/archive/${SKYR_URL_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
+    DEPENDS tl-expected nlohmann-json range-v3
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${tl_expected_install_dir}$<SEMICOLON>\ 
+        ${nlohmann_json_install_dir}$<SEMICOLON>${range_v3_install_dir}
       -Dskyr_BUILD_TESTS=0
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libskyr-url.a
     )
   add_library(url::lib STATIC IMPORTED)
   add_dependencies(url::lib skyr_url)
-  target_link_libraries(url::lib INTERFACE tl_expected::lib nlohmann_json::lib range_v3::lib)
+  target_link_libraries(url::lib INTERFACE tl_expected::header-only 
+    nlohmann_json::header-only range_v3::lib)
   external_project_dirs(skyr_url install_dir)
-  set_property(TARGET url::lib PROPERTY IMPORTED_LOCATION ${skyr_url_install_dir}/lib/libskyr-url.a)
-  include_external_directories(TARGET url::lib DIRECTORIES ${skyr_url_install_dir}/include)
+  set_property(TARGET url::lib PROPERTY 
+    IMPORTED_LOCATION ${skyr_url_install_dir}/lib/libskyr-url.a)
+  include_external_directories(TARGET url::lib 
+    DIRECTORIES ${skyr_url_install_dir}/include)
 endfunction()
