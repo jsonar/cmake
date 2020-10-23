@@ -2254,3 +2254,71 @@ function(build_url)
   include_external_directories(TARGET url::lib 
     DIRECTORIES ${skyr_url_install_dir}/include)
 endfunction()
+
+function(build_hiredis)
+  cmake_parse_arguments(HIREDIS "" "VERSION" "" ${ARGN})
+  if (NOT HIREDIS_VERSION)
+    set(HIREDIS_VERSION 1.0.0)
+  endif()
+  message(STATUS "Building hiredis ${HIREDIC_VERSION}")
+  build_openssl()
+  ExternalProject_Add(hiredis
+    URL https://github.com/redis/hiredis/archive/v1.0.0.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    DEPENDS openssl
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND make
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      PREFIX=<INSTALL_DIR>
+      OPENSSL_PREFIX=${openssl_install_dir}
+    INSTALL_COMMAND make
+      PREFIX=<INSTALL_DIR>
+      install
+    # cmake does not yet build a static lib as of v1.0.0
+    # CMAKE_ARGS
+    #   -DBUILD_SHARED_LIBS=NO
+    #   -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    #   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    #   -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+    #   -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    #   -DENABLE_SSL=ON
+    #   -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libhiredis.a
+    )
+  external_project_dirs(hiredis install_dir)
+  # We're not using hiredis directly, no need for `add_library()` stuff
+endfunction()
+
+function(build_redis_plus_plus)
+  cmake_parse_arguments(REDIS_PLUS_PLUS "" "VERSION" "" ${ARGN})
+  if (NOT REDIS_PLUS_PLUS_VERSION)
+    set(REDIS_PLUS_PLUS_VERSION 1.2.1)
+  endif()
+  message(STATUS "Building redis-plus-plus ${REDIS_PLUS_PLUS_VERSION}")
+  build_hiredis()
+  ExternalProject_Add(redis_plus_plus
+    URL https://github.com/sewenew/redis-plus-plus/archive/${REDIS_PLUS_PLUS_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    DEPENDS hiredis
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_PREFIX_PATH=${hiredis_install_dir}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DREDIS_PLUS_PLUS_CXX_STANDARD=17
+      -DREDIS_PLUS_PLUS_BUILD_SHARED=OFF
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libredis++.a
+    )
+  add_library(redis-plus-plus::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(redis-plus-plus::lib redis_plus_plus)
+  external_project_dirs(redis_plus_plus install_dir)
+  set_target_properties(redis-plus-plus::lib PROPERTIES
+    IMPORTED_LOCATION ${redis_plus_plus_install_dir}/lib/libredis++.a)
+  include_external_directories(TARGET redis-plus-plus::lib
+    DIRECTORIES ${redis_plus_plus_install_dir}/include)
+endfunction()
