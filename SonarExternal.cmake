@@ -284,12 +284,12 @@ function(build_mongoc)
   endforeach()
   # mongoc requires openssl, rt and bson::lib
   find_package(Threads REQUIRED)
-  find_library(rt rt)
+  #find_library(rt rt)
   set_property(TARGET mongo::lib
     PROPERTY
     INTERFACE_LINK_LIBRARIES
       openssl::ssl
-      ${rt}
+      #${rt}
       bson::lib
       openssl::crypto
       Threads::Threads
@@ -1578,6 +1578,7 @@ function(build_boost)
       --user-config=user-config.jam
       variant=release
       link=static
+      visibility=hidden
       threading=multi
       cxxflags=-fPIC
       -sZLIB_INCLUDE=${zlib_install_dir}/include
@@ -1821,10 +1822,10 @@ function(build_aws_encryption)
   include_external_directories(TARGET aws-encryption::lib
     DIRECTORIES ${aws_encryption_install_dir}/include)
   find_package(Threads REQUIRED)
-  find_library(rt rt)
+  #find_library(rt rt)
   set_property(TARGET aws-encryption::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
-      ${rt}
+      #${rt}
       Threads::Threads
       openssl::crypto
       aws::c-common
