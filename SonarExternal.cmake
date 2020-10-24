@@ -2286,8 +2286,13 @@ function(build_hiredis)
     #   -DCMAKE_PREFIX_PATH=${openssl_install_dir}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libhiredis.a
     )
+  add_library(hiredis::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(hiredis::lib hiredis)
   external_project_dirs(hiredis install_dir)
-  # We're not using hiredis directly, no need for `add_library()` stuff
+  set_target_properties(hiredis::lib PROPERTIES
+    IMPORTED_LOCATION ${hiredis_install_dir}/lib/libhiredis.a)
+  include_external_directories(TARGET hiredis::lib
+    DIRECTORIES ${hiredis_install_dir}/include)
 endfunction()
 
 function(build_redis_plus_plus)
@@ -2321,4 +2326,8 @@ function(build_redis_plus_plus)
     IMPORTED_LOCATION ${redis_plus_plus_install_dir}/lib/libredis++.a)
   include_external_directories(TARGET redis-plus-plus::lib
     DIRECTORIES ${redis_plus_plus_install_dir}/include)
+  set_property(TARGET redis-plus-plus::lib PROPERTY
+    INTERFACE_LINK_LIBRARIES
+      hiredis::lib
+    )
 endfunction()
