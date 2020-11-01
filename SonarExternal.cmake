@@ -2345,13 +2345,17 @@ function(build_openldap)
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
       --prefix <INSTALL_DIR>
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libldap.a
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/lib/libldap.a
+      <INSTALL_DIR>/lib/liblber.a
     )
-  add_library(openldap::lib STATIC IMPORTED GLOBAL)
-  add_dependencies(openldap::lib openldap)
   external_project_dirs(openldap install_dir)
-  set_target_properties(openldap::lib PROPERTIES
-    IMPORTED_LOCATION ${openldap_install_dir}/lib/libldap.a)
-  include_external_directories(TARGET openldap::lib
-    DIRECTORIES ${openldap_install_dir}/include)
+  foreach(lib ldap lber)
+    add_library(openldap::${lib} STATIC IMPORTED GLOBAL)
+    add_dependencies(openldap::${lib} openldap)
+    set_target_properties(openldap::${lib} PROPERTIES
+      IMPORTED_LOCATION ${openldap_install_dir}/lib/lib${lib}.a)
+    include_external_directories(TARGET openldap::${lib}
+      DIRECTORIES ${openldap_install_dir}/include)
+  endforeach()
 endfunction()
