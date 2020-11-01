@@ -2331,3 +2331,27 @@ function(build_redis_plus_plus)
       hiredis::lib
     )
 endfunction()
+
+function(build_openldap)
+  cmake_parse_arguments(OPENLDAP "" "VERSION" "" ${ARGN})
+  if (NOT OPENLDAP_VERSION)
+    set(OPENLDAP_VERSION 2.4.55)
+  endif()
+  message(STATUS "Building openldap ${OPENLDAP_VERSION}")
+  ExternalProject_Add(openldap
+    URL https://openldap.org/software/download/OpenLDAP/openldap-release/openldap-${OPENLDAP_VERSION}.tgz
+    DOWNLOAD_NO_PROGRESS ON
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      --prefix <INSTALL_DIR>
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libldap.a
+    )
+  add_library(openldap::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(openldap::lib openldap)
+  external_project_dirs(openldap install_dir)
+  set_target_properties(openldap::lib PROPERTIES
+    IMPORTED_LOCATION ${openldap_install_dir}/lib/libldap.a)
+  include_external_directories(TARGET openldap::lib
+    DIRECTORIES ${openldap_install_dir}/include)
+endfunction()
