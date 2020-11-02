@@ -2348,6 +2348,8 @@ function(build_openldap)
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
       --prefix <INSTALL_DIR>
+    CMAKE_ARGS
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}<SEMICOLON>${sasl_install_dir}
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libldap.a
       <INSTALL_DIR>/lib/liblber.a
@@ -2357,12 +2359,12 @@ function(build_openldap)
     add_library(openldap::${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(openldap::${lib} openldap)
     set_target_properties(openldap::${lib} PROPERTIES
-      IMPORTED_LOCATION ${openldap_install_dir}/lib/lib${lib}.a
+      IMPORTED_LOCATION ${openldap_install_dir}/lib/lib${lib}.a)
+    set_property(TARGET openldap::ldap PROPERTY
       INTERFACE_LINK_LIBRARIES
         openssl::ssl
         openssl::crypto
-        sasl::lib
-    )
+        sasl::lib)
     include_external_directories(TARGET openldap::${lib}
       DIRECTORIES ${openldap_install_dir}/include)
   endforeach()
