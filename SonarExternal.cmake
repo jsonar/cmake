@@ -2338,9 +2338,12 @@ function(build_openldap)
     set(OPENLDAP_VERSION 2.4.55)
   endif()
   message(STATUS "Building openldap ${OPENLDAP_VERSION}")
+  build_openssl()
+  build_sasl()
   ExternalProject_Add(openldap
     URL https://openldap.org/software/download/OpenLDAP/openldap-release/openldap-${OPENLDAP_VERSION}.tgz
     DOWNLOAD_NO_PROGRESS ON
+    DEPENDS openssl sasl
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
@@ -2354,7 +2357,12 @@ function(build_openldap)
     add_library(openldap::${lib} STATIC IMPORTED GLOBAL)
     add_dependencies(openldap::${lib} openldap)
     set_target_properties(openldap::${lib} PROPERTIES
-      IMPORTED_LOCATION ${openldap_install_dir}/lib/lib${lib}.a)
+      IMPORTED_LOCATION ${openldap_install_dir}/lib/lib${lib}.a
+      INTERFACE_LINK_LIBRARIES
+        openssl::ssl
+        openssl::crypto
+        sasl::lib
+    )
     include_external_directories(TARGET openldap::${lib}
       DIRECTORIES ${openldap_install_dir}/include)
   endforeach()
