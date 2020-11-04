@@ -2347,7 +2347,7 @@ function(build_openldap)
     DEPENDS openssl sasl krb5
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-      CFLAGS=-isystem${openssl_install_dir}/include\ -isystem${sasl_install_dir}/include\ -isystem${krb5_install_dir}/include
+      CPPFLAGS=-isystem${openssl_install_dir}/include\ -isystem${sasl_install_dir}/include\ -isystem${krb5_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib\ -lssl\ -lcrypto\ -L${sasl_install_dir}/lib\ -L${krb5_install_dir}/lib\ -lpthread
       --prefix <INSTALL_DIR>
     BUILD_BYPRODUCTS
