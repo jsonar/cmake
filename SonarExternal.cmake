@@ -2340,17 +2340,15 @@ function(build_openldap)
   message(STATUS "Building openldap ${OPENLDAP_VERSION}")
   build_openssl()
   build_sasl()
-  build_krb5()
   ExternalProject_Add(openldap
     URL https://openldap.org/software/download/OpenLDAP/openldap-release/openldap-${OPENLDAP_VERSION}.tgz
     DOWNLOAD_NO_PROGRESS ON
-    DEPENDS openssl sasl krb5
+    DEPENDS openssl sasl
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-      CPPFLAGS=-isystem${openssl_install_dir}/include\ -isystem${sasl_install_dir}/include\ -isystem${krb5_install_dir}/include
-      LDFLAGS=-L${openssl_install_dir}/lib\ -lssl\ -lcrypto\ -L${sasl_install_dir}/lib\ -L${krb5_install_dir}/lib\ -lpthread
+      CPPFLAGS=-isystem${openssl_install_dir}/include\ -isystem${sasl_install_dir}/include
+      LDFLAGS=-L${openssl_install_dir}/lib\ -lssl\ -lcrypto\ -L${sasl_install_dir}/lib\ -lpthread
       --prefix <INSTALL_DIR>
-      --with-tls=openssl
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libldap.a
       <INSTALL_DIR>/lib/liblber.a
