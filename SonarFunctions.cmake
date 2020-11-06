@@ -130,6 +130,7 @@ macro(add_python_target)
       message(FATAL_ERROR "Cannot find python wheel. Please install it manually. Try: ${PYTHON_EXECUTABLE} -m pip install wheel")
     endif()
     message(STATUS "Building python wheel for ${PYTHON_PACKAGE_NAME}-${PYTHON_PACKAGE_VERSION}")
+    string(REPLACE "-" "_" PYTHON_PACKAGE_VERSION ${PYTHON_PACKAGE_VERSION})
     string(REPLACE "-" "_" PYTHON_WHEEL_FILENAME ${PYTHON_PACKAGE_NAME})
     string(APPEND
       PYTHON_WHEEL_FILENAME
