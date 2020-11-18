@@ -2351,6 +2351,7 @@ function(build_openldap)
       CPPFLAGS=-isystem${openssl_install_dir}/include\ -isystem${sasl_install_dir}/include\ -isystem${krb5_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib\ -lssl\ -lcrypto\ -L${sasl_install_dir}/lib\ -L${krb5_install_dir}/lib\ -pthread
       --prefix <INSTALL_DIR>
+      --enable-slapd=no
       --with-tls=openssl
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/lib/libldap.a
