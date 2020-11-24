@@ -3,9 +3,13 @@ cmake_policy(SET CMP0057 NEW) # if (.. IN_LIST ..)
 include(ExternalProject)
 include(GNUInstallDirs)
 string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
-if(EXTERNAL_INSTALL_LIBDIR STREQUAL lib64)
-  set(LIBSUFF 64)
+
+if (APPLE)
+  set(SO dylib)
+else()
+  set(SO so)
 endif()
+
 
 macro(external_project_dirs project)
   # set variables project_<dir> for each of the requested properties
@@ -368,6 +372,9 @@ function(build_curl)
     set(CURL_VERSION 7.65.1)
   endif()
   message(STATUS "Building curl-${CURL_VERSION}")
+  if(EXTERNAL_INSTALL_LIBDIR STREQUAL lib64)
+    set(LIBSUFF 64)
+  endif()
   ExternalProject_Add(curl
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
@@ -2095,19 +2102,19 @@ function(build_unixodbc)
     CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix <INSTALL_DIR>
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
-      --disable-shared
-      --enable-static
+      --enable-shared
+      --disable-static  # Cannot link statically because LGPL
     BUILD_BYPRODUCTS
-      <INSTALL_DIR>/lib/libodbcinst.a
-      <INSTALL_DIR>/lib/libodbc.a
-      <INSTALL_DIR>/lib/libodbccr.a
+      <INSTALL_DIR>/lib/libodbcinst.${SO}
+      <INSTALL_DIR>/lib/libodbc.${SO}
+      <INSTALL_DIR>/lib/libodbccr.${SO}
     )
   external_project_dirs(unixodbc install_dir)
   foreach(obj odbcinst odbc odbccr)
-    add_library(unixodbc::${obj} STATIC IMPORTED GLOBAL)
+    add_library(unixodbc::${obj} SHARED IMPORTED GLOBAL)
     add_dependencies(unixodbc::${obj} unixodbc)
     set_target_properties(unixodbc::${obj} PROPERTIES
-      IMPORTED_LOCATION ${unixodbc_install_dir}/lib/lib${obj}.a)
+      IMPORTED_LOCATION ${unixodbc_install_dir}/lib/lib${obj}.${SO})
     include_external_directories(TARGET unixodbc::${obj}
       DIRECTORIES ${unixodbc_install_dir}/include)
   endforeach()
