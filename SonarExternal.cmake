@@ -713,18 +713,22 @@ function(build_easylogging)
 endfunction()
 
 function(build_pcre)
-  cmake_parse_arguments(PCRE "" "VERSION" "" ${ARGN})
+  cmake_parse_arguments(PCRE "ENABLE_VALGRIND" "VERSION" "" ${ARGN})
   if (NOT PCRE_VERSION)
     set(PCRE_VERSION 8.44)
   endif()
   message(STATUS "Building pcre-${PCRE_VERSION}")
+  set(enable_valgrind)
+  if (ENABLE_VALGRIND)
+    set(enable_valgrind --enable-valgrind)
+  endif()
   ExternalProject_Add(pcre
     URL https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       --enable-jit
-      --enable-valgrind
+      ${enable_valgrind}
       --enable-unicode-properties
       --enable-utf
       --prefix <INSTALL_DIR>
@@ -1105,6 +1109,7 @@ function(build_rdkafka)
   ExternalProject_Add(rdkafka
     URL https://github.com/edenhill/librdkafka/archive/v${RDKAFKA_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
+    DEPENDS icu
     PATCH_COMMAND ${patch_command}
     DEPENDS openssl sasl
     CMAKE_ARGS
@@ -1464,7 +1469,7 @@ function(build_date)
   if (NOT DATE_VERSION)
     set(DATE_VERSION v3.0.0)
   endif()
-  message(STATUS "Building date.h ${DATE_VERSION}")
+  message(STATUS "Building date-${DATE_VERSION}")
   ExternalProject_Add(date
     URL https://github.com/HowardHinnant/date/archive/${DATE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
@@ -2047,7 +2052,7 @@ function(build_simdjson)
   if (NOT SIMDJSON_VERSION)
     set(SIMDJSON_VERSION 0.2.1)
   endif()
-  message(STATUS "Building simdJSON ${SIMDJSON_VERSION}")
+  message(STATUS "Building simdJSON-${SIMDJSON_VERSION}")
   ExternalProject_Add(simdjson
     URL https://github.com/lemire/simdjson/archive/v${SIMDJSON_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
@@ -2063,10 +2068,11 @@ function(build_simdjson)
     )
   external_project_dirs(simdjson install_dir)
   add_library(simdjson::lib STATIC IMPORTED GLOBAL)
-  include_external_directories(TARGET simdjson::lib DIRECTORIES ${simdjson_install_dir}/include) 
+  include_external_directories(TARGET simdjson::lib
+    DIRECTORIES ${simdjson_install_dir}/include)
   set_target_properties(simdjson::lib PROPERTIES
     IMPORTED_LOCATION ${simdjson_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libsimdjson.a)
-  add_dependencies(simdjson::lib simdjson)  
+  add_dependencies(simdjson::lib simdjson)
 endfunction()
 
 
@@ -2075,30 +2081,35 @@ function(build_unixodbc)
     external_project_dirs(unixodbc install_dir)
     return()
   endif()
-  cmake_parse_arguments(unixodbc "" "VERSION" "" ${ARGN})
+  cmake_parse_arguments(unixodbc "" "VERSION;MD5" "" ${ARGN})
   if (NOT UNIXODBC_VERSION)
-    set(UNIXODBC_VERSION 2.3.7)
+    set(UNIXODBC_VERSION 2.3.9)
+    set(UNIXODBC_MD5 06f76e034bb41df5233554abe961a16f)
   endif()
-  message(STATUS "Building unixodbc ${UNIXODBC_VERSION}")
+  message(STATUS "Building unixodbc-${UNIXODBC_VERSION}")
   ExternalProject_Add(unixodbc
-          URL http://www.unixodbc.org/unixODBC-${UNIXODBC_VERSION}.tar.gz
-          URL_MD5 274a711b0c77394e052db6493840c6f9
-          DOWNLOAD_NO_PROGRESS 1
-          BUILD_IN_SOURCE 1
-          CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix <INSTALL_DIR>
-            CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-            CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
-          BUILD_BYPRODUCTS
-             <INSTALL_DIR>/lib/libodbcinst.so
-             <INSTALL_DIR>/lib/libodbc.so
-             <INSTALL_DIR>/lib/libodbccr.so
-          )
+    URL http://www.unixodbc.org/unixODBC-${UNIXODBC_VERSION}.tar.gz
+    URL_MD5 ${UNIXODBC_MD5}
+    DOWNLOAD_NO_PROGRESS 1
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix <INSTALL_DIR>
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      --disable-shared
+      --enable-static
+    BUILD_BYPRODUCTS
+      <INSTALL_DIR>/lib/libodbcinst.a
+      <INSTALL_DIR>/lib/libodbc.a
+      <INSTALL_DIR>/lib/libodbccr.a
+    )
   external_project_dirs(unixodbc install_dir)
   foreach(obj odbcinst odbc odbccr)
-    add_library(unixodbc::${obj} SHARED IMPORTED GLOBAL)
+    add_library(unixodbc::${obj} STATIC IMPORTED GLOBAL)
     add_dependencies(unixodbc::${obj} unixodbc)
-    set_target_properties(unixodbc::${obj} PROPERTIES IMPORTED_LOCATION ${unixodbc_install_dir}/lib/lib${obj}.so)
-    include_external_directories(TARGET unixodbc::${obj} DIRECTORIES ${unixodbc_install_dir}/include)
+    set_target_properties(unixodbc::${obj} PROPERTIES
+      IMPORTED_LOCATION ${unixodbc_install_dir}/lib/lib${obj}.a)
+    include_external_directories(TARGET unixodbc::${obj}
+      DIRECTORIES ${unixodbc_install_dir}/include)
   endforeach()
 endfunction()
 
@@ -2111,7 +2122,7 @@ function(build_nanodbc)
   if (NOT NANODBC_VERSION)
     set(NANODBC_VERSION 2.12.4)
   endif()
-  message(STATUS "Building nanodbc ${NANODBC_VERSION}")
+  message(STATUS "Building nanodbc-${NANODBC_VERSION}")
   build_unixodbc()
   ExternalProject_Add(nanodbc
           URL https://github.com/nanodbc/nanodbc/archive/v${NANODBC_VERSION}.tar.gz
@@ -2168,7 +2179,7 @@ function(build_tl_expected)
   add_library(tl_expected::header-only INTERFACE IMPORTED)
   add_dependencies(tl_expected::header-only tl-expected)
   external_project_dirs(tl-expected install_dir)
-  include_external_directories(TARGET tl_expected::header-only 
+  include_external_directories(TARGET tl_expected::header-only
     DIRECTORIES ${tl_expected_install_dir}/include)
 endfunction()
 
@@ -2193,7 +2204,7 @@ function(build_nlohmann_json)
   add_library(nlohmann_json::header-only INTERFACE IMPORTED)
   add_dependencies(nlohmann_json::header-only nlohmann-json)
   external_project_dirs(nlohmann-json install_dir)
-  include_external_directories(TARGET nlohmann_json::header-only 
+  include_external_directories(TARGET nlohmann_json::header-only
     DIRECTORIES ${nlohmann_json_install_dir}/include)
 endfunction()
 
@@ -2213,11 +2224,15 @@ function(build_range_v3)
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DRANGE_V3_DOCS=NO
+      -DRANGE_V3_TESTS=NO
+      -DRANGE_V3_EXAMPLES=NO
+      -DRANGE_V3_PERF=NO
     )
   add_library(range_v3::lib INTERFACE IMPORTED)
   add_dependencies(range_v3::lib range-v3)
   external_project_dirs(range-v3 install_dir)
-  include_external_directories(TARGET range_v3::lib 
+  include_external_directories(TARGET range_v3::lib
     DIRECTORIES ${range_v3_install_dir}/include)
 endfunction()
 
@@ -2262,10 +2277,10 @@ function(build_hiredis)
   if (NOT HIREDIS_VERSION)
     set(HIREDIS_VERSION 1.0.0)
   endif()
-  message(STATUS "Building hiredis ${HIREDIC_VERSION}")
+  message(STATUS "Building hiredis-${HIREDIS_VERSION}")
   build_openssl()
   ExternalProject_Add(hiredis
-    URL https://github.com/redis/hiredis/archive/v1.0.0.tar.gz
+    URL https://github.com/redis/hiredis/archive/v${HIREDIS_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS openssl
     CONFIGURE_COMMAND ""
@@ -2302,7 +2317,7 @@ function(build_redis_plus_plus)
   if (NOT REDIS_PLUS_PLUS_VERSION)
     set(REDIS_PLUS_PLUS_VERSION 1.2.1)
   endif()
-  message(STATUS "Building redis-plus-plus ${REDIS_PLUS_PLUS_VERSION}")
+  message(STATUS "Building redis-plus-plus-${REDIS_PLUS_PLUS_VERSION}")
   build_hiredis()
   ExternalProject_Add(redis_plus_plus
     URL https://github.com/sewenew/redis-plus-plus/archive/${REDIS_PLUS_PLUS_VERSION}.tar.gz
@@ -2339,7 +2354,7 @@ function(build_openldap)
   if (NOT OPENLDAP_VERSION)
     set(OPENLDAP_VERSION 2.4.55)
   endif()
-  message(STATUS "Building openldap ${OPENLDAP_VERSION}")
+  message(STATUS "Building openldap-${OPENLDAP_VERSION}")
   build_openssl()
   build_sasl()
   build_krb5()
