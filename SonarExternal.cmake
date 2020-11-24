@@ -1249,6 +1249,7 @@ function(build_xerces)
   ExternalProject_Add(xerces
     URL https://www.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
     DOWNLOAD_NO_PROGRESS 1
+    DEPENDS icu
     PATCH_COMMAND ${patch_command}
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
@@ -2220,16 +2221,16 @@ function(build_range_v3)
 endfunction()
 
 function(build_url)
-  cmake_parse_arguments(SKYR_URL "" "VERSION" "" ${ARGN})
-  if(NOT SKYR_URL_VERSION)
-    set(SKYR_URL_VERSION v1.12.0)
+  cmake_parse_arguments(URL "" "VERSION" "" ${ARGN})
+  if(NOT URL_VERSION)
+    set(URL_VERSION v1.13.0)
   endif()
-  message(STATUS "Building skyr-url-${SKYR_URL_VERSION}")
+  message(STATUS "Building url-${URL_VERSION}")
   build_tl_expected()
   build_nlohmann_json()
   build_range_v3()
-  ExternalProject_Add(skyr_url
-    URL https://github.com/cpp-netlib/url/archive/${SKYR_URL_VERSION}.tar.gz
+  ExternalProject_Add(url
+    URL https://github.com/cpp-netlib/url/archive/${URL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     DEPENDS tl-expected nlohmann-json range-v3
     CMAKE_ARGS
@@ -2245,14 +2246,14 @@ function(build_url)
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libskyr-url.a
     )
   add_library(url::lib STATIC IMPORTED)
-  add_dependencies(url::lib skyr_url)
-  target_link_libraries(url::lib INTERFACE tl_expected::header-only 
+  add_dependencies(url::lib url)
+  target_link_libraries(url::lib INTERFACE tl_expected::header-only
     nlohmann_json::header-only range_v3::lib)
-  external_project_dirs(skyr_url install_dir)
-  set_property(TARGET url::lib PROPERTY 
-    IMPORTED_LOCATION ${skyr_url_install_dir}/lib/libskyr-url.a)
-  include_external_directories(TARGET url::lib 
-    DIRECTORIES ${skyr_url_install_dir}/include)
+  external_project_dirs(url install_dir)
+  set_property(TARGET url::lib PROPERTY
+    IMPORTED_LOCATION ${url_install_dir}/lib/libskyr-url.a)
+  include_external_directories(TARGET url::lib
+    DIRECTORIES ${url_install_dir}/include)
 endfunction()
 
 function(build_hiredis)
