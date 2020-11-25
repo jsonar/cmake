@@ -1934,6 +1934,7 @@ function(build_gsasl)
       --disable-kerberos_v5
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libgsasl.a
     )
+  message(WARNING "Linking statically to gsasl, which is LGPL")
   add_library(gsasl::lib STATIC IMPORTED GLOBAL)
   add_dependencies(gsasl::lib gsasl)
   external_project_dirs(gsasl install_dir)
