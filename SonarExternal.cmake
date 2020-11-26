@@ -1733,11 +1733,12 @@ endfunction()
 function(build_archive)
   cmake_parse_arguments(ARCHIVE "" "VERSION" "" ${ARGN})
   if (NOT ARCHIVE_VERSION)
-    set(ARCHIVE_VERSION 3.3.3)
+    set(ARCHIVE_VERSION 3.4.3)
   endif()
   message(STATUS "Building archive-${ARCHIVE_VERSION}")
   ExternalProject_Add(archive
     URL https://libarchive.org/downloads/libarchive-${ARCHIVE_VERSION}.tar.gz
+      https://github.com/libarchive/libarchive/releases/download/v${ARCHIVE_VERSION}/libarchive-${ARCHIVE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include
