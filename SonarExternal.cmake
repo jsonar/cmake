@@ -726,7 +726,7 @@ function(build_pcre)
   endif()
   message(STATUS "Building pcre-${PCRE_VERSION}")
   set(enable_valgrind)
-  if (ENABLE_VALGRIND)
+  if (PCRE_ENABLE_VALGRIND)
     set(enable_valgrind --enable-valgrind)
   endif()
   ExternalProject_Add(pcre
