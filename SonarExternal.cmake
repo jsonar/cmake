@@ -288,7 +288,10 @@ function(build_mongoc)
   endforeach()
   # mongoc requires openssl, rt and bson::lib
   find_package(Threads REQUIRED)
-  find_library(rt rt)
+  find_library(RTLIB rt)
+  if(RTLIB)
+    set(rt ${RTLIB})
+  endif()
   set_property(TARGET mongo::lib
     PROPERTY
     INTERFACE_LINK_LIBRARIES
@@ -1836,7 +1839,10 @@ function(build_aws_encryption)
   include_external_directories(TARGET aws-encryption::lib
     DIRECTORIES ${aws_encryption_install_dir}/include)
   find_package(Threads REQUIRED)
-  find_library(rt rt)
+  find_library(RTLIB rt)
+  if(RTLIB)
+    set(rt ${RTLIB})
+  endif()
   set_property(TARGET aws-encryption::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
       ${rt}
