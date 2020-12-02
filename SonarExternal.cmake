@@ -528,16 +528,12 @@ function(build_jsoncpp)
     external_project_dirs(jsoncpp install_dir)
     return()
   endif()
-  cmake_parse_arguments(JSONCPP "" "VERSION;PATCH_FILE" "" ${ARGN})
+  cmake_parse_arguments(JSONCPP "" "VERSION" "" ${ARGN})
   if(NOT JSONCPP_VERSION)
-    set(JSONCPP_VERSION 1.8.4)
+    set(JSONCPP_VERSION 1.9.3)
   endif()
   message(STATUS "Building jsoncpp-${JSONCPP_VERSION}")
   set(jsoncpp_lib ${EXTERNAL_INSTALL_LIBDIR}/libjsoncpp.a)
-  if(JSONCPP_PATCH_FILE)
-    set(patch_command #git checkout . COMMAND
-      patch -p1 < ${JSONCPP_PATCH_FILE})
-  endif()
   ExternalProject_Add(jsoncpp
     URL https://github.com/open-source-parsers/jsoncpp/archive/${JSONCPP_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
@@ -551,7 +547,6 @@ function(build_jsoncpp)
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     BUILD_BYPRODUCTS
       <INSTALL_DIR>/${jsoncpp_lib}
   )
