@@ -2255,6 +2255,9 @@ function(build_url)
   build_tl_expected()
   build_nlohmann_json()
   build_range_v3()
+  if (CMAKE_BUILD_TYPE STREQUAL Debug)
+    set(libsuff d)
+  endif()
   ExternalProject_Add(url
     URL https://github.com/cpp-netlib/url/archive/${URL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
@@ -2269,7 +2272,7 @@ function(build_url)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_PREFIX_PATH=${tl_expected_install_dir}$<SEMICOLON>${nlohmann_json_install_dir}$<SEMICOLON>${range_v3_install_dir}
       -Dskyr_BUILD_TESTS=0
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libskyr-url.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libskyr-url${libsuff}.a
     )
   add_library(url::lib STATIC IMPORTED)
   add_dependencies(url::lib url)
@@ -2277,7 +2280,7 @@ function(build_url)
     nlohmann_json::header-only range_v3::lib)
   external_project_dirs(url install_dir)
   set_property(TARGET url::lib PROPERTY
-    IMPORTED_LOCATION ${url_install_dir}/lib/libskyr-url.a)
+    IMPORTED_LOCATION ${url_install_dir}/lib/libskyr-url${libsuff}.a)
   include_external_directories(TARGET url::lib
     DIRECTORIES ${url_install_dir}/include)
 endfunction()
