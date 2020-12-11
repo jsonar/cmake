@@ -160,6 +160,7 @@ function(build_icu)
   string(REPLACE "." "_" ICU_VERSION_UNDERSCORE ${ICU_VERSION})
   string(REPLACE "." "-" ICU_VERSION_DASH ${ICU_VERSION})
   ExternalProject_Add(icu
+    PREFIX "icu-${ICU_VERSION}"
     URL https://github.com/unicode-org/icu/releases/download/release-${ICU_VERSION_DASH}/icu4c-${ICU_VERSION_UNDERSCORE}-src.tgz
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/source/configure
