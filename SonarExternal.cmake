@@ -290,13 +290,21 @@ function(build_mongoc)
   find_package(Threads REQUIRED)
   find_library(RTLIB rt)
   if(RTLIB)
-    set(rt ${RTLIB})
+    set(rtlib ${RTLIB})
+  endif()
+  if (APPLE)
+    find_library(COCOA cocoa)
+    set(cocoalib ${COCOA})
+    find_library(SECURITY security)
+    set(security_framework ${SECURITY})
   endif()
   set_property(TARGET mongo::lib
     PROPERTY
     INTERFACE_LINK_LIBRARIES
       openssl::ssl
-      ${rt}
+      ${rtlib}
+      ${cocoalib}
+      ${security_framework}
       bson::lib
       openssl::crypto
       Threads::Threads
@@ -1836,11 +1844,11 @@ function(build_aws_encryption)
   find_package(Threads REQUIRED)
   find_library(RTLIB rt)
   if(RTLIB)
-    set(rt ${RTLIB})
+    set(rtlib ${RTLIB})
   endif()
   set_property(TARGET aws-encryption::lib PROPERTY
     INTERFACE_LINK_LIBRARIES
-      ${rt}
+      ${rtlib}
       Threads::Threads
       openssl::crypto
       aws::c-common
