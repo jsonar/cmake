@@ -933,7 +933,7 @@ function(build_bid)
     set(patch_command patch -p1 < ${BID_PATCH_FILE})
   endif()
   ExternalProject_Add(bid
-    URL https://software.intel.com/sites/default/files/m/d/4/1/d/8/IntelRDFPMathLib20U1.tar.gz
+    URL http://www.netlib.org/misc/intel/IntelRDFPMathLib20U1.tar.gz
     URL_MD5 c9384d2e03a13b35d15e54cf20492cf5
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND ""
