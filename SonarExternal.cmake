@@ -156,6 +156,8 @@ function(build_icu)
   foreach(component ${ICU_COMPONENTS})
     list(APPEND build_byproducts <INSTALL_DIR>/lib/libicu${component}.a)
   endforeach()
+  set(ICU_CFLAGS -fPIC)
+  set(ICU_CXXFLAGS -fPIC)
   message(STATUS "Building icu-${ICU_VERSION}")
   string(REPLACE "." "_" ICU_VERSION_UNDERSCORE ${ICU_VERSION})
   string(REPLACE "." "-" ICU_VERSION_DASH ${ICU_VERSION})
@@ -166,6 +168,8 @@ function(build_icu)
     CONFIGURE_COMMAND <SOURCE_DIR>/source/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       CXX=${CMAKE_CXX_COMPILER_LAUNCHER}\ ${CMAKE_CXX_COMPILER}
+      CFLAGS=${ICU_CFLAGS}
+      CXXFLAGS=${ICU_CXXFLAGS}
       --prefix <INSTALL_DIR>
       --enable-static
       --disable-shared
@@ -941,6 +945,7 @@ function(build_bid)
     BUILD_COMMAND make
       -C <SOURCE_DIR>/LIBRARY
       CC=gcc
+      CFLAGS_CC=-fPIC
       CALL_BY_REF=0
       GLOBAL_RND=1
       GLOBAL_FLAGS=1
@@ -949,6 +954,7 @@ function(build_bid)
     BUILD_BYPRODUCTS <SOURCE_DIR>/LIBRARY/libbid.a
     )
   add_library(bid::lib STATIC IMPORTED GLOBAL)
+  set_property(TARGET bid::lib PROPERTY POSITION_INDEPENDENT_CODE ON)
   add_dependencies(bid::lib bid)
   external_project_dirs(bid source_dir)
   set_property(TARGET bid::lib
@@ -1679,7 +1685,7 @@ function(build_bzip2)
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE ON
-    BUILD_COMMAND ""
+    BUILD_COMMAND make -f Makefile-libbz2_so COMMAND make clean COMMAND make
     INSTALL_COMMAND make install PREFIX=<INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libbz2.a
     )
@@ -1689,6 +1695,9 @@ function(build_bzip2)
   set_target_properties(bzip2::lib PROPERTIES
     IMPORTED_LOCATION ${bzip2_install_dir}/lib/libbz2.a)
   target_include_external_directory(bzip2::lib bzip2 install_dir include)
+  add_library(bzip2::shared::lib SHARED IMPORTED GLOBAL)
+  set_target_properties(bzip2::shared::lib PROPERTIES
+    IMPORTED_LOCATION ${bzip2_install_dir}/src/bzip2/libbz2.so.${BZIP2_VERSION})
 endfunction()
 
 function(build_snappy)
