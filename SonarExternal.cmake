@@ -1685,7 +1685,7 @@ function(build_bzip2)
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE ON
-    BUILD_COMMAND make -f Makefile-libbz2_so COMMAND make clean COMMAND make
+    BUILD_COMMAND make clean COMMAND make -f Makefile-libbz2_so COMMAND make clean COMMAND make
     INSTALL_COMMAND make install PREFIX=<INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libbz2.a
     )
