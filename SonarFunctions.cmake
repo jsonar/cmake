@@ -72,16 +72,18 @@ endfunction()
 function(sonar_python_version python_version_var)
   cmake_parse_arguments(PARSE_ARGV 1 PYTHON "" "SETUPTOOLS_VERSION" "")
   sonar_set_version(version)
-  set(regex "([0-9]+\.[0-9]+\.[0-9]+)-devel(op)?")
-  if(version MATCHES ${regex})
+  set(devel_regex "([0-9]+\\.[0-9]+(\\.[0-9]+)*)-devel(op)?(-.*)?")
+  set(regex "([0-9]+\\.[0-9]+(\\.[0-9]+)*)(-.*)?")
+  if(version MATCHES ${devel_regex})
     # we have a long version, that is incompatible with python versioning
-    string(REGEX REPLACE "${regex}" "\\1.dev0" python_version ${version})
+    string(REGEX REPLACE "${devel_regex}" "\\1.dev0" python_version ${version})
+  elseif(version MATCHES ${regex})
+    string(REGEX REPLACE "${regex}" "\\1" python_version ${version})
   else()
     set(python_version ${version})
   endif()
   set(${python_version_var} ${python_version} PARENT_SCOPE)
 endfunction()
-
 
 macro(add_python_target)
   cmake_parse_arguments(PYTHON_PACKAGE
