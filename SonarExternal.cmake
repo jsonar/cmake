@@ -799,13 +799,13 @@ function(build_glog)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DWITH_GFLAGS=NO
       -DBUILD_SHARED_LIBS=OFF
-    BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libglog.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libglog.a
     )
   external_project_dirs(glog install_dir)
   add_library(glog::lib STATIC IMPORTED)
   add_dependencies(glog::lib glog)
   set_target_properties(glog::lib PROPERTIES
-    IMPORTED_LOCATION ${glog_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libglog.a)
+    IMPORTED_LOCATION ${glog_install_dir}/lib/libglog.a)
   target_include_external_directory(glog::lib glog install_dir include)
 endfunction()
 
