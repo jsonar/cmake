@@ -2,7 +2,7 @@ include(GetGitRevisionDescription)
 
 function(sonar_cpack_version major_var minor_var patch_var)
   git_describe(version --match "v*")
-  set(regex "v([0-9]+)\.([0-9]+)\.([0-9]+)(.*)")
+  set(regex "^v([0-9]+)\\.([0-9]+)\\.([0-9]+)(-.*|)$")
   if (NOT ${version} MATCHES ${regex})
     message(FATAL_ERROR "git tag '${version}' format does not match vMAJOR.MINOR.PATCH[EXTRA]")
   endif()
@@ -13,12 +13,12 @@ function(sonar_cpack_version major_var minor_var patch_var)
   string(REGEX REPLACE "${regex}" "\\2" minor "${version}")
   string(REGEX REPLACE "${regex}" "\\3" patch "${version}")
   if (NOT SHORT_VERSION)
-    string(REGEX REPLACE "${regex}" "\\4" extra "${version}")
+    string(REGEX REPLACE "${regex}" "\\4" pre_release "${version}")
   endif()
-  message(STATUS "Detected ${PROJECT_NAME} version: ${major}.${minor}.${patch}${extra}")
+  message(STATUS "Detected ${PROJECT_NAME} version: ${major}.${minor}.${patch}${pre_release}")
   set(${major_var} "${major}" PARENT_SCOPE)
   set(${minor_var} "${minor}" PARENT_SCOPE)
-  set(${patch_var} "${patch}${extra}" PARENT_SCOPE)
+  set(${patch_var} "${patch}${pre_release}" PARENT_SCOPE)
 endfunction()
 
 function(sonar_git_info describe_var hash_var)
@@ -70,27 +70,22 @@ function(sonar_deps deps_var deps)
 endfunction()
 
 function(sonar_python_version python_version_var)
-  cmake_parse_arguments(PARSE_ARGV 1 PYTHON "" "SETUPTOOLS_VERSION" "")
-  if(NOT PYTHON_SETUPTOOLS_VERSION)
-    set(PYTHON_SETUPTOOLS_VERSION "0.9.8")
-  endif()
   sonar_set_version(version)
-  set(regex "([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)-(.*)")
-  if(version MATCHES ${regex})
-    # we have a long version, that is incompatible with python versioning
-    if (PYTHON_SETUPTOOLS_VERSION VERSION_GREATER_EQUAL 8.0.0)
-      # We are building for python-setuptools >= 8.0.0, which supports PEP-440
-      string(REGEX REPLACE "${regex}" "\\1.\\2+\\3" python_version ${version})
-    else()
-      # older python-setuptools, PEP-440 not supported, so use short version
-      string(REGEX REPLACE "${regex}" "\\1.\\2" python_version ${version})
-    endif()
+  set(base_version_regex "([0-9]+\\.[0-9]+\\.[0-9]+)")
+  set(devel_regex "^${base_version_regex}-devel(op)?(-.*)?$") # 4.4.0-devel or 4.4.0-devel-7-gd8b03e7
+  set(rc_regex "^${base_version_regex}-([0-9]+)(-.*-.*)?$") # 4.4.0-2 or 4.4.0-2-7-gd8b03e7
+  set(regex "^${base_version_regex}(-.*)?$") # 4.4.0 or 4.4.0-7-gd8b03e7
+  if(version MATCHES ${devel_regex})
+    string(REGEX REPLACE "${devel_regex}" "\\1.dev0" python_version ${version})
+  elseif(version MATCHES ${rc_regex})
+    string(REGEX REPLACE "${rc_regex}" "\\1rc\\2" python_version ${version})
+  elseif(version MATCHES ${regex})
+    string(REGEX REPLACE "${regex}" "\\1" python_version ${version})
   else()
     set(python_version ${version})
   endif()
   set(${python_version_var} ${python_version} PARENT_SCOPE)
 endfunction()
-
 
 macro(add_python_target)
   cmake_parse_arguments(PYTHON_PACKAGE

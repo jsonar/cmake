@@ -2161,6 +2161,7 @@ function(build_nanodbc)
             -DNANODBC_EXAMPLES=OFF
             -DNANODBC_STATIC=ON
             -DNANODBC_TEST=OFF
+            -DNANODBC_ODBC_VERSION=SQL_OV_ODBC3
           BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libnanodbc.a
           )
   add_library(nanodbc::lib STATIC IMPORTED GLOBAL)
