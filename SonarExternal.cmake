@@ -1685,7 +1685,7 @@ function(build_bzip2)
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE ON
-    BUILD_COMMAND COMMAND make clean COMMAND make
+    BUILD_COMMAND make
     INSTALL_COMMAND make install PREFIX=<INSTALL_DIR>
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libbz2.a
     )
@@ -1707,21 +1707,22 @@ function(build_bzip2_shared)
     set(BZIP2_SHARED_VERSION 1.0.7)
   endif()
   message(STATUS "Building SHARED bzip2-${BZIP2_SHARED_VERSION}")
+  build_bzip2(VERSION ${BZIP2_SHARED_VERSION}) # we use the static bzip2 for the include files
   ExternalProject_Add(bzip2-shared
     URL https://sourceware.org/pub/bzip2/bzip2-${BZIP2_SHARED_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE ON
-    BUILD_COMMAND make clean COMMAND make -f Makefile-libbz2_so
-    INSTALL_COMMAND make install PREFIX=<INSTALL_DIR>
+    BUILD_COMMAND make -f Makefile-libbz2_so
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/libbz2.so.${BZIP2_SHARED_VERSION} <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION}
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION}
     )
-  add_library(bzip2::shared::lib STATIC IMPORTED GLOBAL)
+  add_library(bzip2::shared::lib SHARED IMPORTED GLOBAL)
   add_dependencies(bzip2::shared::lib bzip2-shared)
   external_project_dirs(bzip2-shared install_dir)
   set_target_properties(bzip2::shared::lib PROPERTIES
     IMPORTED_LOCATION ${bzip2_shared_install_dir}/lib/libbz2.so.${BZIP2_SHARED_VERSION})
-  target_include_external_directory(bzip2::shared::lib bzip2-shared install_dir include)
+  target_include_external_directory(bzip2::shared::lib bzip2 install_dir include) # not a mistake, using the _static_ bzip2 for its header files
 endfunction()
 
 function(build_snappy)
