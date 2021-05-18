@@ -107,6 +107,7 @@ function(git_describe _var)
 	execute_process(COMMAND
 		"${GIT_EXECUTABLE}"
 		describe
+		--first-parent
 		${hash}
 		${ARGN}
 		WORKING_DIRECTORY
