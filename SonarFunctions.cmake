@@ -267,8 +267,13 @@ function(set_package_and_file_name_for_component)
       OUTPUT_VARIABLE RHEL
       OUTPUT_STRIP_TRAILING_WHITESPACE)
     sonar_vendor(OUTPUT_VARIABLE vendor)
-    set (package_file_name
-      "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}.${RHEL}.${vendor}.${CPACK_RPM_PACKAGE_ARCHITECTURE}")
+    if (CUSTOM_RPM_NAME)
+      string(CONFIGURE "${CUSTOM_RPM_NAME}" custom_format)
+      set(package_file_name "${custom_format}")
+    else()
+      set(package_file_name
+        "${PKG_FILE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}${CPACK_PACKAGE_VERSION_EXTRA}.${RHEL}.${vendor}.${CPACK_RPM_PACKAGE_ARCHITECTURE}")
+    endif()
   elseif(generator STREQUAL "DEB")
     set(local_gen "DEBIAN")
     execute_process(COMMAND dpkg "--print-architecture"
