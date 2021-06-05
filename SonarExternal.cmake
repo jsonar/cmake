@@ -1715,7 +1715,9 @@ function(build_bzip2_shared)
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE ON
     BUILD_COMMAND make -f Makefile-libbz2_so
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/libbz2.so.${BZIP2_SHARED_VERSION} <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION}
+    INSTALL_COMMAND
+      ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/libbz2.so.${BZIP2_SHARED_VERSION} <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION}
+      COMMAND ln -s <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION} <INSTALL_DIR>/lib/libbz2.so.1.0
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION}
     )
   add_library(bzip2::shared::lib SHARED IMPORTED GLOBAL)
