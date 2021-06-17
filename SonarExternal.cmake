@@ -791,6 +791,10 @@ function(build_glog)
   if(GLOG_VERSION VERSION_GREATER_EQUAL 0.5.0)
     set(libdir ${EXTERNAL_INSTALL_LIBDIR})
   endif()
+  set(libname glog)
+  if(CMAKE_BUILD_TYPE STREQUAL Debug)
+    string(APPEND libname d)
+  endif()
   ExternalProject_Add(glog
     URL https://github.com/google/glog/archive/v${GLOG_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
@@ -803,13 +807,13 @@ function(build_glog)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DWITH_GFLAGS=NO
       -DBUILD_SHARED_LIBS=OFF
-    BUILD_BYPRODUCTS <INSTALL_DIR>/${libdir}/libglog.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${libdir}/lib${libname}.a
     )
   external_project_dirs(glog install_dir)
   add_library(glog::lib STATIC IMPORTED)
   add_dependencies(glog::lib glog)
   set_target_properties(glog::lib PROPERTIES
-    IMPORTED_LOCATION ${glog_install_dir}/${libdir}/libglog.a)
+    IMPORTED_LOCATION ${glog_install_dir}/${libdir}/lib${libname}.a)
   target_include_external_directory(glog::lib glog install_dir include)
 endfunction()
 
