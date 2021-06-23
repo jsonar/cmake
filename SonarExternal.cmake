@@ -727,6 +727,7 @@ function(build_pcre)
     URL https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      CFLAGS=-fPIC
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       --enable-jit
       --enable-unicode-properties
@@ -946,6 +947,7 @@ function(build_bid)
       -C <SOURCE_DIR>/LIBRARY
       CC=gcc
       CFLAGS_CC=-fPIC
+      CFLAGS_OPT=-fPIC
       CALL_BY_REF=0
       GLOBAL_RND=1
       GLOBAL_FLAGS=1
@@ -954,7 +956,6 @@ function(build_bid)
     BUILD_BYPRODUCTS <SOURCE_DIR>/LIBRARY/libbid.a
     )
   add_library(bid::lib STATIC IMPORTED GLOBAL)
-  set_property(TARGET bid::lib PROPERTY POSITION_INDEPENDENT_CODE ON)
   add_dependencies(bid::lib bid)
   external_project_dirs(bid source_dir)
   set_property(TARGET bid::lib
@@ -1714,7 +1715,9 @@ function(build_bzip2_shared)
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE ON
     BUILD_COMMAND make -f Makefile-libbz2_so
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/libbz2.so.${BZIP2_SHARED_VERSION} <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION}
+    INSTALL_COMMAND
+      ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/libbz2.so.${BZIP2_SHARED_VERSION} <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION}
+      COMMAND ln -s <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION} <INSTALL_DIR>/lib/libbz2.so.1.0
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libbz2.so.${BZIP2_SHARED_VERSION}
     )
   add_library(bzip2::shared::lib SHARED IMPORTED GLOBAL)
@@ -1741,6 +1744,7 @@ function(build_snappy)
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libsnappy.a
     )
   add_library(snappy::lib STATIC IMPORTED GLOBAL)
