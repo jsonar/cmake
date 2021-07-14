@@ -810,11 +810,18 @@ function(build_glog)
     BUILD_BYPRODUCTS <INSTALL_DIR>/${libdir}/lib${libname}.a
     )
   external_project_dirs(glog install_dir)
+  find_library(unwind unwind)
   add_library(glog::lib STATIC IMPORTED)
   add_dependencies(glog::lib glog)
   set_target_properties(glog::lib PROPERTIES
     IMPORTED_LOCATION ${glog_install_dir}/${libdir}/lib${libname}.a)
   target_include_external_directory(glog::lib glog install_dir include)
+  if (unwind)
+    set_property(TARGET glog::lib PROPERTY
+      INTERFACE_LINK_LIBRARIES
+        ${unwind}
+      )
+  endif()
 endfunction()
 
 function(build_gflags)
