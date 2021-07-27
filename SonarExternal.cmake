@@ -640,7 +640,7 @@ function(build_mongocxx)
   endif()
   build_openssl()
   ExternalProject_Add(mongocxx
-    URL https://github.com/mongodb/mongo-cxx-driver/archive/r${MONGOCXX_VERSION}.tar.gz
+    URL https://github.com/mongodb/mongo-cxx-driver/releases/download/r${MONGOCXX_VERSION}/mongo-cxx-driver-r${MONGOCXX_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     DEPENDS mongoc openssl
     CMAKE_ARGS
