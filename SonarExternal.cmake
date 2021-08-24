@@ -457,10 +457,20 @@ function(build_aws)
   if (NOT AWS_VERSION)
     set(AWS_VERSION 1.7.144)
   endif()
+  if(AWS_VERSION VERSION_GREATER_EQUAL 1.9.0)
+    list(APPEND deps crt-cpp c-io)
+  endif()
   if(AWS_VERSION VERSION_GREATER_EQUAL 1.7.0)
     # https://github.com/aws/aws-sdk-cpp/issues/1020#issuecomment-441843581
     # starting with 1.7.0, C++ SDK needs dependencies on aws-c-common, aws-checksums adn aws-c-event-stream
-    set(deps c-event-stream checksums c-common)
+    list(APPEND deps c-event-stream checksums c-common)
+  endif()
+  if(AWS_VERSION VERSION_EQUAL 1.9.87)
+    if (NOT AWS_PATCH_FILE)
+      file(DOWNLOAD https://github.com/aws/aws-sdk-cpp/pull/1744.patch
+        ${CMAKE_CURRENT_BINARY_DIR}/aws-pr-1744.patch)
+      set(AWS_PATCH_FILE ${CMAKE_CURRENT_BINARY_DIR}/aws-pr-1744.patch)
+    endif()
   endif()
   foreach(component ${AWS_COMPONENTS})
     list(APPEND BUILD_BYPRODUCTS
@@ -470,6 +480,8 @@ function(build_aws)
     list(APPEND BUILD_BYPRODUCTS
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-${dep}.a)
   endforeach()
+  list(APPEND BUILD_BYPRODUCTS
+    <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libs2n.a)
   build_zlib()
   build_openssl()
   if (AWS_CURL_VERSION)
@@ -500,7 +512,14 @@ function(build_aws)
       -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}$<SEMICOLON>${zlib_install_dir}
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
-  )
+    )
+  ExternalProject_Add_Step(aws deps
+    COMMAND <SOURCE_DIR>/prefetch_crt_dependency.sh
+    COMMENT "Prefetching CRT dependencies"
+    DEPENDEES download
+    DEPENDERS patch
+    WORKING_DIRECTORY <SOURCE_DIR>
+    )
   external_project_dirs(aws install_dir)
   add_library(aws::core STATIC IMPORTED)
   add_dependencies(aws::core aws)
@@ -524,6 +543,12 @@ function(build_aws)
     set_property(TARGET aws::core APPEND PROPERTY
       INTERFACE_LINK_LIBRARIES aws::${dep})
   endforeach()
+  add_library(aws::s2n STATIC IMPORTED)
+  add_dependencies(aws::s2n aws)
+  set_target_properties(aws::s2n PROPERTIES
+    IMPORTED_LOCATION ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libs2n.a)
+  set_property(TARGET aws::core APPEND PROPERTY
+    INTERFACE_LINK_LIBRARIES aws::s2n)
 
   foreach(component ${AWS_COMPONENTS})
     set(lib aws::${component})
