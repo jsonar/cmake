@@ -2251,6 +2251,10 @@ endfunction()
 
 function(build_nlohmann_json)
   cmake_parse_arguments(NLOHMANN_JSON "" "VERSION" "" ${ARGN})
+  if(TARGET nlohmann-json)
+    external_project_dirs(nlohmann-json install_dir)
+    return()
+  endif()
   if(NOT NLOHMANN_JSON_VERSION)
     set(NLOHMANN_JSON_VERSION v3.9.1)
   endif()
@@ -2451,4 +2455,88 @@ function(build_openldap)
     include_external_directories(TARGET openldap::${lib}
       DIRECTORIES ${openldap_install_dir}/include)
   endforeach()
+endfunction()
+
+function(build_google_cloud)
+  cmake_parse_arguments(GOOGLE_CLOUD "" "VERSION" "COMPONENTS" ${ARGN})
+  if (NOT GOOGLE_CLOUD_VERSION)
+    set(GOOGLE_CLOUD_VERSION 1.31.0)
+  endif()
+  if (NOT GOOGLE_CLOUD_COMPONENTS)
+    set(GOOGLE_CLOUD_COMPONENTS common iam logging pubsub storage
+      bigquery bigtable spanner firestore)
+  endif()
+  message(STATUS "Building google-cloud-${GOOGLE_CLOUD_VERSION}")
+  build_openssl()
+  build_curl()
+  build_nlohmann_json()
+  build_crc32c()
+  build_zlib()
+  foreach(component ${GOOGLE_CLOUD_COMPONENTS})
+    list(APPEND build_byproducts <INSTALL_DIR>/lib/libgoogle_cloud_cpp_${component}.a)
+  endforeach()
+  ExternalProject_Add(google-cloud
+    URL https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v${GOOGLE_CLOUD_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    DEPENDS
+      #abseil
+      #grpc
+      curl
+      crc32c
+      openssl
+      nlohmann-json
+      #protobuf
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}$<SEMICOLON>${nlohmann_json_install_dir}$<SEMICOLON>${crc32c_install_dir}$<SEMICOLON>${zlib_install_dir}
+      -DBUILD_TESTING=NO
+    BUILD_BYPRODUCTS ${build_byproducts}
+    )
+  external_project_dirs(google-cloud install_dir)
+  foreach(component ${GOOGLE_CLOUD_COMPONENTS})
+    add_library(google-cloud::${component} STATIC IMPORTED GLOBAL)
+    add_dependencies(google-cloud::${component} google-cloud)
+    set_target_properties(google-cloud::${component} PROPERTIES
+      IMPORTED_LOCATION ${google_cloud_install_dir}/lib/libgoogle_cloud_cpp_${component}.a)
+    include_external_directories(TARGET google-cloud::${component}
+      DIRECTORIES ${google_cloud_install_dir}/include)
+  endforeach()
+  # hopefully just link to google-cloud::lib to get everything
+  add_library(google-cloud::lib INTERFACE IMPORTED)
+  add_dependencies(google-cloud::lib google-cloud)
+  foreach(component ${GOOGLE_CLOUD_COMPONENTS})
+    set_property(TARGET google-cloud::lib APPEND PROPERTY
+      INTERFACE_LINK_LIBRARIES google-cloud::${component})
+  endforeach()
+endfunction()
+
+function(build_crc32c)
+  cmake_parse_arguments(CRC32C "" "VERSION" "" ${ARGN})
+  if (NOT CRC32C_VERSION)
+    set(CRC32C_VERSION 1.1.1)
+  endif()
+  message(STATUS "Building crc32c-${CRC32C_VERSION}")
+  ExternalProject_Add(crc32c
+    URL https://github.com/google/crc32c/archive/refs/tags/${CRC32C_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCRC32C_BUILD_TESTS=NO
+      -DCRC32C_BUILD_BENCHMARKS=NO
+      -DCRC32C_USE_GLOG=NO
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcrc32.a
+    )
+  external_project_dirs(crc32c install_dir)
 endfunction()
