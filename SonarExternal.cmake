@@ -513,13 +513,15 @@ function(build_aws)
     BUILD_BYPRODUCTS
       "${BUILD_BYPRODUCTS}"
     )
-  ExternalProject_Add_Step(aws deps
-    COMMAND <SOURCE_DIR>/prefetch_crt_dependency.sh
-    COMMENT "Prefetching CRT dependencies"
-    DEPENDEES download
-    DEPENDERS patch
-    WORKING_DIRECTORY <SOURCE_DIR>
-    )
+  if(AWS_VERSION VERSION_GREATER_EQUAL 1.9.0)
+    ExternalProject_Add_Step(aws deps
+      COMMAND <SOURCE_DIR>/prefetch_crt_dependency.sh
+      COMMENT "Prefetching CRT dependencies"
+      DEPENDEES download
+      DEPENDERS patch
+      WORKING_DIRECTORY <SOURCE_DIR>
+      )
+  endif()
   external_project_dirs(aws install_dir)
   add_library(aws::core STATIC IMPORTED)
   add_dependencies(aws::core aws)
@@ -543,12 +545,14 @@ function(build_aws)
     set_property(TARGET aws::core APPEND PROPERTY
       INTERFACE_LINK_LIBRARIES aws::${dep})
   endforeach()
-  add_library(aws::s2n STATIC IMPORTED)
-  add_dependencies(aws::s2n aws)
-  set_target_properties(aws::s2n PROPERTIES
-    IMPORTED_LOCATION ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libs2n.a)
-  set_property(TARGET aws::core APPEND PROPERTY
-    INTERFACE_LINK_LIBRARIES aws::s2n)
+  if(AWS_VERSION VERSION_GREATER_EQUAL 1.9.0)
+    add_library(aws::s2n STATIC IMPORTED)
+    add_dependencies(aws::s2n aws)
+    set_target_properties(aws::s2n PROPERTIES
+      IMPORTED_LOCATION ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libs2n.a)
+    set_property(TARGET aws::core APPEND PROPERTY
+      INTERFACE_LINK_LIBRARIES aws::s2n)
+  endif()
 
   foreach(component ${AWS_COMPONENTS})
     set(lib aws::${component})
