@@ -2055,7 +2055,7 @@ function(build_protobuf)
   endif()
   cmake_parse_arguments(PROTOBUF "" "VERSION" "" ${ARGN})
   if (NOT PROTOBUF_VERSION)
-    set(PROTOBUF_VERSION 3.9.0)
+    set(PROTOBUF_VERSION 3.17.3)
   endif()
   build_zlib()
   message(STATUS "Building protobuf-${PROTOBUF_VERSION}")
@@ -2463,29 +2463,40 @@ function(build_google_cloud)
     set(GOOGLE_CLOUD_VERSION 1.31.0)
   endif()
   if (NOT GOOGLE_CLOUD_COMPONENTS)
-    set(GOOGLE_CLOUD_COMPONENTS common iam logging pubsub storage
+    set(GOOGLE_CLOUD_COMPONENTS iam logging pubsub storage
       bigquery bigtable spanner firestore)
   endif()
-  message(STATUS "Building google-cloud-${GOOGLE_CLOUD_VERSION}")
-  build_openssl()
-  build_curl()
-  build_nlohmann_json()
+  message(STATUS "Building google-cloud-${GOOGLE_CLOUD_VERSION} [${GOOGLE_CLOUD_COMPONENTS}]")
+  # add common component at the beginning of the list
+  list(REMOVE_DUPLICATES GOOGLE_CLOUD_COMPONENTS)
+  list(REMOVE_ITEM GOOGLE_CLOUD_COMPONENTS common)
+  list(INSERT GOOGLE_CLOUD_COMPONENTS 0 common)
+  build_abseil()
+  build_cares()
   build_crc32c()
+  build_curl()
+  build_grpc()
+  build_nlohmann_json()
+  build_openssl()
+  build_protobuf()
+  build_re2()
   build_zlib()
   foreach(component ${GOOGLE_CLOUD_COMPONENTS})
-    list(APPEND build_byproducts <INSTALL_DIR>/lib/libgoogle_cloud_cpp_${component}.a)
+    list(APPEND build_byproducts <INSTALL_DIR>/lib64/libgoogle_cloud_cpp_${component}.a)
   endforeach()
   ExternalProject_Add(google-cloud
     URL https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v${GOOGLE_CLOUD_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS
-      #abseil
-      #grpc
-      curl
+      abseil
+      cares
       crc32c
-      openssl
+      curl
+      grpc
       nlohmann-json
-      #protobuf
+      openssl
+      re2
+      protobuf
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=NO
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -2494,7 +2505,7 @@ function(build_google_cloud)
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}$<SEMICOLON>${nlohmann_json_install_dir}$<SEMICOLON>${crc32c_install_dir}$<SEMICOLON>${zlib_install_dir}
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>${curl_install_dir}$<SEMICOLON>${nlohmann_json_install_dir}$<SEMICOLON>${crc32c_install_dir}$<SEMICOLON>${zlib_install_dir}$<SEMICOLON>${grpc_install_dir}$<SEMICOLON>${protobuf_install_dir}$<SEMICOLON>${abseil_install_dir}$<SEMICOLON>${cares_install_dir}$<SEMICOLON>${re2_install_dir}
       -DBUILD_TESTING=NO
     BUILD_BYPRODUCTS ${build_byproducts}
     )
@@ -2503,7 +2514,7 @@ function(build_google_cloud)
     add_library(google-cloud::${component} STATIC IMPORTED GLOBAL)
     add_dependencies(google-cloud::${component} google-cloud)
     set_target_properties(google-cloud::${component} PROPERTIES
-      IMPORTED_LOCATION ${google_cloud_install_dir}/lib/libgoogle_cloud_cpp_${component}.a)
+      IMPORTED_LOCATION ${google_cloud_install_dir}/lib64/libgoogle_cloud_cpp_${component}.a)
     include_external_directories(TARGET google-cloud::${component}
       DIRECTORIES ${google_cloud_install_dir}/include)
   endforeach()
@@ -2517,6 +2528,10 @@ function(build_google_cloud)
 endfunction()
 
 function(build_crc32c)
+  if(TARGET crc32c)
+    external_project_dirs(crc32c install_dir)
+    return()
+  endif()
   cmake_parse_arguments(CRC32C "" "VERSION" "" ${ARGN})
   if (NOT CRC32C_VERSION)
     set(CRC32C_VERSION 1.1.1)
@@ -2536,7 +2551,140 @@ function(build_crc32c)
       -DCRC32C_BUILD_TESTS=NO
       -DCRC32C_BUILD_BENCHMARKS=NO
       -DCRC32C_USE_GLOG=NO
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcrc32.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libcrc32c.a
     )
   external_project_dirs(crc32c install_dir)
+endfunction()
+
+function(build_grpc)
+  if(TARGET grpc)
+    external_project_dirs(grpc install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(GRPC "" "VERSION" "" ${ARGN})
+  if (NOT GRPC_VERSION)
+    set(GRPC_VERSION 1.39.1)
+  endif()
+  message(STATUS "Building grpc-${GRPC_VERSION}")
+  build_abseil()
+  build_cares()
+  build_protobuf()
+  build_openssl()
+  build_re2()
+  build_zlib()
+  ExternalProject_Add(grpc
+    URL https://github.com/grpc/grpc/archive/refs/tags/v${GRPC_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    DEPENDS
+      abseil
+      cares
+      openssl
+      protobuf
+      re2
+      zlib
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}$<SEMICOLON>$<SEMICOLON>${zlib_install_dir}$<SEMICOLON>${protobuf_install_dir}$<SEMICOLON>${abseil_install_dir}$<SEMICOLON>${cares_install_dir}$<SEMICOLON>${re2_install_dir}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DgRPC_ABSL_PROVIDER=package
+      -DgRPC_BUILD_CSHARP_EXT=NO
+      -DgRPC_BUILD_TESTS=NO
+      -DgRPC_CARES_PROVIDER=package
+      -DgRPC_PROTOBUF_PROVIDER=package
+      -DgRPC_RE2_PROVIDER=package
+      -DgRPC_SSL_PROVIDER=package
+      -DgRPC_ZLIB_PROVIDER=package
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libgrpc.a
+    )
+  external_project_dirs(grpc install_dir)
+endfunction()
+
+function(build_abseil)
+  if(TARGET abseil)
+    external_project_dirs(abseil install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(ABSEIL "" "VERSION" "" ${ARGN})
+  if (NOT ABSEIL_VERSION)
+    set(ABSEIL_VERSION 20210324.2)
+  endif()
+  message(STATUS "Building abseil-${ABSEIL_VERSION}")
+  ExternalProject_Add(abseil
+    URL https://github.com/abseil/abseil-cpp/archive/refs/tags/${ABSEIL_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DBUILD_TESTING=NO
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libabsl_base.a
+    )
+  external_project_dirs(abseil install_dir)
+endfunction()
+
+function(build_cares)
+  if(TARGET cares)
+    external_project_dirs(cares install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(CARES "" "VERSION" "" ${ARGN})
+  if(NOT CARES_VERSION)
+    set(CARES_VERSION 1.17.2)
+  endif()
+  string(REPLACE "." "_" CARES_VERSION_UNDERSCORES ${CARES_VERSION})
+  message(STATUS "Building cares-${CARES_VERSION}")
+  ExternalProject_Add(cares
+    URL https://github.com/c-ares/c-ares/releases/download/cares-${CARES_VERSION_UNDERSCORES}/c-ares-${CARES_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCARES_STATIC=YES
+      -DCARES_STATIC_PIC=YES
+      -DCARES_SHARED=NO
+      -DCARES_BUILD_TOOLS=NO
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libcares.a
+    )
+  external_project_dirs(cares install_dir)
+endfunction()
+
+function(build_re2)
+  if(TARGET re2)
+    external_project_dirs(re2 install_dir)
+    return()
+  endif()
+  cmake_parse_arguments(RE2 "" "VERSION" "" ${ARGN})
+  if(NOT RE2_VERSION)
+    set(RE2_VERSION 2021-09-01)
+  endif()
+  message(STATUS "Building re2-${RE2_VERSION}")
+  ExternalProject_Add(re2
+    URL https://github.com/google/re2/archive/refs/tags/${RE2_VERSION}.tar.gz
+    DOWNLOAD_NO_PROGRESS ON
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DRE2_BUILD_TESTING=NO
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libre2.a
+    )
+  external_project_dirs(re2 install_dir)
 endfunction()
