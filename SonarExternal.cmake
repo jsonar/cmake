@@ -2525,6 +2525,8 @@ function(build_google_cloud)
     set_property(TARGET google-cloud::lib APPEND PROPERTY
       INTERFACE_LINK_LIBRARIES google-cloud::${component})
   endforeach()
+  set_property(TARGET google-cloud::lib APPEND PROPERTY
+    INTERFACE_LINK_LIBRARIES abseil::lib)
 endfunction()
 
 function(build_crc32c)
@@ -2629,6 +2631,12 @@ function(build_abseil)
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libabsl_base.a
     )
   external_project_dirs(abseil install_dir)
+  add_library(abseil::lib STATIC IMPORTED GLOBAL)
+  add_dependencies(abseil::lib abseil)
+  set_target_properties(abseil::lib PROPERTIES
+    IMPORTED_LOCATION ${abseil_install_dir}/lib64/libabsl_base.a)
+  include_external_directories(TARGET abseil::lib
+    DIRECTORIES ${abseil_install_dir}/include)
 endfunction()
 
 function(build_cares)
