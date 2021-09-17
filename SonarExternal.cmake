@@ -2397,6 +2397,7 @@ function(build_redis_plus_plus)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DREDIS_PLUS_PLUS_CXX_STANDARD=17
       -DREDIS_PLUS_PLUS_BUILD_SHARED=OFF
+      -DREDIS_PLUS_PLUS_BUILD_TEST=OFF
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libredis++.a
     )
   add_library(redis-plus-plus::lib STATIC IMPORTED GLOBAL)
