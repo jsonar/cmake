@@ -2,7 +2,8 @@ cmake_policy(SET CMP0057 NEW) # if (.. IN_LIST ..)
 
 include(ExternalProject)
 include(GNUInstallDirs)
-string(REGEX MATCH "^lib(64)?" EXTERNAL_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
+string(REGEX MATCH "^lib(64)?" LIBDIR ${CMAKE_INSTALL_LIBDIR})
+set(EXTERNAL_INSTALL_LIBDIR ${LIBDIR}) # backward compat
 
 if (APPLE)
   set(SO dylib)
@@ -2461,7 +2462,7 @@ function(build_google_cloud)
   # add common component at the beginning of the list
   list(REMOVE_DUPLICATES GOOGLE_CLOUD_COMPONENTS)
   list(REMOVE_ITEM GOOGLE_CLOUD_COMPONENTS common)
-  list(INSERT GOOGLE_CLOUD_COMPONENTS 0 common)
+  list(APPEND GOOGLE_CLOUD_COMPONENTS common)
   build_abseil()
   build_cares()
   build_crc32c()
@@ -2473,7 +2474,7 @@ function(build_google_cloud)
   build_re2()
   build_zlib()
   foreach(component ${GOOGLE_CLOUD_COMPONENTS})
-    list(APPEND build_byproducts <INSTALL_DIR>/lib64/libgoogle_cloud_cpp_${component}.a)
+    list(APPEND build_byproducts <INSTALL_DIR>/${LIBDIR}/libgoogle_cloud_cpp_${component}.a)
   endforeach()
   ExternalProject_Add(google-cloud
     URL https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v${GOOGLE_CLOUD_VERSION}.tar.gz
@@ -2505,7 +2506,7 @@ function(build_google_cloud)
     add_library(google-cloud::${component} STATIC IMPORTED GLOBAL)
     add_dependencies(google-cloud::${component} google-cloud)
     set_target_properties(google-cloud::${component} PROPERTIES
-      IMPORTED_LOCATION ${google_cloud_install_dir}/lib64/libgoogle_cloud_cpp_${component}.a)
+      IMPORTED_LOCATION ${google_cloud_install_dir}/${LIBDIR}/libgoogle_cloud_cpp_${component}.a)
     include_external_directories(TARGET google-cloud::${component}
       DIRECTORIES ${google_cloud_install_dir}/include)
   endforeach()
@@ -2606,6 +2607,10 @@ function(build_abseil)
   if (NOT ABSEIL_VERSION)
     set(ABSEIL_VERSION 20210324.2)
   endif()
+  set(ABSEIL_LIBS base strings time time_zone throw_delegate raw_logging_internal int128)
+  foreach(lib ${ABSEIL_LIBS})
+    list(APPEND build_byproducts <INSTALL_DIR>/${LIBDIR}/libabsl_${lib}.a)
+  endforeach()
   message(STATUS "Building abseil-${ABSEIL_VERSION}")
   ExternalProject_Add(abseil
     URL https://github.com/abseil/abseil-cpp/archive/refs/tags/${ABSEIL_VERSION}.tar.gz
@@ -2619,13 +2624,21 @@ function(build_abseil)
       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DBUILD_TESTING=NO
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib64/libabsl_base.a
+    BUILD_BYPRODUCTS ${build_byproducts}
     )
   external_project_dirs(abseil install_dir)
-  add_library(abseil::lib STATIC IMPORTED GLOBAL)
+  foreach(lib ${ABSEIL_LIBS})
+    add_library(abseil::lib-${lib} STATIC IMPORTED GLOBAL)
+    add_dependencies(abseil::lib-${lib} abseil)
+    set_target_properties(abseil::lib-${lib} PROPERTIES
+      IMPORTED_LOCATION ${abseil_install_dir}/${LIBDIR}/libabsl_${lib}.a)
+  endforeach()
+  add_library(abseil::lib INTERFACE IMPORTED GLOBAL)
   add_dependencies(abseil::lib abseil)
-  set_target_properties(abseil::lib PROPERTIES
-    IMPORTED_LOCATION ${abseil_install_dir}/lib64/libabsl_base.a)
+  foreach(lib ${ABSEIL_LIBS})
+    set_property(TARGET abseil::lib APPEND PROPERTY
+      INTERFACE_LINK_LIBRARIES abseil::lib-${lib})
+  endforeach()
   include_external_directories(TARGET abseil::lib
     DIRECTORIES ${abseil_install_dir}/include)
 endfunction()
