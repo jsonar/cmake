@@ -2348,39 +2348,29 @@ endfunction()
 function(build_hiredis)
   cmake_parse_arguments(HIREDIS "" "VERSION" "" ${ARGN})
   if (NOT HIREDIS_VERSION)
-    set(HIREDIS_VERSION 1.0.0)
+    set(HIREDIS_VERSION 07c3618ffe)
   endif()
   message(STATUS "Building hiredis-${HIREDIS_VERSION}")
   build_openssl()
   ExternalProject_Add(hiredis
-    URL https://github.com/redis/hiredis/archive/v${HIREDIS_VERSION}.tar.gz
+    URL https://github.com/redis/hiredis/archive/${HIREDIS_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS openssl
-    CONFIGURE_COMMAND ""
-    BUILD_IN_SOURCE 1
-    BUILD_COMMAND make
-      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-      PREFIX=<INSTALL_DIR>
-      OPENSSL_PREFIX=${openssl_install_dir}
-    INSTALL_COMMAND make
-      PREFIX=<INSTALL_DIR>
-      install
-    # cmake does not yet build a static lib as of v1.0.0
-    # CMAKE_ARGS
-    #   -DBUILD_SHARED_LIBS=NO
-    #   -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    #   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    #   -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-    #   -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    #   -DENABLE_SSL=ON
-    #   -DCMAKE_PREFIX_PATH=${openssl_install_dir}
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libhiredis.a
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=NO
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DENABLE_SSL=ON
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libhiredis_static.a
     )
   add_library(hiredis::lib STATIC IMPORTED GLOBAL)
   add_dependencies(hiredis::lib hiredis)
   external_project_dirs(hiredis install_dir)
   set_target_properties(hiredis::lib PROPERTIES
-    IMPORTED_LOCATION ${hiredis_install_dir}/lib/libhiredis.a)
+    IMPORTED_LOCATION ${hiredis_install_dir}/lib/libhiredis_static.a)
   include_external_directories(TARGET hiredis::lib
     DIRECTORIES ${hiredis_install_dir}/include)
 endfunction()
@@ -2407,6 +2397,7 @@ function(build_redis_plus_plus)
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DREDIS_PLUS_PLUS_CXX_STANDARD=17
       -DREDIS_PLUS_PLUS_BUILD_SHARED=OFF
+      -DREDIS_PLUS_PLUS_BUILD_TEST=OFF
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libredis++.a
     )
   add_library(redis-plus-plus::lib STATIC IMPORTED GLOBAL)
