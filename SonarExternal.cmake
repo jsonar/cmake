@@ -481,8 +481,10 @@ function(build_aws)
     list(APPEND BUILD_BYPRODUCTS
       <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-${dep}.a)
   endforeach()
-  list(APPEND BUILD_BYPRODUCTS
-    <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libs2n.a)
+  if(AWS_VERSION VERSION_GREATER_EQUAL 1.9.0)
+    list(APPEND BUILD_BYPRODUCTS
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libs2n.a)
+  endif()
   build_zlib()
   build_openssl()
   if (AWS_CURL_VERSION)
