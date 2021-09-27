@@ -2155,6 +2155,7 @@ function(build_unixodbc)
   message(STATUS "Building unixodbc-${UNIXODBC_VERSION}")
   ExternalProject_Add(unixodbc
     URL http://www.unixodbc.org/unixODBC-${UNIXODBC_VERSION}.tar.gz
+      https://yhager.com/unixODBC-${UNIXODBC_VERSION}.tar.gz
     URL_MD5 ${UNIXODBC_MD5}
     DOWNLOAD_NO_PROGRESS 1
     BUILD_IN_SOURCE 1
