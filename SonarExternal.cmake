@@ -769,7 +769,7 @@ function(build_pcre)
     set(enable_valgrind --enable-valgrind)
   endif()
   ExternalProject_Add(pcre
-    URL https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VERSION}.tar.gz
+    URL https://downloads.sourceforge.net/project/pcre/pcre/${PCRE_VERSION}/pcre-${PCRE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
