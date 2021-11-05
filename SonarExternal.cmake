@@ -724,7 +724,7 @@ function(build_pcre)
   endif()
   message(STATUS "Building pcre-${PCRE_VERSION}")
   ExternalProject_Add(pcre
-    URL https://ftp.pcre.org/pub/pcre/pcre-${PCRE_VERSION}.tar.gz
+    URL https://netactuate.dl.sourceforge.net/project/pcre/pcre/${PCRE_VERSION}/pcre-${PCRE_VERSION}.tar.bz2
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CFLAGS=-fPIC
