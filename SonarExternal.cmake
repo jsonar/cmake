@@ -1647,7 +1647,7 @@ function(build_libxml2)
   build_xz()
   message(STATUS "Building libxml2-${LIBXML2_VERSION}")
   ExternalProject_Add(libxml2
-    URL ftp://xmlsoft.org/libxml2/libxml2-${LIBXML2_VERSION}.tar.gz
+    URL http://xmlsoft.org/download/libxml2-${LIBXML2_VERSION}.tar.gz
     URL_HASH SHA1=${LIBXML2_SHA1}
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS xz
