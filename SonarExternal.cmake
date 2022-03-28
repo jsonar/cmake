@@ -55,7 +55,7 @@ function(build_zlib)
   endif()
   message(STATUS "Building zlib-${ZLIB_VERSION}")
   ExternalProject_Add(zlib
-    URL https://www.zlib.net/zlib-${ZLIB_VERSION}.tar.gz
+    URL https://www.zlib.net/fossils/zlib-${ZLIB_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
