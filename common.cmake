@@ -18,8 +18,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(SonarFunctions)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "" CACHE PATH "Package install prefix" FORCE)
+  set(CMAKE_INSTALL_PREFIX "/" CACHE PATH "Package install prefix" FORCE)
 endif()
+
+include(GNUInstallDirs)
 
 find_program(CCACHE ccache)
 if(CCACHE)
@@ -28,7 +30,6 @@ if(CCACHE)
   set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
 endif()
 
-include(GNUInstallDirs)
 include(SonarExternal)
 
 string(TOLOWER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_LOWER)
@@ -36,7 +37,7 @@ string(TOLOWER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_LOWER)
 ## install eula to separate component packages
 foreach(component ${SONAR_COMPONENTS})
   install(FILES ${CMAKE_CURRENT_LIST_DIR}/eula.txt
-    DESTINATION share/doc/${component}
+    DESTINATION ${CMAKE_INSTALL_DOCDIR}
     COMPONENT ${component}
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
     )
@@ -45,7 +46,7 @@ endforeach()
 ## install eula to default location if no components
 if (NOT SONAR_COMPONENTS)
   install(FILES ${CMAKE_CURRENT_LIST_DIR}/eula.txt
-    DESTINATION share/doc/${CMAKE_PROJECT_NAME_LOWER}
+    DESTINATION ${CMAKE_INSTALL_DOCDIR}
     COMPONENT ${component}
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
    )

@@ -2,7 +2,7 @@ cmake_policy(SET CMP0057 NEW) # if (.. IN_LIST ..)
 
 include(ExternalProject)
 include(GNUInstallDirs)
-string(REGEX MATCH "^lib(64)?" LIBDIR ${CMAKE_INSTALL_LIBDIR})
+string(REGEX MATCH "lib(64)?$" LIBDIR ${CMAKE_INSTALL_LIBDIR})
 set(EXTERNAL_INSTALL_LIBDIR ${LIBDIR}) # backward compat
 
 if (APPLE)
@@ -199,71 +199,43 @@ function(build_mongoc)
   set(mongoc_url
     https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_VERSION}/mongo-c-driver-${MONGOC_VERSION}.tar.gz)
   set(mongoc_build_byproducts
-        <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libmongoc-static-1.0.a
-        <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libbson-static-1.0.a)
-  if(MONGOC_VERSION VERSION_GREATER_EQUAL 1.10.0)
-    set(libmongoc ${EXTERNAL_INSTALL_LIBDIR}/libmongoc-static-1.0.a)
-    set(libbson ${EXTERNAL_INSTALL_LIBDIR}/libbson-static-1.0.a)
-    # build using cmake
-    ExternalProject_Add(mongoc
-      URL ${mongoc_url}
-      DOWNLOAD_NO_PROGRESS 1
-      DEPENDS openssl
-      CMAKE_ARGS
-        -DENABLE_TRACING=$<IF:$<CONFIG:Debug>,ON,OFF>
-        -DBUILD_SHARED_LIBS=OFF
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-        -DCMAKE_INSTALL_MESSAGE=LAZY
-        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DCMAKE_PREFIX_PATH=${openssl_install_dir}
-        -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF
-        -DENABLE_BSON=ON
-        -DENABLE_EXAMPLES=OFF
-        -DENABLE_HTML_DOCS=OFF
-        -DENABLE_ICU=OFF
-        -DENABLE_MAN_PAGES=OFF
-        -DENABLE_MONGOC=ON
-        -DENABLE_SASL=OFF
-        -DENABLE_SNAPPY=OFF
-        -DENABLE_STATIC=ON
-        -DENABLE_TESTS=OFF
-        -DENABLE_SHM_COUNTERS=OFF
-        -DENABLE_ZLIB=BUNDLED
-        -DENABLE_ZSTD=OFF
-        -DCMAKE_EXE_LINKER_FLAGS=-ldl
-      BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
-                       <INSTALL_DIR>/${libbson}
-      )
-  else()
-    set(libmongoc lib/libmongoc-1.0.a)
-    set(libbson lib/libbson-1.0.a)
-    # build using autotools
-    ExternalProject_Add(mongoc
-      URL ${mongoc_url}
-      DOWNLOAD_NO_PROGRESS 1
-      DEPENDS openssl
-      CONFIGURE_COMMAND PKG_CONFIG_PATH=${openssl_install_dir}/lib/pkgconfig <SOURCE_DIR>/configure
-        CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
-        --disable-automatic-init-and-cleanup
-        --with-libbson=bundled
-        --enable-static
-        --disable-shared
-        --disable-sasl
-        --disable-examples
-        --disable-man-pages
-        --disable-tests
-        --with-pic
-        --with-snappy=no
-        --with-zlib=bundled
-        $<$<CONFIG:Debug>:--enable-debug>
-        --prefix <INSTALL_DIR>
-      BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
-                       <INSTALL_DIR>/${libbson}
-      )
-  endif()
+    <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libmongoc-static-1.0.a
+    <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libbson-static-1.0.a)
+  set(libmongoc ${EXTERNAL_INSTALL_LIBDIR}/libmongoc-static-1.0.a)
+  set(libbson ${EXTERNAL_INSTALL_LIBDIR}/libbson-static-1.0.a)
+  # build using cmake
+  ExternalProject_Add(mongoc
+    URL ${mongoc_url}
+    DOWNLOAD_NO_PROGRESS 1
+    DEPENDS openssl
+    CMAKE_ARGS
+      -DENABLE_TRACING=$<IF:$<CONFIG:Debug>,ON,OFF>
+      -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+      -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+      -DCMAKE_INSTALL_MESSAGE=LAZY
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      -DCMAKE_PREFIX_PATH=${openssl_install_dir}
+      -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF
+      -DENABLE_BSON=ON
+      -DENABLE_EXAMPLES=OFF
+      -DENABLE_HTML_DOCS=OFF
+      -DENABLE_ICU=OFF
+      -DENABLE_MAN_PAGES=OFF
+      -DENABLE_MONGOC=ON
+      -DENABLE_SASL=OFF
+      -DENABLE_SNAPPY=OFF
+      -DENABLE_STATIC=ON
+      -DENABLE_TESTS=OFF
+      -DENABLE_SHM_COUNTERS=OFF
+      -DENABLE_ZLIB=BUNDLED
+      -DENABLE_ZSTD=OFF
+      -DCMAKE_EXE_LINKER_FLAGS=-ldl
+    BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
+      <INSTALL_DIR>/${libbson}
+  )
   external_project_dirs(mongoc install_dir)
   foreach(driver mongo bson)
     set(lib ${driver}::lib)

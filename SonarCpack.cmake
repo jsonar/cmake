@@ -20,6 +20,7 @@ endif()
 # they end up in the parent project's package.  To avoid that, use `$(MAKE)
 # DESTDIR=<INSTALL_PREFIX> install` when installing an external project.
 set(CPACK_SET_DESTDIR ON)
+set(CPACK_PACKAGE_RELOCATABLE OFF)
 
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY NO)
 

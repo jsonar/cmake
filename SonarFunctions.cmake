@@ -39,7 +39,7 @@ endfunction()
 
 function(sonar_cpack_generator cpack_generator_var)
   if(NOT SONAR_CPACK_GENERATOR)
-    set(SONAR_CPACK_GENERATOR TGZ CACHE STRING "sonar cpack generator")
+    set(SONAR_CPACK_GENERATOR RPM CACHE STRING "sonar cpack generator")
   endif()
   set(${cpack_generator_var} "${SONAR_CPACK_GENERATOR}" PARENT_SCOPE)
 endfunction()
@@ -145,7 +145,7 @@ macro(add_python_target)
       DEPENDS ${wheel}
       )
     if(NOT PYTHON_PACKAGE_DESTINATION)
-      set(PYTHON_PACKAGE_DESTINATION lib/sonar/wheels)
+      set(PYTHON_PACKAGE_DESTINATION ${CMAKE_INSTALL_LIBDIR}/sonar/wheels)
     endif()
     message(STATUS "Installing ${PYTHON_PACKAGE_NAME}-${PYTHON_PACKAGE_VERSION}.whl to ${PYTHON_PACKAGE_DESTINATION}")
     install(FILES ${wheel} DESTINATION ${PYTHON_PACKAGE_DESTINATION})
@@ -401,8 +401,8 @@ function(sonar_install)
   set_property(TARGET ${targets}
     PROPERTY INSTALL_RPATH \$ORIGIN/../lib)
   install(TARGETS ${targets}
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
   foreach(target ${targets})
     get_target_property(type ${target} TYPE)
@@ -429,12 +429,41 @@ function(sonar_install)
             \"^libresolv\.so\"
             \"^libm\.so\"
             \"^libc\.so\"
+            \"^ld-\.*so\"
         )
         file(INSTALL
           FILES \${deps}
-          DESTINATION \${CMAKE_INSTALL_PREFIX}/lib
+          DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
           FOLLOW_SYMLINK_CHAIN)
       ")
     endif()
   endforeach()
+endfunction()
+
+find_package(PkgConfig QUIET)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(SYSTEMD "systemd")
+  if (SYSTEMD_FOUND)
+    execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE}
+      --variable=systemdsystemunitdir systemd
+      OUTPUT_VARIABLE SYSTEMD_SERVICES_DIR)
+    string(REGEX REPLACE "[ \t\n]+" ""
+      SYSTEMD_SERVICES_DIR ${SYSTEMD_SERVICES_DIR})
+    message(STATUS "SYSTEMD_SERVICES_DIR ${SYSTEMD_SERVICES_DIR}")
+    string(REPLACE "/" ";" SYSTEMD_SERVICES_DIR_LIST ${SYSTEMD_SERVICES_DIR})
+    set(fullpath "")
+    foreach(item ${SYSTEMD_SERVICES_DIR_LIST})
+      set(path ${fullpath}/${item})
+      list(APPEND CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION ${path})
+      set(fullpath ${path})
+    endforeach()
+  else()
+    message(FATAL_ERROR "Unable to detect systemd. Aborting")
+  endif()
+else()
+  message(FATAL_ERROR, "Unable to detect pkg-config. Aborting")
+endif()
+
+function(sonar_install_service service_file)
+  install(FILES ${service_file} DESTINATION ${SYSTEMD_SERVICES_DIR})
 endfunction()
