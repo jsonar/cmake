@@ -464,6 +464,6 @@ else()
   message(FATAL_ERROR, "Unable to detect pkg-config. Aborting")
 endif()
 
-function(sonar_install_service service_file)
-  install(FILES ${service_file} DESTINATION ${SYSTEMD_SERVICES_DIR})
+function(sonar_install_service)
+  install(FILES ${ARGV} DESTINATION ${SYSTEMD_SERVICES_DIR})
 endfunction()
