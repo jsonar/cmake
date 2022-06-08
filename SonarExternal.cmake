@@ -2178,10 +2178,10 @@ function(build_nanodbc)
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DCMAKE_PREFIX_PATH=${unixodbc_install_dir}
-            -DNANODBC_ENABLE_LIBCXX=OFF
-            -DNANODBC_EXAMPLES=OFF
+            -DNANODBC_DISABLE_LIBCXX=ON
+            -DNANODBC_DISABLE_EXAMPLES=ON
             -DNANODBC_STATIC=ON
-            -DNANODBC_TEST=OFF
+            -DNANODBC_DISABLE_TESTS=ON
             -DNANODBC_ODBC_VERSION=SQL_OV_ODBC3
           BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libnanodbc.a
           )
