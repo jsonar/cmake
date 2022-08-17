@@ -76,15 +76,24 @@ endfunction()
 function(sonar_python_version python_version_var)
   sonar_set_version(version)
   set(base_version_regex "([0-9]+\\.[0-9]+\\.[0-9]+)")
-  set(devel_regex "^${base_version_regex}-devel(op)?(-.*)?$") # 4.4.0-devel or 4.4.0-devel-7-gd8b03e7
-  set(rc_regex "^${base_version_regex}-([0-9]+)(-.*-.*)?$") # 4.4.0-2 or 4.4.0-2-7-gd8b03e7
-  set(regex "^${base_version_regex}(-.*)?$") # 4.4.0 or 4.4.0-7-gd8b03e7
+  set(devel_regex "^${base_version_regex}-devel(op)?$") # 4.4.0-devel -> 4.4.0.dev0
+  set(devel_regex_post "^${base_version_regex}-devel(op)?-([0-9]+)-.*$") # 4.4.0-devel-7-gd8b03e7 -> 4.4.0.dev7
+  set(rc_regex "^${base_version_regex}-([0-9]+)$") # 4.4.0-2 -> 4.4.0rc2
+  set(rc_regex_post "^${base_version_regex}-([0-9]+)-([0-9]+)-.*$") # 4.4.0-2-7-gd8b03e7 -> 4.4.0rc2.post7
+  set(regex "^${base_version_regex}$") # 4.4.0 -> 4.4.0
+  set(regex_post "^${base_version_regex}-([0-9]+)-.*$") # 4.4.0-7-gd8b03e7 -> 4.4.0.post7
   if(version MATCHES ${devel_regex})
     string(REGEX REPLACE "${devel_regex}" "\\1.dev0" python_version ${version})
+  elseif(version MATCHES ${devel_regex_post})
+    string(REGEX REPLACE "${devel_regex_post}" "\\1.dev\\3" python_version ${version})
   elseif(version MATCHES ${rc_regex})
     string(REGEX REPLACE "${rc_regex}" "\\1rc\\2" python_version ${version})
+  elseif(version MATCHES ${rc_regex_post})
+    string(REGEX REPLACE "${rc_regex_post}" "\\1rc\\2.post\\3" python_version ${version})
   elseif(version MATCHES ${regex})
     string(REGEX REPLACE "${regex}" "\\1" python_version ${version})
+  elseif(version MATCHES ${regex_post})
+    string(REGEX REPLACE "${regex_post}" "\\1.post\\2" python_version ${version})
   else()
     set(python_version ${version})
   endif()
