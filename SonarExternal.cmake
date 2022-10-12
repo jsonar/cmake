@@ -459,7 +459,7 @@ function(build_aws)
     set(AWS_VERSION 1.7.144)
   endif()
   if(AWS_VERSION VERSION_GREATER_EQUAL 1.9.0)
-    list(APPEND deps crt-cpp c-io)
+    list(APPEND deps crt-cpp c-mqtt c-s3 c-auth c-cal c-io c-http c-compression c-sdkutils)
   endif()
   if(AWS_VERSION VERSION_GREATER_EQUAL 1.7.0)
     # https://github.com/aws/aws-sdk-cpp/issues/1020#issuecomment-441843581
@@ -1901,7 +1901,7 @@ function(build_aws_encryption)
       ${rtlib}
       Threads::Threads
       openssl::crypto
-      aws::c-common
+      aws::core
     )
 endfunction()
 
