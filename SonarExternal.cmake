@@ -1790,7 +1790,7 @@ endfunction()
 function(build_archive)
   cmake_parse_arguments(ARCHIVE "" "VERSION" "" ${ARGN})
   if (NOT ARCHIVE_VERSION)
-    set(ARCHIVE_VERSION 3.4.3)
+    set(ARCHIVE_VERSION 3.6.2)
   endif()
   message(STATUS "Building archive-${ARCHIVE_VERSION}")
   ExternalProject_Add(archive
