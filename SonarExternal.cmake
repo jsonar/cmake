@@ -1792,15 +1792,18 @@ function(build_archive)
   if (NOT ARCHIVE_VERSION)
     set(ARCHIVE_VERSION 3.6.2)
   endif()
+  build_xz()
   message(STATUS "Building archive-${ARCHIVE_VERSION}")
   ExternalProject_Add(archive
     URL https://libarchive.org/downloads/libarchive-${ARCHIVE_VERSION}.tar.gz
       https://github.com/libarchive/libarchive/releases/download/v${ARCHIVE_VERSION}/libarchive-${ARCHIVE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
+    DEPENDS xz
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
       --prefix <INSTALL_DIR>
+      --with-lzma=${xz_install_dir}
       --disable-shared
       --enable-static
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libarchive.a
@@ -1809,7 +1812,8 @@ function(build_archive)
   add_dependencies(archive::lib archive)
   external_project_dirs(archive install_dir)
   set_target_properties(archive::lib PROPERTIES
-    IMPORTED_LOCATION ${archive_install_dir}/lib/libarchive.a)
+          IMPORTED_LOCATION ${archive_install_dir}/lib/libarchive.a
+          INTERFACE_LINK_LIBRARIES xz::lib)
   target_include_external_directory(archive::lib archive install_dir include)
 endfunction()
 
