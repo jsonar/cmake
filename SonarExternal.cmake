@@ -1698,20 +1698,20 @@ function(build_cppunit)
 endfunction()
 
 function(build_libxml2)
-  cmake_parse_arguments(LIBXML2 "" "VERSION;SHA1" "" ${ARGN})
+  cmake_parse_arguments(LIBXML2 "" "VERSION;SHA256" "" ${ARGN})
   if (TARGET libxml2)
     external_project_dirs(libxml2 install_dir)
     return()
   endif()
   if (NOT LIBXML2_VERSION)
     set(LIBXML2_VERSION 2.9.9)
-    set(LIBXML2_SHA1 96686d1dd9fddf3b35a28b1e2e4bbacac889add3)
   endif()
+  string(REGEX REPLACE "\.[0-9]+$" "" LIBXML2_MAJOR_MINOR_VERSION ${LIBXML2_VERSION})
   build_xz()
   message(STATUS "Building libxml2-${LIBXML2_VERSION}")
   ExternalProject_Add(libxml2
-    URL ftp://xmlsoft.org/libxml2/libxml2-${LIBXML2_VERSION}.tar.gz
-    URL_HASH SHA1=${LIBXML2_SHA1}
+    URL https://download.gnome.org/sources/libxml2/${LIBXML2_MAJOR_MINOR_VERSION}/libxml2-${LIBXML2_VERSION}.tar.xz
+    URL_HASH SHA256=${LIBXML2_SHA256}
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS xz
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
