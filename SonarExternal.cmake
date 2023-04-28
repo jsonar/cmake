@@ -1802,10 +1802,9 @@ function(build_archive)
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS libxml2
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
-      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include\ -isystem${libxml2_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
       --prefix <INSTALL_DIR>
-      --with-libxml2=${libxml2_install_dir}
       --disable-shared
       --enable-static
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libarchive.a
