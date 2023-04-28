@@ -1698,20 +1698,21 @@ function(build_cppunit)
 endfunction()
 
 function(build_libxml2)
-  cmake_parse_arguments(LIBXML2 "" "VERSION;SHA1" "" ${ARGN})
+  cmake_parse_arguments(LIBXML2 "" "VERSION;SHA256" "" ${ARGN})
   if (TARGET libxml2)
     external_project_dirs(libxml2 install_dir)
     return()
   endif()
   if (NOT LIBXML2_VERSION)
     set(LIBXML2_VERSION 2.9.9)
-    set(LIBXML2_SHA1 96686d1dd9fddf3b35a28b1e2e4bbacac889add3)
+    set(LIBXML2_SHA256 58a5c05a2951f8b47656b676ce1017921a29f6b1419c45e3baed0d6435ba03f5)
   endif()
+  string(REGEX REPLACE "\.[0-9]+$" "" LIBXML2_MAJOR_MINOR_VERSION ${LIBXML2_VERSION})
   build_xz()
   message(STATUS "Building libxml2-${LIBXML2_VERSION}")
   ExternalProject_Add(libxml2
-    URL ftp://xmlsoft.org/libxml2/libxml2-${LIBXML2_VERSION}.tar.gz
-    URL_HASH SHA1=${LIBXML2_SHA1}
+    URL https://download.gnome.org/sources/libxml2/${LIBXML2_MAJOR_MINOR_VERSION}/libxml2-${LIBXML2_VERSION}.tar.xz
+    URL_HASH SHA256=${LIBXML2_SHA256}
     DOWNLOAD_NO_PROGRESS ON
     DEPENDS xz
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
@@ -1792,18 +1793,18 @@ function(build_archive)
   if (NOT ARCHIVE_VERSION)
     set(ARCHIVE_VERSION 3.6.2)
   endif()
-  build_xz()
+  build_libxml2()
+  build_openssl()
   message(STATUS "Building archive-${ARCHIVE_VERSION}")
   ExternalProject_Add(archive
     URL https://libarchive.org/downloads/libarchive-${ARCHIVE_VERSION}.tar.gz
       https://github.com/libarchive/libarchive/releases/download/v${ARCHIVE_VERSION}/libarchive-${ARCHIVE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
-    DEPENDS xz
+    DEPENDS libxml2
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
-      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include
+      CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include\ -isystem${libxml2_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
       --prefix <INSTALL_DIR>
-      --with-lzma=${xz_install_dir}
       --disable-shared
       --enable-static
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libarchive.a
@@ -1813,7 +1814,7 @@ function(build_archive)
   external_project_dirs(archive install_dir)
   set_target_properties(archive::lib PROPERTIES
           IMPORTED_LOCATION ${archive_install_dir}/lib/libarchive.a
-          INTERFACE_LINK_LIBRARIES xz::lib)
+          INTERFACE_LINK_LIBRARIES libxml2::lib)
   target_include_external_directory(archive::lib archive install_dir include)
 endfunction()
 
