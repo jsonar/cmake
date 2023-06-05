@@ -1800,7 +1800,7 @@ function(build_archive)
     URL https://libarchive.org/downloads/libarchive-${ARCHIVE_VERSION}.tar.gz
       https://github.com/libarchive/libarchive/releases/download/v${ARCHIVE_VERSION}/libarchive-${ARCHIVE_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
-    DEPENDS libxml2
+    DEPENDS openssl libxml2
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include\ -isystem${libxml2_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
@@ -1814,7 +1814,7 @@ function(build_archive)
   external_project_dirs(archive install_dir)
   set_target_properties(archive::lib PROPERTIES
           IMPORTED_LOCATION ${archive_install_dir}/lib/libarchive.a
-          INTERFACE_LINK_LIBRARIES libxml2::lib)
+          INTERFACE_LINK_LIBRARIES libxml2::lib openssl::ssl openssl::crypto)
   target_include_external_directory(archive::lib archive install_dir include)
 endfunction()
 
