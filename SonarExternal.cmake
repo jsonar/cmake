@@ -1983,13 +1983,15 @@ function(build_gsasl)
     external_project_dirs(gsasl install_dir)
     return()
   endif()
-  cmake_parse_arguments(GSASL "" "VERSION" "" ${ARGN})
+  cmake_parse_arguments(GSASL "" "VERSION;SHA256" "" ${ARGN})
   if (NOT GSASL_VERSION)
     set(GSASL_VERSION 1.10.0)
+    set(GSASL_SHA256 f1b553384dedbd87478449775546a358d6f5140c15cccc8fb574136fdc77329f)
   endif()
   message(STATUS "Building gsasl-${GSASL_VERSION}")
   ExternalProject_Add(gsasl
     URL https://ftp.gnu.org/gnu/gsasl/libgsasl-${GSASL_VERSION}.tar.gz
+    URL_HASH SHA256=${GSASL_SHA256}
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
