@@ -379,9 +379,10 @@ function(build_curl)
   build_zlib()
   build_openssl()
   build_libssh2()
+  build_gsasl()
   cmake_parse_arguments(CURL "" "VERSION" "" ${ARGN})
   if(NOT CURL_VERSION)
-    set(CURL_VERSION 7.65.1)
+    set(CURL_VERSION 8.1.0)
   endif()
   message(STATUS "Building curl-${CURL_VERSION}")
   if(EXTERNAL_INSTALL_LIBDIR STREQUAL lib64)
@@ -390,7 +391,7 @@ function(build_curl)
   ExternalProject_Add(curl
     URL https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    DEPENDS openssl libssh2 zlib
+    DEPENDS openssl libssh2 zlib gsasl
     CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include
       LDFLAGS=-L${openssl_install_dir}/lib
@@ -407,7 +408,6 @@ function(build_curl)
       --without-brotli
       --without-gssapi
       --without-libidn2
-      --without-libmetalink
       --without-libpsl
       --without-librtmp
       --with-libssh2=${libssh2_install_dir}
@@ -415,6 +415,7 @@ function(build_curl)
       --without-nss
       --with-ssl=${openssl_install_dir}
       --with-zlib=${zlib_install_dir}
+      --without-zstd
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libcurl.a
     )
   add_library(curl::lib STATIC IMPORTED)
@@ -429,6 +430,7 @@ function(build_curl)
       openssl::ssl
       openssl::crypto
       zlib::lib
+      gsasl::lib
       )
 endfunction()
 
@@ -909,7 +911,7 @@ function(build_google_api)
   endforeach()
   ExternalProject_Add(google_api
     SOURCE_DIR ${GOOGLE_API_SOURCE_DIR}
-    DEPENDS curl jsoncpp glog gflags openssl
+    DEPENDS curl jsoncpp glog gflags openssl gsasl
     CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -919,7 +921,7 @@ function(build_google_api)
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}$<SEMICOLON>${openssl_install_dir}$<SEMICOLON>${libssh2_install_dir}$<SEMICOLON>${zlib_install_dir}
+      -DCMAKE_PREFIX_PATH=${curl_install_dir}$<SEMICOLON>${jsoncpp_install_dir}$<SEMICOLON>${glog_install_dir}$<SEMICOLON>${gflags_install_dir}$<SEMICOLON>${openssl_install_dir}$<SEMICOLON>${libssh2_install_dir}$<SEMICOLON>${zlib_install_dir}$<SEMICOLON>${gsasl_install_dir}
     BUILD_BYPRODUCTS ${byproducts}
     )
   external_project_dirs(google_api binary_dir source_dir)
@@ -950,7 +952,8 @@ function(build_google_api)
         jsoncpp::lib
         openssl::ssl
         openssl::crypto
-      )
+        gsasl::lib
+        )
   endforeach()
 endfunction()
 
@@ -1980,15 +1983,13 @@ function(build_gsasl)
     external_project_dirs(gsasl install_dir)
     return()
   endif()
-  cmake_parse_arguments(GSASL "" "VERSION;SHA1" "" ${ARGN})
+  cmake_parse_arguments(GSASL "" "VERSION" "" ${ARGN})
   if (NOT GSASL_VERSION)
-    set(GSASL_VERSION 1.8.0)
-    set(GSASL_SHA1 08fd5dfdd3d88154cf06cb0759a732790c47b4f7)
+    set(GSASL_VERSION 1.10.0)
   endif()
   message(STATUS "Building gsasl-${GSASL_VERSION}")
   ExternalProject_Add(gsasl
-    URL ftp://ftp.gnu.org/gnu/gsasl/libgsasl-${GSASL_VERSION}.tar.gz
-    URL_HASH SHA1=${GSASL_SHA1}
+    URL https://ftp.gnu.org/gnu/gsasl/libgsasl-${GSASL_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
@@ -2000,7 +2001,6 @@ function(build_gsasl)
       --disable-kerberos_v5
     BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libgsasl.a
     )
-  message(WARNING "Linking statically to gsasl, which is LGPL")
   add_library(gsasl::lib STATIC IMPORTED GLOBAL)
   add_dependencies(gsasl::lib gsasl)
   external_project_dirs(gsasl install_dir)
