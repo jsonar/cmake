@@ -760,35 +760,33 @@ function(build_easylogging)
   )
 endfunction()
 
-function(build_pcre)
-  cmake_parse_arguments(PCRE "ENABLE_VALGRIND" "VERSION" "" ${ARGN})
-  if (NOT PCRE_VERSION)
-    set(PCRE_VERSION 8.45)
+function(build_pcre2)
+  cmake_parse_arguments(PCRE2 "ENABLE_VALGRIND" "VERSION" "" ${ARGN})
+  if (NOT PCRE2_VERSION)
+    set(PCRE2_VERSION 10.42)
   endif()
-  message(STATUS "Building pcre-${PCRE_VERSION}")
+  message(STATUS "Building pcre2-${PCRE2_VERSION}")
   set(enable_valgrind)
-  if (PCRE_ENABLE_VALGRIND)
+  if (PCRE2_ENABLE_VALGRIND)
     set(enable_valgrind --enable-valgrind)
   endif()
-  ExternalProject_Add(pcre
-    URL https://downloads.sourceforge.net/project/pcre/pcre/${PCRE_VERSION}/pcre-${PCRE_VERSION}.tar.gz
+  ExternalProject_Add(pcre2
+    URL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE2_VERSION}/pcre2-${PCRE2_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS 1
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       --enable-jit
       ${enable_valgrind}
-      --enable-unicode-properties
-      --enable-utf
       --prefix <INSTALL_DIR>
-    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libpcre.a
+    BUILD_BYPRODUCTS <INSTALL_DIR>/lib/libpcre2-8.a
     )
-  external_project_dirs(pcre install_dir)
-  add_library(pcre::lib STATIC IMPORTED)
-  add_dependencies(pcre::lib pcre)
-  set_property(TARGET pcre::lib
-    PROPERTY IMPORTED_LOCATION ${pcre_install_dir}/lib/libpcre.a
+  external_project_dirs(pcre2 install_dir)
+  add_library(pcre2-8::lib STATIC IMPORTED)
+  add_dependencies(pcre2-8::lib pcre2)
+  set_property(TARGET pcre2-8::lib
+    PROPERTY IMPORTED_LOCATION ${pcre2_install_dir}/lib/libpcre2-8.a
     )
-  target_include_external_directory(pcre::lib pcre install_dir include)
+  target_include_external_directory(pcre2-8::lib pcre2 install_dir include)
 endfunction()
 
 function(use_asio_standalone)
