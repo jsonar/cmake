@@ -84,7 +84,7 @@ function(build_openssl)
     return()
   endif()
   if(NOT OPENSSL_VERSION)
-    set(OPENSSL_VERSION 1.1.1u)
+    set(OPENSSL_VERSION 3.1.1)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
   string(REGEX MATCH "^[0-9]\.[0-9]\.[0-9]" OPENSSL_BRANCH ${OPENSSL_VERSION})
@@ -122,20 +122,20 @@ function(build_openssl)
       no-dso
     INSTALL_COMMAND make install_sw
     BUILD_BYPRODUCTS
-      <INSTALL_DIR>/lib/libssl.a
-      <INSTALL_DIR>/lib/libcrypto.a
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libssl.a
+      <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libcrypto.a
       )
   external_project_dirs(openssl install_dir)
   add_library(openssl::ssl STATIC IMPORTED GLOBAL)
   add_dependencies(openssl::ssl openssl)
   set_target_properties(openssl::ssl PROPERTIES
-    IMPORTED_LOCATION ${openssl_install_dir}/lib/libssl.a)
+    IMPORTED_LOCATION ${openssl_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libssl.a)
   target_include_external_directory(openssl::ssl openssl install_dir include)
 
   add_library(openssl::crypto STATIC IMPORTED GLOBAL)
   add_dependencies(openssl::crypto openssl)
   set_target_properties(openssl::crypto PROPERTIES
-    IMPORTED_LOCATION ${openssl_install_dir}/lib/libcrypto.a)
+    IMPORTED_LOCATION ${openssl_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libcrypto.a)
   target_include_external_directory(openssl::crypto openssl install_dir include)
   find_package(Threads REQUIRED)
   set_property(TARGET openssl::crypto
@@ -245,7 +245,7 @@ function(build_mongoc)
       URL ${mongoc_url}
       DOWNLOAD_NO_PROGRESS 1
       DEPENDS openssl
-      CONFIGURE_COMMAND PKG_CONFIG_PATH=${openssl_install_dir}/lib/pkgconfig <SOURCE_DIR>/configure
+      CONFIGURE_COMMAND PKG_CONFIG_PATH=${openssl_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/pkgconfig <SOURCE_DIR>/configure
         CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
         --disable-automatic-init-and-cleanup
         --with-libbson=bundled
@@ -394,7 +394,7 @@ function(build_curl)
     DEPENDS openssl libssh2 zlib gsasl
     CONFIGURE_COMMAND libsuff=${LIBSUFF} <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include
-      LDFLAGS=-L${openssl_install_dir}/lib
+      LDFLAGS=-L${openssl_install_dir}/${EXTERNAL_INSTALL_LIBDIR}
       CFLAGS=-DOPENSSL_NO_SSL3_METHOD\ -isystem${openssl_install_dir}/include
       CPPFLAGS=-DOPENSSL_NO_SSL3_METHOD\ -isystem${openssl_install_dir}/include
       LIBS=-ldl\ -lpthread
@@ -557,6 +557,8 @@ function(build_aws)
       IMPORTED_LOCATION ${aws_install_dir}/${EXTERNAL_INSTALL_LIBDIR}/libs2n.a)
     set_property(TARGET aws::core APPEND PROPERTY
       INTERFACE_LINK_LIBRARIES aws::s2n)
+    set_property(TARGET aws::s2n APPEND PROPERTY
+      INTERFACE_LINK_LIBRARIES Threads::Threads)
   endif()
 
   foreach(component ${AWS_COMPONENTS})
@@ -1806,7 +1808,7 @@ function(build_archive)
     DEPENDS openssl libxml2
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}\ -isystem${openssl_install_dir}/include\ -isystem${libxml2_install_dir}/include
-      LDFLAGS=-L${openssl_install_dir}/lib
+      LDFLAGS=-L${openssl_install_dir}/${EXTERNAL_INSTALL_LIBDIR}
       --prefix <INSTALL_DIR>
       --disable-shared
       --enable-static
@@ -1891,6 +1893,7 @@ function(build_aws_encryption)
       -DCMAKE_INSTALL_MESSAGE=LAZY
       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
       -DCMAKE_PREFIX_PATH=${aws_install_dir}$<SEMICOLON>${openssl_install_dir}
+      -DCMAKE_C_FLAGS="-Wno-error=deprecated-declarations"
     BUILD_BYPRODUCTS <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libaws-encryption-sdk.a
     )
   add_library(aws-encryption::lib STATIC IMPORTED GLOBAL)
@@ -2441,7 +2444,7 @@ function(build_openldap)
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
       CPPFLAGS=-isystem${openssl_install_dir}/include\ -isystem${sasl_install_dir}/include\ -isystem${krb5_install_dir}/include
-      LDFLAGS=-L${openssl_install_dir}/lib\ -lssl\ -lcrypto\ -L${sasl_install_dir}/lib\ -L${krb5_install_dir}/lib\ -pthread
+      LDFLAGS=-L${openssl_install_dir}/${EXTERNAL_INSTALL_LIBDIR}\ -lssl\ -lcrypto\ -L${sasl_install_dir}/lib\ -L${krb5_install_dir}/lib\ -pthread
       --prefix <INSTALL_DIR>
       --enable-slapd=no
       --with-tls=openssl
