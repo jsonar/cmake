@@ -52,7 +52,7 @@ function(build_zlib)
     return()
   endif()
   if (NOT ZLIB_VERSION)
-    set(ZLIB_VERSION 1.2.13)
+    set(ZLIB_VERSION 1.3.0)
   endif()
   message(STATUS "Building zlib-${ZLIB_VERSION}")
   ExternalProject_Add(zlib
@@ -84,7 +84,7 @@ function(build_openssl)
     return()
   endif()
   if(NOT OPENSSL_VERSION)
-    set(OPENSSL_VERSION 3.1.1)
+    set(OPENSSL_VERSION 3.2.0)
   endif()
   message(STATUS "Building openssl-${OPENSSL_VERSION}")
   string(REGEX MATCH "^[0-9]\.[0-9]\.[0-9]" OPENSSL_BRANCH ${OPENSSL_VERSION})
@@ -231,7 +231,7 @@ function(build_mongoc)
         -DENABLE_STATIC=ON
         -DENABLE_TESTS=OFF
         -DENABLE_SHM_COUNTERS=OFF
-        -DENABLE_ZLIB=BUNDLED
+        -DENABLE_=BUNDLED
         -DENABLE_ZSTD=OFF
         -DCMAKE_EXE_LINKER_FLAGS=-ldl
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
