@@ -231,7 +231,7 @@ function(build_mongoc)
         -DENABLE_STATIC=ON
         -DENABLE_TESTS=OFF
         -DENABLE_SHM_COUNTERS=OFF
-        -DENABLE_=BUNDLED
+        -DENABLE_ZLIB=BUNDLED
         -DENABLE_ZSTD=OFF
         -DCMAKE_EXE_LINKER_FLAGS=-ldl
       BUILD_BYPRODUCTS <INSTALL_DIR>/${libmongoc}
