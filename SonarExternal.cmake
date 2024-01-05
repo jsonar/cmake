@@ -1319,8 +1319,7 @@ function(build_xerces)
   endif()
   build_icu()
   ExternalProject_Add(xerces
-    URL https://www.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
-        https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
+    URL https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-${XERCES_VERSION}.tar.xz
     DOWNLOAD_NO_PROGRESS 1
     DEPENDS icu
     PATCH_COMMAND ${patch_command}
