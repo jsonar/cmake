@@ -52,7 +52,7 @@ function(build_zlib)
     return()
   endif()
   if (NOT ZLIB_VERSION)
-    set(ZLIB_VERSION 1.3)
+    set(ZLIB_VERSION 1.3.1)
   endif()
   message(STATUS "Building zlib-${ZLIB_VERSION}")
   ExternalProject_Add(zlib
