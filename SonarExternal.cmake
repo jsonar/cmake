@@ -1917,6 +1917,9 @@ function(build_aws_encryption)
     )
 endfunction()
 
+set(SONARW_S3_BUCKET_URL "https://sonarw-dependencies-mirror.s3.amazonaws.com")
+set(SONARW_S3_BUCKET_SOURCE_DIR ${SONARW_S3_BUCKET_URL}/source)
+
 function(build_xz)
   if(TARGET xz)
     external_project_dirs(xz install_dir)
@@ -1924,11 +1927,12 @@ function(build_xz)
   endif()
   cmake_parse_arguments(XZ "" "VERSION" "" ${ARGN})
   if (NOT XZ_VERSION)
-    set(XZ_VERSION 5.4.3)
+    set(XZ_VERSION 5.2.12)
   endif()
   message(STATUS "Building xz-${XZ_VERSION}")
   ExternalProject_Add(xz
-    URL https://tukaani.org/xz/xz-${XZ_VERSION}.tar.gz
+    URL ${SONARW_S3_BUCKET_SOURCE_DIR}/xz/${XZ_VERSION}/xz-${XZ_VERSION}.tar.gz
+        #https://tukaani.org/xz/xz-${XZ_VERSION}.tar.gz
     DOWNLOAD_NO_PROGRESS ON
     CONFIGURE_COMMAND <SOURCE_DIR>/configure
       CC=${CMAKE_C_COMPILER_LAUNCHER}\ ${CMAKE_C_COMPILER}
