@@ -196,8 +196,7 @@ function(build_mongoc)
   endif()
   message(STATUS "Building mongo-c-driver-${MONGOC_VERSION}")
   build_openssl()
-  set(mongoc_url
-    https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_VERSION}/mongo-c-driver-${MONGOC_VERSION}.tar.gz)
+  set(mongoc_url https://github.com/mongodb/mongo-c-driver/archive/refs/tags/${MONGOC_VERSION}.tar.gz)
   set(mongoc_build_byproducts
         <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libmongoc-static-1.0.a
         <INSTALL_DIR>/${EXTERNAL_INSTALL_LIBDIR}/libbson-static-1.0.a)
