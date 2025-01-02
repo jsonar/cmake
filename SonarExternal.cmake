@@ -1596,7 +1596,7 @@ function(build_boost)
     set(download_step SOURCE_DIR ${BOOST_SOURCE_DIR})
   else()
     set(download_step URL
-      https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2
+      https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2
       https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_UNDERSCORES}.tar.bz2/download)
   endif()
   foreach(component ${BOOST_COMPONENTS})
